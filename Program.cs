@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.InteropServices;
 
 namespace Chess
 {
@@ -8,12 +9,21 @@ namespace Chess
         static void Main(string[] args)
         {
             ChessTable chess = new ChessTable();
+            
             Console.ReadLine();
         }
     }
 
     class ChessTable
     {
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool GetConsoleMode(IntPtr handle, out int mode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetStdHandle(int handle);
+
         private Player white; //white top
         private Player black; //black bottom
         private uint[,] whiteSpawnLocation;
@@ -23,19 +33,37 @@ namespace Chess
         private byte[] squareColour1;
         private byte[] squareColour2;
         private byte[] offset;
+        private byte[] windowsSize = new byte[2];
 
         public ChessTable()
         {
+            var handle = GetStdHandle(-11);
+            int mode;
+            GetConsoleMode(handle, out mode);
+            SetConsoleMode(handle, mode | 0x4);
+
             squareSize = 5;
             lineColour = new byte[] {122,122,122 };
             squareColour1 = new byte[] {255,255,0 };
             squareColour2 = new byte[] {0,255,255 };
             offset = new byte[] {2,2 };
+
+            windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
+            windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
+            Console.SetWindowSize(windowsSize[0], windowsSize[1]);
+            BoardSetup();
         }
 
         private void BoardSetup()
-        {
-
+        {//8 squares in each direction.
+            ushort distanceX = (ushort)(9 + 8 * squareSize);
+            for (int k = 0; k < distanceX; k++)
+                for (int i = 0; i < distanceX; i += 1 + squareSize)
+                {
+                    Console.SetCursorPosition(i + offset[0], k + offset[1]);
+                    Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m|" + "\x1b[0m");
+                }
+            
         }
 
         private void PlayerSetup()
