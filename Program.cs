@@ -22,12 +22,15 @@ namespace Chess
         private byte[] lineColour;
         private byte[] squareColour1;
         private byte[] squareColour2;
+        private byte[] offset;
 
         public ChessTable()
         {
             squareSize = 5;
             lineColour = new byte[] {122,122,122 };
-
+            squareColour1 = new byte[] {255,255,0 };
+            squareColour2 = new byte[] {0,255,255 };
+            offset = new byte[] {2,2 };
         }
 
         private void BoardSetup()

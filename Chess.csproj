@@ -15,4 +15,10 @@
     </Content>
   </ItemGroup>
 
+  <ItemGroup>
+    <None Update="Chess.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+  </ItemGroup>
+
 </Project>
