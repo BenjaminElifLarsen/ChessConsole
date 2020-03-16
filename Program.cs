@@ -7,7 +7,7 @@ namespace Chess
     {
         static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
+            ChessTable chess = new ChessTable();
             Console.ReadLine();
         }
     }
@@ -18,7 +18,19 @@ namespace Chess
         private Player black; //black bottom
         private uint[,] whiteSpawnLocation;
         private uint[,] blackSpawnLocation;
-        ChessTable()
+        private byte squareSize;
+        private byte[] lineColour;
+        private byte[] squareColour1;
+        private byte[] squareColour2;
+
+        public ChessTable()
+        {
+            squareSize = 5;
+            lineColour = new byte[] {122,122,122 };
+
+        }
+
+        private void BoardSetup()
         {
 
         }
@@ -138,6 +150,7 @@ namespace Chess
         private byte[] colour;
         private string[] design;
         private byte[][] movePattern;
+        private byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
         private bool? team;
         private uint[] spawnLocation;
         private string ID;
