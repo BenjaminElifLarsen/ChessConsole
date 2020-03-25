@@ -39,35 +39,26 @@ namespace Chess
 
         public ChessTable()
         {
-            squareSize = 5;
-            lineColour = new byte[] {122,122,122 };
-            squareColour1 = new byte[] {255,255,0 };
-            squareColour2 = new byte[] {0,255,255 };
-            offset = new byte[] {2,2 };
-            BoardSetup();
-        }
-
-        private void BoardSetup()
-        {
             var handle = GetStdHandle(-11);
             int mode;
             GetConsoleMode(handle, out mode);
             SetConsoleMode(handle, mode | 0x4);
 
             squareSize = 5;
-            lineColour = new byte[] {122,122,122 };
+            lineColour = new byte[] { 122, 122, 122 };
             lineColourBase = new byte[] { 87, 65, 47 };
-            squareColour1 = new byte[] {182,123,91 };
-            squareColour2 = new byte[] {135,68,31 };
-            offset = new byte[] {2,2 };
+            squareColour1 = new byte[] { 182, 123, 91 };
+            squareColour2 = new byte[] { 135, 68, 31 };
+            offset = new byte[] { 2, 2 };
 
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            BoardDraw();
+            BoardSetup();
         }
 
-        private void BoardDraw()
+
+        private void BoardSetup()
         {//8 squares in each direction. Each piece is 3*3 currently, each square is 5*5 currently. 
             Console.CursorVisible = false;
             ushort distance = (ushort)(9 + 8 * squareSize);
