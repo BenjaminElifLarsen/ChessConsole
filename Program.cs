@@ -209,8 +209,8 @@ namespace Chess
             };
 
             uint[][] pawnMove =
-            { //first move, it got the possiblity of moving 1 or 2
-
+            { //first move, it got the possiblity of moving 1 or 2 //the pawn class should check if it, that is a specific pawn, have moved or not. If not it should give the option of moving 2 squares forward
+                new uint[] {1 }
             };
 
             uint[][] rockMove =
@@ -220,7 +220,7 @@ namespace Chess
                 //piece can move in each direction, i.e. when the piece hits a wall or another piece. 
                     //This just leave how to select the different direction, but then again, it same should be done for the "normal" 1-4 values. 
                     //Of course, the maximum move distance and move selection should be done over in the specific chesspiece. 
-                    //Git, are you working?
+                    //Git, are you working? Does not seem so, 3 hours spent and back to restore my work... yay... good job Git...
             };
 
             string team;
@@ -255,9 +255,98 @@ namespace Chess
 
     }
 
+    class King : ChessPiece
+    {
+
+    }
+
+    class Queen : ChessPiece
+    {
+
+    }
+
+    class Pawn : ChessPiece
+    {
+        private bool firstTurn = false;
+
+    }
+
+    class Rock : ChessPiece
+    {
+
+    }
+
+    class Bishop : ChessPiece
+    {
+
+    }
+
+    class Knight : ChessPiece
+    {
+
+        Knight(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID)
+        {
+
+        }
 
 
-    class ChessPiece //after the UML this class should be abstract and the same for its methods
+        protected override uint[] Location { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        protected override byte[] Colour { set => throw new NotImplementedException(); }
+        protected override string[] Design { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        protected override byte[][] MovePattern { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        protected override byte[][] AttackPattern { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        protected override bool Team { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        protected override uint[] SpawnLocation { set => throw new NotImplementedException(); }
+        protected override string ID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+        protected override bool CanDoMove { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
+
+        public override void Control()
+        {
+            throw new NotImplementedException();
+        }
+
+        public override void Taken()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void DisplayPossibleMove()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void Draw()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void IsHoveredOn()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void Move()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void RemoveDraw()
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void SetTeam(bool? team_)
+        {
+            throw new NotImplementedException();
+        }
+
+        protected override void TakeEnemyPiece()
+        {
+            throw new NotImplementedException();
+        }
+    }
+
+    public abstract class ChessPiece //after the UML this class should be abstract and the same for its methods
     {//when put on a location, check if there is an allie, if there is invalid move, if enemy, call that pieces removeDraw and call their Taken using TakeEnemyPiece
         private uint[] location; //x,y
         private byte[] colour;
@@ -266,58 +355,49 @@ namespace Chess
         private byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
         private bool? team;
         private uint[] spawnLocation;
-        private string ID;
+        private string id;
         private bool canDoMove;
 
-        ChessPiece(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID)
-        {
+        //ChessPiece(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID)
+        //{
 
-        }
+        //}
 
-        public void Control()
-        {
+        abstract protected uint[] Location { get; set; } //consider for each of the properties what kind they should have
+        
+        abstract protected byte[] Colour { set; }
 
-        }
+        abstract protected string[] Design { get; set; }
 
-        private void Move()
-        {
+        abstract protected byte[][] MovePattern { get; set; }
 
-        }
+        abstract protected byte[][] AttackPattern { get; set; }
 
-        private void Draw()
-        {
+        abstract protected bool Team { get; set; }
 
-        }
+        abstract protected uint[] SpawnLocation { set; }
 
-        public void IsHoveredOn()
-        {
+        abstract protected string ID { get; set; }
 
-        }
+        abstract protected bool CanDoMove { get; set; }
 
-        private void RemoveDraw()
-        {
+        abstract public void Control();
 
-        }
+        abstract protected void Move();
 
-        public void Taken()
-        {
+        abstract protected void Draw();
 
-        }
+        abstract protected void IsHoveredOn();
 
-        private void SetTeam(bool? team_)
-        {
+        abstract protected void RemoveDraw();
 
-        }
+        abstract public void Taken();
 
-        private void DisplayPossibleMove()
-        {
+        abstract protected void SetTeam(bool? team_);
 
-        }
+        abstract protected void DisplayPossibleMove();
 
-        private void TakeEnemyPiece()
-        {
-
-        }
+        abstract protected void TakeEnemyPiece();
 
     }
 
