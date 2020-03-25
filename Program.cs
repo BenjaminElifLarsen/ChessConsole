@@ -255,33 +255,33 @@ namespace Chess
 
     }
 
-    class King : ChessPiece
+    sealed class King : ChessPiece
+    { //this one really need to keep an eye on all other pieces and their location
+
+    }
+
+    sealed class Queen : ChessPiece
     {
 
     }
 
-    class Queen : ChessPiece
-    {
-
-    }
-
-    class Pawn : ChessPiece
+    sealed class Pawn : ChessPiece
     {
         private bool firstTurn = false;
 
     }
 
-    class Rock : ChessPiece
+    sealed class Rock : ChessPiece
     {
 
     }
 
-    class Bishop : ChessPiece
+    sealed class Bishop : ChessPiece
     {
 
     }
 
-    class Knight : ChessPiece
+    sealed class Knight : ChessPiece
     {
 
         Knight(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID)
@@ -289,7 +289,13 @@ namespace Chess
 
         }
 
+        public override bool BeenTaken => hasBeenTaken;
 
+ 
+        protected override bool SetBeenTaken
+        {
+            set => hasBeenTaken = value;
+        }
         protected override uint[] Location { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         protected override byte[] Colour { set => throw new NotImplementedException(); }
         protected override string[] Design { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
@@ -300,6 +306,7 @@ namespace Chess
         protected override string ID { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
         protected override bool CanDoMove { get => throw new NotImplementedException(); set => throw new NotImplementedException(); }
 
+
         public override void Control()
         {
             throw new NotImplementedException();
@@ -307,7 +314,7 @@ namespace Chess
 
         public override void Taken()
         {
-            throw new NotImplementedException();
+            
         }
 
         protected override void DisplayPossibleMove()
@@ -315,9 +322,13 @@ namespace Chess
             throw new NotImplementedException();
         }
 
-        protected override void Draw()
+        protected override void Draw() //hmm... since a lot of the code is going to be the same over the different pieces, maybe don't use an abstract class. Use the base class method implementation and overwrite where needed
         {
-            throw new NotImplementedException();
+            byte[] designSize = new byte[] {(byte)Design[0].Length, (byte)Design.Length };
+            uint drawLocationX = Location[0]; //+ (the square size - designSize[0]) /2
+            uint drawLocationY = Location[1]; //+ (the square size - designSize[1]) /2
+
+
         }
 
         protected override void IsHoveredOn()
@@ -348,20 +359,24 @@ namespace Chess
 
     public abstract class ChessPiece //after the UML this class should be abstract and the same for its methods
     {//when put on a location, check if there is an allie, if there is invalid move, if enemy, call that pieces removeDraw and call their Taken using TakeEnemyPiece
-        private uint[] location; //x,y
-        private byte[] colour;
-        private string[] design;
-        private byte[][] movePattern;
-        private byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
-        private bool? team;
-        private uint[] spawnLocation;
-        private string id;
-        private bool canDoMove;
-
+        protected uint[] location; //x,y
+        protected byte[] colour;
+        protected string[] design;
+        protected byte[][] movePattern;
+        protected byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
+        protected bool? team;
+        protected uint[] spawnLocation;
+        protected string id;
+        protected bool canDoMove;
+        protected bool hasBeenTaken = false;
         //ChessPiece(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID)
         //{
 
         //}
+
+        abstract public bool BeenTaken { get; }
+
+        abstract protected bool SetBeenTaken { set; }
 
         abstract protected uint[] Location { get; set; } //consider for each of the properties what kind they should have
         
