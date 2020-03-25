@@ -9,7 +9,7 @@ namespace Chess
         static void Main(string[] args)
         {
             ChessTable chess = new ChessTable();
-            
+
             Console.ReadLine();
         }
     }
@@ -37,6 +37,20 @@ namespace Chess
         private byte[] windowsSize = new byte[2];
 
         public ChessTable()
+        private byte[] squareColour1;
+        private byte[] squareColour2;
+        private byte[] offset;
+
+        public ChessTable()
+        {
+            squareSize = 5;
+            lineColour = new byte[] {122,122,122 };
+            squareColour1 = new byte[] {255,255,0 };
+            squareColour2 = new byte[] {0,255,255 };
+            offset = new byte[] {2,2 };
+        }
+
+        private void BoardSetup()
         {
             var handle = GetStdHandle(-11);
             int mode;

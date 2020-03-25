@@ -1,0 +1,8 @@
+﻿Ideas--------------------------
+Each chess piece should have accesss to a matrix of the board. 
+0's being the black side and 1's being the white size
+Use to check the location of enemies and allies, since the type does not matter to most pieces.
+	When a piece moves, it should updates it own location in the matrix too.
+Only the king needs to care about the types since it needs to figure out if it can move to a location and/or if it is treated by another piece. 
+	Maybe instead of 0's and 1's, use an sbyte. If positive it is black and negative is white. 
+	Each type got it own value, e.g. king is +-1, queen is +-2, bishop is +-3, knight is +-4, rock is +-6 and pawn is +-6
