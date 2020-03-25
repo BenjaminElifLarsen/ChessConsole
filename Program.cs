@@ -218,6 +218,7 @@ namespace Chess
                 //piece can move in each direction, i.e. when the piece hits a wall or another piece. 
                     //This just leave how to select the different direction, but then again, it same should be done for the "normal" 1-4 values. 
                     //Of course, the maximum move distance and move selection should be done over in the specific chesspiece. 
+                    //Git, are you working?
             };
 
             string team;
