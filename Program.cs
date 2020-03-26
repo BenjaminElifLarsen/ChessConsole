@@ -4,6 +4,13 @@ using System.Runtime.InteropServices;
 
 namespace Chess
 {
+
+    public class MapMatrix
+    {
+        private MapMatrix() { }
+        public static sbyte[,] map = new sbyte[8, 8];
+    }
+
     class Program
     {
         static void Main(string[] args)
