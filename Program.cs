@@ -11,6 +11,25 @@ namespace Chess
         public static sbyte[,] map = new sbyte[8, 8];
     }
 
+    public class ChessList
+    {
+        private ChessList() { }
+        private List<ChessPiece> chessListBlack = new List<ChessPiece>();
+        private List<ChessPiece> chessListWhite = new List<ChessPiece>();
+        public void SetChessListBlack(List<ChessPiece> list)
+        {
+            chessListBlack = list;
+        }
+        public void SetChessListWhite(List<ChessPiece> list)
+        {
+            chessListWhite = list;
+        }
+        public List<ChessPiece> GetList(bool team)
+        {
+            return team == true ? chessListBlack : chessListWhite;
+        }
+    }
+
     class Program
     {
         static void Main(string[] args)
