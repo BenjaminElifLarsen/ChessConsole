@@ -367,6 +367,7 @@ namespace Chess
             //how to best do this and DisplayPossibleMove()... 
             //how to know which location they have selected out of all the possible location?
             //before fully starting to implement the move and display, focus on just moving a single piece around to ensure the (remove)draw function work and the matrix map is updated and all of that. 
+            //Then set up two pieces, one of each player, and see if the map and such are working correctly and if they got the same location if the correct one is removed. 
         }
 
         protected void Draw()
@@ -415,7 +416,7 @@ namespace Chess
         public void Taken()
         {//call by another piece, the one that takes this piece. 
             hasBeenTaken = true;
-            RemoveDraw();
+            RemoveDraw(); //if the piece is taken, the other piece stands on this ones location, so removeDraw might remove the other piece. Consider how to implement the Taken/Move regarding that. 
         }
 
         protected void SetTeam(bool team_)

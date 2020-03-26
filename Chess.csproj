@@ -16,6 +16,9 @@
   </ItemGroup>
 
   <ItemGroup>
+    <None Update="board.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
     <None Update="Chess.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
