@@ -227,7 +227,7 @@ namespace Chess
                 //piece can move in each direction, i.e. when the piece hits a wall or another piece. 
                     //This just leave how to select the different direction, but then again, it same should be done for the "normal" 1-4 values. 
                     //Of course, the maximum move distance and move selection should be done over in the specific chesspiece. 
-                    //Git, are you working? Does not seem so, 3 hours spent and back to restore my work... yay... good job Git...
+                        //change done to the base class, no need for these Move variables, also the design strings. 
             };
 
             string team;
@@ -305,7 +305,16 @@ namespace Chess
 
         public Knight(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_,team_,spawnLocation_,ID)
         { //maybe do not have the moves and attacks, design and suck as parameters, but rather part of the code, since you have changed from abstract to non abstract class
-            //redo the constructors when you are sure what you will need. So far: spawnlocation, id and team
+          //redo the constructors when you are sure what you will need. So far: spawnlocation, id and team
+            Design = new string[]
+            {
+                "^V^",
+                "*|*",
+                "-K-"
+            };
+
+
+
         }
 
 
@@ -321,19 +330,19 @@ namespace Chess
         protected byte[][] movePattern;
         protected byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
         protected bool team;
-        protected uint[] spawnLocation;
+        protected uint[] mapLocation;
         protected string id;
         protected bool canDoMove;
         protected bool hasBeenTaken = false;
         protected byte squareSize; 
 
-        public ChessPiece(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID)
+        public ChessPiece(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] mapLocation_, string ID)
         { //for testing the code, just create a single player and a single piece. 
-            Location = location;
+            Location = location; //location should be the console x,y values, but instead of being given, it should be calculated out from the maplocation and square size
             Colour = colour;
             Design = design_;
             SetTeam(team_);
-            SpawnLocation = spawnLocation_;
+            MapLocation = mapLocation_; //what should this actually be done, is it the actually values on the console or is it values that fits the map matrix and location is then the actually console location...
             this.ID = ID; //String.Format("{0}5:{1}", team, i); team = currentTurn == true ? "-" : "+";
             Draw();
         }
@@ -353,13 +362,16 @@ namespace Chess
 
         protected bool Team { get => team; } //need to know it own team, but does it need to know the others's teams, the IDs can be used for that or just the matrix map. 
 
-        protected uint[] SpawnLocation { set => spawnLocation = value; }
+        protected uint[] MapLocation { set => mapLocation = value; }
 
         protected string ID { get => id; set => id = value; } //maybe split into two. Get being protected and the set being public 
 
         protected bool CanDoMove { get => canDoMove; set => canDoMove = value; } //what was the canDoMove suppose to be for again?
 
-        public void Control()
+        /// <summary>
+        /// Function that "controls" a piece. What to explain and how to..
+        /// </summary>
+        public virtual void Control()
         {
             Move();
             RemoveDraw();
@@ -367,7 +379,7 @@ namespace Chess
             UpdateMapMatrix();
         }
 
-        protected void Move()
+        protected virtual void Move()
         { 
             //calculate each possible, legal, end location. Maybe have, in the class scope, a variable byte[,] legalEndLocations that the DisplayPossibleMove can use. 
             DisplayPossibleMove(); //actually all of this is needed be done in the derived classes, since movement (and attacks) depends on the type of piece. 
@@ -375,8 +387,17 @@ namespace Chess
             //how to know which location they have selected out of all the possible location?
             //before fully starting to implement the move and display, focus on just moving a single piece around to ensure the (remove)draw function work and the matrix map is updated and all of that. 
             //Then set up two pieces, one of each player, and see if the map and such are working correctly and if they got the same location if the correct one is removed. 
+
         }
 
+        protected void LocationUpdate()
+        { //should squareSize be given using the consturctor or via a class. If given using the constructor the player constructur needs it too and having a single parameter just to give it on since wierd.
+            //also need the offset, since the map matrix does not contain the any offset. 
+        }
+
+        /// <summary>
+        /// Draws the chesspiece at its specific location
+        /// </summary>
         protected void Draw()
         {
             byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
@@ -385,21 +406,25 @@ namespace Chess
             for (int i = 0; i < design[0].Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
             {
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}",design[i]); //becareful, this one is not ending with a "\x1b[0m".
+                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}",design[i]); //be careful, this one is not ending with a "\x1b[0m".
             }
-
         }
 
-        public void IsHoveredOn()
+        public void IsHoveredOn(bool hover) //when a player hovers over a piece all this code with true, if and when they move to another piece call this piece again but with false 
         { //consider allowing a custom colour or just inverse colour. 
-            byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
-            int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
-            int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
-            for (int i = 0; i < design[0].Length; i++)  
+            if (hover)
             {
-                Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[48;2;" + 255 + ";" + 0 + ";" + 0 + "m{0}", design[i]); //this one is not ending with a "\x1b[0m".
+                byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
+                int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
+                int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+                for (int i = 0; i < design[0].Length; i++)
+                {
+                    Console.SetCursorPosition(drawLocationX, drawLocationY + i);
+                    Console.Write("\x1b[48;2;" + 255 + ";" + 0 + ";" + 0 + "m{0}", design[i]); //this one is not ending with a "\x1b[0m".
+                }
             }
+            else
+                Draw();
         }
 
         protected void RemoveDraw()
@@ -414,7 +439,6 @@ namespace Chess
             }
         }
 
-
         protected void UpdateMapMatrix()
         { //need to either give the array[,] or have a class that it can acess it from. Since it is an array, an update in one instance will update the array in all instances. 
 
@@ -423,6 +447,7 @@ namespace Chess
         public void Taken()
         {//call by another piece, the one that takes this piece. 
             hasBeenTaken = true;
+            //it should remove itself from the map matrix. 
             RemoveDraw(); //if the piece is taken, the other piece stands on this ones location, so removeDraw might remove the other piece. Consider how to implement the Taken/Move regarding that. 
         }
 
