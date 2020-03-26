@@ -33,7 +33,7 @@ namespace Chess
 
         private Player white; //white top
         private Player black; //black bottom
-        private uint[,] whiteSpawnLocation;
+        private uint[,] whiteSpawnLocation; //since the map matrix is being used, no real reason for having these outside their player class
         private uint[,] blackSpawnLocation;
         private byte squareSize;
         private byte[] lineColour;
@@ -264,11 +264,19 @@ namespace Chess
 
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
-        public King(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) { }
+        public King(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID)
+        {
+            Design = new string[]
+            {
+                "^V^",
+                "*|*",
+                "-K-"
+            };
+        }
 
         public bool IsInDanger()
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
-
+            //should also check if it even can move, if it cannot the game should end
 
             return false;
         }
@@ -277,7 +285,16 @@ namespace Chess
 
     sealed class Queen : ChessPiece
     {
-        public Queen(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) { }
+        public Queen(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) 
+        {
+            Design = new string[]
+            {
+                "_w_",
+                "~|~",
+                "-Q-"
+            };
+        }
+
     }
 
     sealed class Pawn : ChessPiece
@@ -285,17 +302,44 @@ namespace Chess
         private bool firstTurn = false;
         private bool canAttactLeft;
         private bool canAttackRight; 
-        public Pawn(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) { }
+        public Pawn(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID)
+        {
+            Design = new string[]
+            {
+                " - ",
+                " | ",
+                "-P-"
+            };
+        }
+
     }
 
     sealed class Rock : ChessPiece
     {
-        public Rock(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) { }
+        public Rock(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID)
+        {
+            Design = new string[]
+            {
+                "^^^",
+                "|=|",
+                "-R-"
+            };
+        }
+
     }
 
     sealed class Bishop : ChessPiece
     {
-        public Bishop(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) { }
+        public Bishop(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) 
+        {
+            Design = new string[]
+            {
+                "_+_",
+                "|O|",
+                "-B-"
+            };
+        }
+
     }
 
     sealed class Knight : ChessPiece
@@ -308,9 +352,9 @@ namespace Chess
           //redo the constructors when you are sure what you will need. So far: spawnlocation, id and team
             Design = new string[]
             {
-                "^V^",
-                "*|*",
-                "-K-"
+                " ^_",
+                " |>",
+                "-k-"
             };
 
 
@@ -325,7 +369,7 @@ namespace Chess
     abstract public class ChessPiece //still got a lot to read and learn about what is the best choice for a base class, class is abstract, everything is abstract, nothing is abstract and so on. 
     {//when put on a location, check if there is an allie, if there is invalid move, if enemy, call that pieces removeDraw and call their Taken using TakeEnemyPiece
         protected uint[] location; //x,y
-        protected byte[] colour;
+        protected byte[] colour; // https://docs.microsoft.com/en-us/dotnet/csharp/tutorials/inheritance 
         protected string[] design;
         protected byte[][] movePattern;
         protected byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
@@ -343,7 +387,7 @@ namespace Chess
             Design = design_;
             SetTeam(team_);
             MapLocation = mapLocation_; //what should this actually be done, is it the actually values on the console or is it values that fits the map matrix and location is then the actually console location...
-            this.ID = ID; //String.Format("{0}5:{1}", team, i); team = currentTurn == true ? "-" : "+";
+            this.ID = ID; //String.Format("{0}n:{1}", team, i); team = currentTurn == true ? "-" : "+"; n being the chesspiece type
             Draw();
         }
 
@@ -374,9 +418,9 @@ namespace Chess
         public virtual void Control()
         {
             Move();
-            RemoveDraw();
+            RemoveDraw(); //maybe move it into the Move function
             Draw();
-            UpdateMapMatrix();
+            //UpdateMapMatrix();
         }
 
         protected virtual void Move()
@@ -410,6 +454,10 @@ namespace Chess
             }
         }
 
+        /// <summary>
+        /// Displays a piece in another colour if it is hovered over. 
+        /// </summary>
+        /// <param name="hover">If true, the piece will be coloured in a different colour. If false, the piece will have its normal colour.</param>
         public void IsHoveredOn(bool hover) //when a player hovers over a piece all this code with true, if and when they move to another piece call this piece again but with false 
         { //consider allowing a custom colour or just inverse colour. 
             if (hover)
@@ -427,6 +475,9 @@ namespace Chess
                 Draw();
         }
 
+        /// <summary>
+        /// removes the visual identication of a chesspiece at its current location.
+        /// </summary>
         protected void RemoveDraw()
         {
             byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
@@ -439,9 +490,15 @@ namespace Chess
             }
         }
 
-        protected void UpdateMapMatrix()
+        /// <summary>
+        /// updates the map matrix with the new location of the chess piece and sets the old location to zero. 
+        /// </summary>
+        protected void UpdateMapMatrix(uint[] oldMapLocation)
         { //need to either give the array[,] or have a class that it can acess it from. Since it is an array, an update in one instance will update the array in all instances. 
-
+            string[] splittedID = ID.Split(':');
+            sbyte piece = sbyte.Parse(splittedID[0]);
+            MapMatrix.map[mapLocation[0], mapLocation[1]] = piece;
+            MapMatrix.map[oldMapLocation[0], oldMapLocation[1]] = 0;
         }
 
         public void Taken()
@@ -451,6 +508,10 @@ namespace Chess
             RemoveDraw(); //if the piece is taken, the other piece stands on this ones location, so removeDraw might remove the other piece. Consider how to implement the Taken/Move regarding that. 
         }
 
+        /// <summary>
+        /// Sets the team of the chesspiece.
+        /// </summary>
+        /// <param name="team_">True for .... False for ....</param>
         protected void SetTeam(bool team_)
         {
             team = team_;
