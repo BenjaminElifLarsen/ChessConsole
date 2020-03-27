@@ -507,8 +507,8 @@ namespace Chess
         /// <summary>
         /// updates the map matrix with the new location of the chess piece and sets the old location to zero. 
         /// </summary>
-        protected void UpdateMapMatrix(uint[] oldMapLocation)
-        { //need to either give the array[,] or have a class that it can acess it from. Since it is an array, an update in one instance will update the array in all instances. 
+        protected void UpdateMapMatrix(uint[] oldMapLocation) //need to call this before the LocationUpdate
+        { 
             MapMatrix.map[mapLocation[0], mapLocation[1]] = ID;
             MapMatrix.map[oldMapLocation[0], oldMapLocation[1]] = "";
         }
@@ -542,15 +542,27 @@ namespace Chess
             //what should be drawn, where should it and how to restore back to the default design and colour
         }
 
-        protected void TakeEnemyPiece()
+        protected void TakeEnemyPiece() 
         {
-            //how to find and get the enemy piece. The lists so far only exist in the players. Maybe have a class that only contains the two lists and when called a method to get a list, 
-            //it use a conditional operator to return the list of the other team. 
-            //the lists cannot be inheritance, since the piece will need to the other team's list and the player only contains their team's list.   
-            //got the list now. Now to figure out how to find a specific piece in that list...
-            //1) can look at the map location of each piece and see if one fits the new location of this piece
-            //2) look at the map, see what value is at the location and cheeck the the number part of the ID... actually maybe instead of using a sbyte for the map, consider use a string
-                //so you can write the entire ID... why did I not think of that before... then you can just look for the whole ID 
+            //consider this aproach: Player select a location. This chesspiece then checks the location for an ID string or "". If "" call the removeDraw, move the piece and call Draw.
+                //If there is an ID string, find that chesspiece and call its Taken. Then call removeDraw, move the piece and the call Draw. 
+            string newLocationCurrentValue = MapMatrix.map[mapLocation[0], mapLocation[1]];
+            if(newLocationCurrentValue != "")
+            {
+                foreach (ChessPiece chesspiece in ChessList.GetList(Team)) //remember to ensure it gets the other teams list... so at some point figure out if false is white or black...
+                {
+                    if (chesspiece.ID == newLocationCurrentValue)
+                    {
+                        chesspiece.Taken(); //huh, got access to all functions and class scope values... guess that makes sense... Figure out some way to prevent that
+                        break;
+                    }
+                }
+            }
+            RemoveDraw();
+            //call move function
+            Draw();
+
+
         }
 
     }
