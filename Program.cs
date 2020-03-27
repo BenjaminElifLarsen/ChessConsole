@@ -178,14 +178,12 @@ namespace Chess
         private bool currentTurn; //rename to either black or white so it makes more sense 
         private List<ChessPiece> chessPieces = new List<ChessPiece>();
         private uint[,] spawnLocations; //start with the pawns, left to right and then the rest, left to right
-        private sbyte directionMultiplier;
 
         public Player(byte[] colour, bool startTurn, uint[,] spawnLocations)
         {
             this.colour = colour;
             this.currentTurn = startTurn;
             this.spawnLocations = spawnLocations;
-            directionMultiplier = startTurn ? (sbyte)1 : (sbyte)-1;
             CreatePieces();
         }
 
@@ -215,62 +213,6 @@ namespace Chess
 
         private void CreatePieces()
         {
-            string[] pawnDesign =
-            {
-                " - ",
-                " | ",
-                "-P-"
-            };
-            string[] rockDesign =
-            {
-                "^^^",
-                "|=|",
-                "-R-"
-            };
-
-            string[] knightDesign =
-            {
-                " ^_",
-                " |>",
-                "-k-"
-            };
-
-            string[] bishopDesign =
-            {
-                "_+_",
-                "|O|",
-                "-B-"
-            };
-
-            string[] queenDesign =
-            {
-                "_w_",
-                "~|~",
-                "-Q-"
-            };
-
-            string[] kingDesign =
-            {
-                "^V^",
-                "*|*",
-                "-K-"
-            };
-
-            uint[][] pawnMove =
-            { //first move, it got the possiblity of moving 1 or 2 //the pawn class should check if it, that is a specific pawn, have moved or not. If not it should give the option of moving 2 squares forward
-                new uint[] {1 }
-            };
-
-            uint[][] rockMove =
-            { //it can move 1 to 7 squares in each direciton. With current design decision it will contain 7*4 arrays, a little to much
-                //consider another way to do these moves. Also since the queen have many more moves, 7*8 moves
-                //maybe other than just the 1-4 values used, use 5 for unlimited move in diagonal directions and 6 for unlimited non-diagnonal directions, where the code should calculate the max amount of distance the 
-                //piece can move in each direction, i.e. when the piece hits a wall or another piece. 
-                    //This just leave how to select the different direction, but then again, it same should be done for the "normal" 1-4 values. 
-                    //Of course, the maximum move distance and move selection should be done over in the specific chesspiece. 
-                        //change done to the base class, no need for these Move variables, also the design strings. 
-            };
-
             string team;
             team = currentTurn == true ? "-" : "+";
 
