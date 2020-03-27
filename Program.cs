@@ -7,24 +7,29 @@ namespace Chess
 
     public class MapMatrix
     {
-        private MapMatrix() { }
+        private MapMatrix()
+        {
+            for (int n = 0; n < 8; n++)
+                for (int m = 0; m < 8; m++)
+                    map[n, m] = "";
+        }
         public static string[,] map = new string[8, 8];
     }
 
     public class ChessList
     {
         private ChessList() { }
-        private List<ChessPiece> chessListBlack = new List<ChessPiece>();
-        private List<ChessPiece> chessListWhite = new List<ChessPiece>();
-        public void SetChessListBlack(List<ChessPiece> list)
+        private static List<ChessPiece> chessListBlack = new List<ChessPiece>();
+        private static List<ChessPiece> chessListWhite = new List<ChessPiece>();
+        public static void SetChessListBlack(List<ChessPiece> list)
         {
             chessListBlack = list;
         }
-        public void SetChessListWhite(List<ChessPiece> list)
+        public static void SetChessListWhite(List<ChessPiece> list)
         {
             chessListWhite = list;
         }
-        public List<ChessPiece> GetList(bool team)
+        public static List<ChessPiece> GetList(bool team)
         {
             return team == true ? chessListBlack : chessListWhite;
         }
@@ -33,18 +38,18 @@ namespace Chess
     public class Settings
     {
         private Settings() { }
-        private byte squareSize = 5;
-        private byte[] lineColour = new byte[] { 122, 122, 122 };
-        private byte[] lineColourBase = new byte[] { 87, 65, 47 };
-        private byte[] squareColour1 = new byte[] { 182, 123, 91 };
-        private byte[] squareColour2 = new byte[] { 135, 68, 31 };
-        private byte[] offset = new byte[] { 2, 2 };
-        public byte SquareSize { get => squareSize; }
-        public byte[] LineColour { get => lineColour; }
-        public byte[] LineColourBase { get => lineColourBase; }
-        public byte[] SquareColour1 { get => squareColour1; }
-        public byte[] SquareColour2 { get => squareColour2; }
-        public byte[] Offset { get => offset; }
+        private static byte squareSize = 5;
+        private static byte[] lineColour = new byte[] { 122, 122, 122 };
+        private static byte[] lineColourBase = new byte[] { 87, 65, 47 };
+        private static byte[] squareColour1 = new byte[] { 182, 123, 91 };
+        private static byte[] squareColour2 = new byte[] { 135, 68, 31 };
+        private static byte[] offset = new byte[] { 2, 2 };
+        public static byte SquareSize { get => squareSize; }
+        public static byte[] LineColour { get => lineColour; }
+        public static byte[] LineColourBase { get => lineColourBase; }
+        public static byte[] SquareColour1 { get => squareColour1; }
+        public static byte[] SquareColour2 { get => squareColour2; }
+        public static byte[] Offset { get => offset; } //remember the '|' and '-'
     }
 
     class Program
@@ -300,7 +305,7 @@ namespace Chess
 
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
-        public King(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID)
+        public King(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_, team_, spawnLocation_, ID)
         {
             Design = new string[]
             {
@@ -312,7 +317,8 @@ namespace Chess
 
         public bool IsInDanger()
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
-            //should also check if it even can move, if it cannot the game should end
+            //should also check if it even can move, if it cannot the game should end. //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
+            //hmm... could also look check specific squares for specific chesspieces, e.g. check all left, right, up and down squares for rocks and queen, check specific squares that 3 squares away for knights and so on. 
 
             return false;
         }
@@ -321,7 +327,7 @@ namespace Chess
 
     sealed class Queen : ChessPiece
     {
-        public Queen(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) 
+        public Queen(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_, team_, spawnLocation_, ID)
         {
             Design = new string[]
             {
@@ -338,7 +344,7 @@ namespace Chess
         private bool firstTurn = false;
         private bool canAttactLeft;
         private bool canAttackRight; 
-        public Pawn(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID)
+        public Pawn(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_, team_, spawnLocation_, ID)
         {
             Design = new string[]
             {
@@ -352,7 +358,7 @@ namespace Chess
 
     sealed class Rock : ChessPiece
     {
-        public Rock(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID)
+        public Rock(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_, team_, spawnLocation_, ID)
         {
             Design = new string[]
             {
@@ -366,7 +372,7 @@ namespace Chess
 
     sealed class Bishop : ChessPiece
     {
-        public Bishop(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_, team_, spawnLocation_, ID) 
+        public Bishop(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_, team_, spawnLocation_, ID)
         {
             Design = new string[]
             {
@@ -383,7 +389,7 @@ namespace Chess
 
         //Knight(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : this(location_, colour_, design_, team_, spawnLocation_, ID) { }
 
-        public Knight(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(location_, colour_, design_,team_,spawnLocation_,ID)
+        public Knight(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_,team_,spawnLocation_,ID)
         { //maybe do not have the moves and attacks, design and suck as parameters, but rather part of the code, since you have changed from abstract to non abstract class
           //redo the constructors when you are sure what you will need. So far: spawnlocation, id and team
             Design = new string[]
@@ -392,7 +398,7 @@ namespace Chess
                 " |>",
                 "-k-"
             };
-
+            MovePattern = new byte[][] { new byte[] {6} }; //maybe drop the idea of a movePattern variable and just write it into the specialised move code 
 
 
         }
@@ -416,14 +422,15 @@ namespace Chess
         protected bool hasBeenTaken = false;
         protected byte squareSize; 
 
-        public ChessPiece(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] mapLocation_, string ID)
+        public ChessPiece(byte[] colour_, string[] design_, bool team_, uint[] mapLocation_, string ID)
         { //for testing the code, just create a single player and a single piece. 
-            Location = location; //location should be the console x,y values, but instead of being given, it should be calculated out from the maplocation and square size
+            //location should be the console x,y values, but instead of being given, it should be calculated out from the maplocation and square size
             Colour = colour;
             Design = design_;
             SetTeam(team_);
             MapLocation = mapLocation_; //what should this actually be done, is it the actually values on the console or is it values that fits the map matrix and location is then the actually console location...
             this.ID = ID; //String.Format("{0}n:{1}", team, i); team = currentTurn == true ? "-" : "+"; n being the chesspiece type
+            LocationUpdate();
             Draw();
         }
 
@@ -432,9 +439,14 @@ namespace Chess
         /// </summary>
         public bool BeenTaken { get => hasBeenTaken; } //use by other code to see if the piece have been "taken" and should be removed from game. 
 
-
+        /// <summary>
+        /// Sets the hasBeenTaken value...
+        /// </summary>
         protected bool SetBeenTaken { set => hasBeenTaken = value; }
 
+        /// <summary>
+        /// Gets and sets the location of the chesspiece on the console.  
+        /// </summary>
         protected uint[] Location { get => location; set => location = value; } //consider for each of the properties what kind they should have
 
         protected byte[] Colour { set => colour = value; }
@@ -461,13 +473,14 @@ namespace Chess
         public virtual void Control()
         {
             Move();
-            RemoveDraw(); //maybe move it into the Move function
+            RemoveDraw(); 
+            LocationUpdate();
             Draw();
             //UpdateMapMatrix();
         }
 
         /// <summary>
-        /// 
+        /// Calculates the, legal, location(s) the chesspiece is able to move too. 
         /// </summary>
         protected virtual void Move()
         { 
@@ -477,16 +490,25 @@ namespace Chess
             //how to know which location they have selected out of all the possible location?
             //before fully starting to implement the move and display, focus on just moving a single piece around to ensure the (remove)draw function work and the matrix map is updated and all of that. 
             //Then set up two pieces, one of each player, and see if the map and such are working correctly and if they got the same location if the correct one is removed. 
-
+            //Should this function also figure out which location the player chose, set the new location and all that or should another function do that? 
         }
 
         /// <summary>
         /// updates the location that is used for displaying the chesspiece on the chessboard
         /// </summary>
-        protected void LocationUpdate()
-        { //should squareSize be given using the consturctor or via a class. If given using the constructor the player constructur needs it too and having a single parameter just to give it on since wierd.
-            //also need the offset, since the map matrix does not contain the any offset. 
-            //maybe have a class that contain all "settings" of the game, e.g. offsets, colours, symbols '-' and '|', and so on
+        protected void LocationUpdate() //where should this one being called from
+        { 
+            Location[0] = mapLocation[0] * squareSize + (mapLocation[0]+1) * 1 + Settings.Offset[0]; //(matpLocation[0]+1) is for the amount of spaces between the offsets and first square and the space between all the squares
+            //7*5+8+2 = 35+10 = 45, x
+            //1*5+2+2 = 5+4 = 9, y 
+            /*{1,2}
+             * 1*5+2+2 = 9
+             * 2*5+3+2 = 15
+             * {0,0}
+             * 0*5+1+2 = 3
+             * 0*5+1+2 = 3
+             */
+            Location[1] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0];
         }
 
         /// <summary>
@@ -545,10 +567,8 @@ namespace Chess
         /// </summary>
         protected void UpdateMapMatrix(uint[] oldMapLocation)
         { //need to either give the array[,] or have a class that it can acess it from. Since it is an array, an update in one instance will update the array in all instances. 
-            string[] splittedID = ID.Split(':');
-            sbyte piece = sbyte.Parse(splittedID[0]);
-            MapMatrix.map[mapLocation[0], mapLocation[1]] = piece;
-            MapMatrix.map[oldMapLocation[0], oldMapLocation[1]] = 0;
+            MapMatrix.map[mapLocation[0], mapLocation[1]] = ID;
+            MapMatrix.map[oldMapLocation[0], oldMapLocation[1]] = "";
         }
 
 
