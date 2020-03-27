@@ -8,7 +8,7 @@ namespace Chess
     public class MapMatrix
     {
         private MapMatrix() { }
-        public static sbyte[,] map = new sbyte[8, 8];
+        public static string[,] map = new string[8, 8];
     }
 
     public class ChessList
@@ -28,6 +28,23 @@ namespace Chess
         {
             return team == true ? chessListBlack : chessListWhite;
         }
+    }
+
+    public class Settings
+    {
+        private Settings() { }
+        private byte squareSize = 5;
+        private byte[] lineColour = new byte[] { 122, 122, 122 };
+        private byte[] lineColourBase = new byte[] { 87, 65, 47 };
+        private byte[] squareColour1 = new byte[] { 182, 123, 91 };
+        private byte[] squareColour2 = new byte[] { 135, 68, 31 };
+        private byte[] offset = new byte[] { 2, 2 };
+        public byte SquareSize { get => squareSize; }
+        public byte[] LineColour { get => lineColour; }
+        public byte[] LineColourBase { get => lineColourBase; }
+        public byte[] SquareColour1 { get => squareColour1; }
+        public byte[] SquareColour2 { get => squareColour2; }
+        public byte[] Offset { get => offset; }
     }
 
     class Program
