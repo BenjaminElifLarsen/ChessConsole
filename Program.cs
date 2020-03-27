@@ -410,7 +410,11 @@ namespace Chess
             Draw();
         }
 
+        /// <summary>
+        /// Returns a bool that indicate if this piece has been "taken" by another player's piece. 
+        /// </summary>
         public bool BeenTaken { get => hasBeenTaken; } //use by other code to see if the piece have been "taken" and should be removed from game. 
+
 
         protected bool SetBeenTaken { set => hasBeenTaken = value; }
 
@@ -421,12 +425,15 @@ namespace Chess
         protected string[] Design { get => design; set => design = value; }
         protected byte[][] MovePattern { set => movePattern = value; }
 
-        protected byte[][] AttackPattern { get => attack; set => attack = value; }
+        protected byte[][] AttackPattern { get => attack; set => attack = value; } 
 
         protected bool Team { get => team; } //need to know it own team, but does it need to know the others's teams, the IDs can be used for that or just the matrix map. 
 
         protected uint[] MapLocation { set => mapLocation = value; }
 
+        /// <summary>
+        /// Gets and set the ID of the chesspiece. //maybe have some code that ensures the ID is unique 
+        /// </summary>
         protected string ID { get => id; set => id = value; } //maybe split into two. Get being protected and the set being public 
 
         protected bool CanDoMove { get => canDoMove; set => canDoMove = value; } //what was the canDoMove suppose to be for again?
@@ -442,6 +449,9 @@ namespace Chess
             //UpdateMapMatrix();
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
         protected virtual void Move()
         { 
             //calculate each possible, legal, end location. Maybe have, in the class scope, a variable byte[,] legalEndLocations that the DisplayPossibleMove can use. 
@@ -453,9 +463,13 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// updates the location that is used for displaying the chesspiece on the chessboard
+        /// </summary>
         protected void LocationUpdate()
         { //should squareSize be given using the consturctor or via a class. If given using the constructor the player constructur needs it too and having a single parameter just to give it on since wierd.
             //also need the offset, since the map matrix does not contain the any offset. 
+            //maybe have a class that contain all "settings" of the game, e.g. offsets, colours, symbols '-' and '|', and so on
         }
 
         /// <summary>
@@ -520,6 +534,10 @@ namespace Chess
             MapMatrix.map[oldMapLocation[0], oldMapLocation[1]] = 0;
         }
 
+
+        /// <summary>
+        /// Set a chesspeice set to be taken so it can be removed. 
+        /// </summary>
         public void Taken()
         {//call by another piece, the one that takes this piece. 
             hasBeenTaken = true;
@@ -536,9 +554,13 @@ namespace Chess
             team = team_;
         }
 
+        /// <summary>
+        /// Display the possible, legal, moves a chesspiece can take. 
+        /// </summary>
         protected void DisplayPossibleMove()
         {
             //needs to draw at every end location
+            //what should be drawn, where should it and how to restore back to the default design and colour
         }
 
         protected void TakeEnemyPiece()
@@ -546,6 +568,10 @@ namespace Chess
             //how to find and get the enemy piece. The lists so far only exist in the players. Maybe have a class that only contains the two lists and when called a method to get a list, 
             //it use a conditional operator to return the list of the other team. 
             //the lists cannot be inheritance, since the piece will need to the other team's list and the player only contains their team's list.   
+            //got the list now. Now to figure out how to find a specific piece in that list...
+            //1) can look at the map location of each piece and see if one fits the new location of this piece
+            //2) look at the map, see what value is at the location and cheeck the the number part of the ID... actually maybe instead of using a sbyte for the map, consider use a string
+                //so you can write the entire ID... why did I not think of that before... then you can just look for the whole ID 
         }
 
     }
