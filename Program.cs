@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using System.Runtime.InteropServices;
 
 namespace Chess
-{
+{   //https://www.chessvariants.com/d.chess/chess.html
 
     public class MapMatrix
     {
@@ -143,9 +143,9 @@ namespace Chess
                         for (int k = 0; k < squareSize; k++)
                         {
                             Console.SetCursorPosition(i + offset[0] + 1 + n, k + offset[1] + 1 + m);
-                            if (location % 2 == 0)
+                            if (location % 2 == 1)
                                 Console.Write("\x1b[48;2;" + squareColour1[0] + ";" + squareColour1[1] + ";" + squareColour1[2] + "m " + "\x1b[0m");
-                            else if (location % 2 == 1)
+                            else if (location % 2 == 0)
                                 Console.Write("\x1b[48;2;" + squareColour2[0] + ";" + squareColour2[1] + ";" + squareColour2[2] + "m " + "\x1b[0m");
                         }
                     }
@@ -245,6 +245,8 @@ namespace Chess
 
     }
 
+
+
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
         public King(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_, team_, spawnLocation_, ID)
@@ -255,12 +257,22 @@ namespace Chess
                 "*|*",
                 "-K-"
             };
-        }
+        } //king cannot move next to another king
 
         public bool IsInDanger()
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
             //hmm... could also look check specific squares for specific chesspieces, e.g. check all left, right, up and down squares for rocks and queen, check specific squares that 3 squares away for knights and so on. 
+            //the king can, however, take a chesspiece as long time that piece is not protected by another nor is the other king. Cannot move next to the hostile king 
+            return false;
+        }
+
+        private bool HasMoved { get; } //if moved, castling cannot be done
+
+        private bool Castling()
+        { //king moves two squares in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, no of the squares should be threanten by
+            //hostile piece??? 
+
 
             return false;
         }
@@ -296,6 +308,24 @@ namespace Chess
             };
         }
 
+        private void CheckAttackPossbilities()
+        {
+            //should check if it can take a piece and if it can, ensure that it is given to the displayPossibleMoves. 
+            //read up on the "en-passant" rule regarding taking another pawn that has double moved.
+        }
+
+        private bool HasDoubleSquareMoved { get; set; }
+
+        private void Promotion()
+        { //pawn can become any other type of chesspiece. It should remove itself and create a new instance of the chosen piece on the same location.
+
+        }
+
+        private void DisplayPromotions()
+        { //writes to a location what chesspieces it can be promoted too.
+
+        }
+
     }
 
     sealed class Rock : ChessPiece
@@ -308,6 +338,15 @@ namespace Chess
                 "|=|",
                 "-R-"
             };
+        }
+
+        private bool HasMoved { get; } //if moved, castling cannot be done
+
+        private bool Castling()
+        {
+
+
+            return false;
         }
 
     }
@@ -391,11 +430,20 @@ namespace Chess
         /// </summary>
         protected uint[] Location { get => location; set => location = value; } //consider for each of the properties what kind they should have
 
+        /// <summary>
+        /// sets the colour of the chesspiece.
+        /// </summary>
         protected byte[] Colour { set => colour = value; }
 
+        /// <summary>
+        /// Sets and gets the design of the chesspieice. 
+        /// </summary>
         protected string[] Design { get => design; set => design = value; }
+
+        //remove 
         protected byte[][] MovePattern { set => movePattern = value; }
 
+        //remove 
         protected byte[][] AttackPattern { get => attack; set => attack = value; } 
 
         protected bool Team { get => team; } //need to know it own team, but does it need to know the others's teams, the IDs can be used for that or just the matrix map. 
@@ -546,19 +594,20 @@ namespace Chess
         {
             //consider this aproach: Player select a location. This chesspiece then checks the location for an ID string or "". If "" call the removeDraw, move the piece and call Draw.
                 //If there is an ID string, find that chesspiece and call its Taken. Then call removeDraw, move the piece and the call Draw. 
-            string newLocationCurrentValue = MapMatrix.map[mapLocation[0], mapLocation[1]];
+            string newLocationCurrentValue = MapMatrix.map[mapLocation[0], mapLocation[1]]; //should the map have been updated already or should this line of code some new location
             if(newLocationCurrentValue != "")
             {
                 foreach (ChessPiece chesspiece in ChessList.GetList(Team)) //remember to ensure it gets the other teams list... so at some point figure out if false is white or black...
                 {
                     if (chesspiece.ID == newLocationCurrentValue)
                     {
-                        chesspiece.Taken(); //huh, got access to all functions and class scope values... guess that makes sense... Figure out some way to prevent that
+                        chesspiece.Taken(); //huh, got access to all functions and class scope values... guess that makes sense... Figure out some way to prevent that, so read
                         break;
                     }
                 }
             }
             RemoveDraw();
+            //UpdateMapMatrix();
             //call move function
             Draw();
 
