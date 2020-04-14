@@ -446,7 +446,7 @@ namespace Chess
 
     abstract public class ChessPiece //still got a lot to read and learn about what is the best choice for a base class, class is abstract, everything is abstract, nothing is abstract and so on. 
     {//when put on a location, check if there is an allie, if there is invalid move, if enemy, call that pieces removeDraw and call their Taken using TakeEnemyPiece
-        protected uint[] location; //x,y
+        protected uint[] location = new uint[2]; //x,y
         protected byte[] colour; // https://docs.microsoft.com/en-us/dotnet/csharp/tutorials/inheritance 
         protected string[] design;
         protected byte[][] movePattern;
@@ -456,14 +456,14 @@ namespace Chess
         protected string id;
         protected bool canDoMove;
         protected bool hasBeenTaken = false;
-        protected byte squareSize;
+        protected byte squareSize = Settings.SquareSize;
         protected List<uint[,]> possibleEndLocations = new List<uint[,]>();
         protected string teamString; //come up with a better name
 
         public ChessPiece(byte[] colour_, bool team_, uint[] mapLocation_, string ID)
         { //for testing the code, just create a single player and a single piece. 
             //location should be the console x,y values, but instead of being given, it should be calculated out from the maplocation and square size
-            Colour = colour;
+            Colour = colour_;
             SetTeam(team_);
             MapLocation = mapLocation_; //what should this actually be done, is it the actually values on the console or is it values that fits the map matrix and location is then the actually console location...
             this.ID = ID; //String.Format("{0}n:{1}", team, i); team = currentTurn == true ? "-" : "+"; n being the chesspiece type
@@ -554,7 +554,7 @@ namespace Chess
         /// </summary>
         protected void LocationUpdate() //where should this one being called from
         { 
-            Location[0] = mapLocation[0] * squareSize + (mapLocation[0]+1) * 1 + Settings.Offset[0]; //(matpLocation[0]+1) is for the amount of spaces between the offsets and first square and the space between all the squares
+            Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //(matpLocation[0]+1) is for the amount of spaces between the offsets and first square and the space between all the squares
             //7*5+8+2 = 35+10 = 45, x
             //1*5+2+2 = 5+4 = 9, y 
             /*{1,2}
@@ -564,7 +564,7 @@ namespace Chess
              * 0*5+1+2 = 3
              * 0*5+1+2 = 3
              */
-            Location[1] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0];
+            Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0];
         }
 
         /// <summary>
@@ -576,9 +576,9 @@ namespace Chess
             int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
             int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
             for (int i = 0; i < design[0].Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
-            {
+            { //To fix, the background colour is overwritten with the default colour, black, rather than keeping the current background colour.
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}",design[i]); //be careful, this one is not ending with a "\x1b[0m".
+                Console.Write("\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}",design[i]); //be careful, this one is not ending with a "\x1b[0m".
             }
         }
 
