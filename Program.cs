@@ -13,7 +13,8 @@ namespace Chess
                 for (int m = 0; m < 8; m++)
                     map[n, m] = "";
         }
-        public static string[,] map = new string[8, 8];
+        private static string[,] map = new string[8, 8];
+        public static string[,] GetMap { get => map; }
     }
 
     public class ChessList
@@ -60,7 +61,7 @@ namespace Chess
         static void Main(string[] args)
         {
             ChessTable chess = new ChessTable();
-
+            chess.Play();
             Console.ReadLine();
         }
     }
@@ -159,6 +160,16 @@ namespace Chess
                 location++;
             }
 
+
+        }
+
+        public void Play()
+        {
+            do
+            {
+                white.Control();
+
+            } while (true);
         }
 
         private void PlayerSetup()
@@ -211,7 +222,7 @@ namespace Chess
             location = ChessList.GetList(white)[0].GetMapLocation;
             do
             {
-                FeltMove();
+                bool selected = FeltMove();
                 //both of the if-statements need to be called after the player either has moved to another felt or pressed enter.
                 if (lastPiece != null)
                 {
@@ -219,7 +230,7 @@ namespace Chess
                     lastPiece = null;
                     lastMapLocationID = null;
                 }
-                string squareID = MapMatrix.map[location[0], location[1]];
+                string squareID = MapMatrix.GetMap[location[0], location[1]];
                 if (squareID != "")
 
                     if(squareID.Split(':')[0] == team)
@@ -232,18 +243,24 @@ namespace Chess
                                 piece.IsHoveredOn(true);
                                 lastMapLocationID = piece.GetID;
                                 lastPiece = posistion;
+                                if(selected == true)
+                                {
+                                    hasSelected = true;
+                                    selectedChessPiece = posistion;
+                                    ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                                }
                             }
                             posistion++;
                         }
                     }
                                 
             } while (!hasSelected);
-
+            FeltHighLight(false);
             SelectPiece();
 
         }
 
-        private void FeltMove()
+        private bool FeltMove()
         { //what should this class do?
             uint[] oldLocation = new uint[2]; //needs to be saved, perhaps return it. As currently done, not needed.
             uint[] currentLocation = location; //remember that both arrays point to the same memory.
@@ -267,18 +284,19 @@ namespace Chess
             }else if(keyInfo.Key == ConsoleKey.Enter)
             {
                 //what to do if enter is pressed given the other code. 
+                return true;
             }
 
             FeltHighLight(true);
+            return false;
 
-            void FeltHighLight(bool highlight)
-            {
-                //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //repurpose these codes to work with the highligtning. The calculated values 
-                //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0]; //are the top left corner of the square
-            }
         }
 
-
+        private void FeltHighLight(bool highlight)
+        {
+            //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //repurpose these codes to work with the highligtning. The calculated values 
+            //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0]; //are the top left corner of the square
+        }
 
         /// <summary>
         /// 
@@ -414,7 +432,7 @@ namespace Chess
             //if (possibleEndLocations.Count != 0)
             //    possibleEndLocations.Clear();
             if ((!team && mapLocation[1] != 0) || (team && mapLocation[1] != 7))
-                if (MapMatrix.map[mapLocation[0], mapLocation[1]+moveDirection] == "")
+                if (MapMatrix.GetMap[mapLocation[0], mapLocation[1]+moveDirection] == "")
                 {
                     possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection) } });
                 }
@@ -441,7 +459,7 @@ namespace Chess
 
             void LocationCheck(sbyte direction) //find a better name
             {
-                string locationID = MapMatrix.map[mapLocation[0] + direction, mapLocation[1] + moveDirection];
+                string locationID = MapMatrix.GetMap[mapLocation[0] + direction, mapLocation[1] + moveDirection];
                 if (locationID != "")
                 {
                     string teamID = locationID.Split(':')[0];
@@ -722,8 +740,8 @@ namespace Chess
         /// </summary>
         protected void UpdateMapMatrix(uint[] oldMapLocation) //need to call this before the LocationUpdate
         { 
-            MapMatrix.map[mapLocation[0], mapLocation[1]] = ID;
-            MapMatrix.map[oldMapLocation[0], oldMapLocation[1]] = "";
+            MapMatrix.GetMap[mapLocation[0], mapLocation[1]] = ID;
+            MapMatrix.GetMap[oldMapLocation[0], oldMapLocation[1]] = "";
         }
 
 
@@ -759,7 +777,7 @@ namespace Chess
         {
             //consider this aproach: Player select a location. This chesspiece then checks the location for an ID string or "". If "" call the removeDraw, move the piece and call Draw.
                 //If there is an ID string, find that chesspiece and call its Taken. Then call removeDraw, move the piece and the call Draw. 
-            string newLocationCurrentValue = MapMatrix.map[mapLocation[0], mapLocation[1]]; //should the map have been updated already or should this line of code some new location
+            string newLocationCurrentValue = MapMatrix.GetMap[mapLocation[0], mapLocation[1]]; //should the map have been updated already or should this line of code some new location
             if(newLocationCurrentValue != "")
             {
                 foreach (ChessPiece chesspiece in ChessList.GetList(Team)) //remember to ensure it gets the other teams list... so at some point figure out if false is white or black...
