@@ -102,7 +102,7 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            whiteSpawnLocation = new uint[,] { {1,2 }, {2,3 } };
+            whiteSpawnLocation = new uint[,] { {1,2 }, {1,3 } };
             BoardSetup();
             PlayerSetup();
         }
@@ -239,6 +239,7 @@ namespace Chess
             string id_ = String.Format("{0}:6:{1}", team, 0);
             uint[] spawn = new uint[] {  spawnLocations[0,0] , spawnLocations[0,1] };
             ChessPiece pawn = new Pawn(colour, currentTurn, spawn, id_);
+
         }
 
         public bool Turn(bool turn)
@@ -575,10 +576,12 @@ namespace Chess
             byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
             int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
             int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+            uint locationForColour = (mapLocation[0] + mapLocation[1]) % 2; //if zero, background colour is "white", else background colour is "black".
+            byte[] colours = locationForColour == 0 ? Settings.SquareColour1: Settings.SquareColour2; 
             for (int i = 0; i < design[0].Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
             { //To fix, the background colour is overwritten with the default colour, black, rather than keeping the current background colour.
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}",design[i]); //be careful, this one is not ending with a "\x1b[0m".
+                Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}\x1b[0m", design[i], colours); 
             }
         }
 
@@ -593,10 +596,12 @@ namespace Chess
                 byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
                 int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
                 int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+                uint locationForColour = (mapLocation[0] + mapLocation[1]) % 2; //if zero, background colour is "white", else background colour is "black".
+                byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
                 for (int i = 0; i < design[0].Length; i++)
                 {
                     Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                    Console.Write("\x1b[48;2;" + 255 + ";" + 0 + ";" + 0 + "m{0}", design[i]); //this one is not ending with a "\x1b[0m".
+                    Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i], colours); 
                 }
             }
             else
