@@ -266,18 +266,17 @@ namespace Chess
                     }
                                 
             } while (!hasSelected);
-            FeltHighLight(false);
+            SquareHighLight(false);
             SelectPiece();
 
         }
 
         private bool FeltMove()
-        { //what should this class do?
-            uint[] oldLocation = new uint[2]; //needs to be saved, perhaps return it. As currently done, not needed.
+        {
             uint[] currentLocation = location; //remember that both arrays point to the same memory.
 
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-            FeltHighLight(false);
+            SquareHighLight(false);
             if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
             {
                 currentLocation[1]--;
@@ -294,28 +293,23 @@ namespace Chess
                 currentLocation[0]++;
             }else if(keyInfo.Key == ConsoleKey.Enter)
             {
-                //what to do if enter is pressed given the other code. 
                 return true;
             }
 
-            FeltHighLight(true);
+            SquareHighLight(true);
             return false;
 
         }
 
-        private void FeltHighLight(bool highlight)
-        {
-            //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //repurpose these codes to work with the highligtning. The calculated values 
-            //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0]; //are the top left corner of the square
-        }
 
         /// <summary>
         /// 
         /// </summary>
         /// <param name="isHighlighted">If true highlights the square. If false, it will remove the highligh.</param>
-        private void HighlightSquare(bool isHighlighted) 
+        private void SquareHighLight(bool isHighlighted) 
         {
-
+            //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //repurpose these codes to work with the highligtning. The calculated values 
+            //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0]; //are the top left corner of the square. Those + 1s should be turned into a setting too, so you can easier add felt markers in the board setup
         }
 
         private void SelectPiece()
