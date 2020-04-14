@@ -21,13 +21,16 @@ namespace Chess
         private ChessList() { }
         private static List<ChessPiece> chessListBlack = new List<ChessPiece>();
         private static List<ChessPiece> chessListWhite = new List<ChessPiece>();
-        public static void SetChessListBlack(List<ChessPiece> list)
+        //public static void SetChessListBlack(List<ChessPiece> list)
+        //{
+        //    chessListBlack = list;
+        //}
+        public static void SetChessList(List<ChessPiece> list, bool team)
         {
-            chessListBlack = list;
-        }
-        public static void SetChessListWhite(List<ChessPiece> list)
-        {
-            chessListWhite = list;
+            if (team)
+                chessListWhite = list;
+            else
+                chessListBlack = list;
         }
         public static List<ChessPiece> GetList(bool team)
         {
@@ -177,19 +180,20 @@ namespace Chess
     class Player
     { //this class is set to be an abstract in the UML, but is that really needed? 
         private byte[] colour;
-        private bool currentTurn; //rename to either black or white so it makes more sense 
+        private bool white; 
         private List<ChessPiece> chessPieces = new List<ChessPiece>();
         private uint[,] spawnLocations; //start with the pawns, left to right and then the rest, left to right
         private string team;
         private string selectedID;
-        private int selectedChessPiece; 
+        private int selectedChessPiece;
+        private uint[] location; //x,y
 
         public Player(byte[] colour, bool startTurn, uint[,] spawnLocations)
         {
             this.colour = colour;
-            this.currentTurn = startTurn;
+            this.white = startTurn;
             this.spawnLocations = spawnLocations;
-            team = currentTurn == true ? "+" : "-";
+            team = white == true ? "+" : "-";
             CreatePieces();
         }
 
@@ -204,13 +208,18 @@ namespace Chess
             bool hasSelected = false;
             do //so how is the hover over going to work... Going through a list? Let the player tourch every board felt and if there is a friendly chess piece highlight it? Write the location, e.g. D5
             { //writting a location makes it quick to select a piece, but there is a chance for writting an invalid location (hostile piece, empty or outside the map). Going through all felts takes a while. List can jump a lot on the board.
-                
+                //perhaps go with the move over all felts, but set the start location as the location of the first piece
                 SelectPiece();
             } while (!hasSelected);
-            //go through the list, e.g. if player press left arror it goes - 1 and if at 0 it goes to 7? Or should the code let the player move through the board and hightlight the square they are standing on and if there 
+            //go through the list, e.g. if player press left arrow it goes - 1 and if at 0 it goes to 7? Or should the code let the player move through the board and hightlight the square they are standing on and if there 
             //is a chess piece in their control its gets highlighted instead of and they can select it? 
 
+        }
 
+        private void FeltMove()
+        {
+            location = ChessList.GetList(white)[0].GetMapLocation;
+            
         }
 
         private void SelectPiece()
@@ -247,19 +256,20 @@ namespace Chess
             //string kingID = String.Format("{0}:1:{1}", team, 0);
             string id_ = String.Format("{0}:6:{1}", team, 0);
             uint[] spawn = new uint[] {  spawnLocations[0,0] , spawnLocations[0,1] };
-            ChessPiece pawn = new Pawn(colour, currentTurn, spawn, id_);
+            ChessPiece pawn = new Pawn(colour, white, spawn, id_);
             string id_2 = String.Format("{0}:6:{1}", team, 1);
             uint[] spawn2 = new uint[] { spawnLocations[1, 0], spawnLocations[1, 1] };
-            ChessPiece pawn2 = new Pawn(colour, currentTurn, spawn2, id_2);
+            ChessPiece pawn2 = new Pawn(colour, white, spawn2, id_2);
             chessPieces.Add(pawn);
             chessPieces.Add(pawn2);
+            ChessList.SetChessList(chessPieces, white);
         }
 
         public bool Turn(bool turn)
         {
 
 
-            return currentTurn;
+            return white;
         }
 
     }
@@ -518,6 +528,8 @@ namespace Chess
         protected bool Team { get => team; } //need to know it own team, but does it need to know the others's teams, the IDs can be used for that or just the matrix map. 
 
         protected uint[] MapLocation { set => mapLocation = value; }
+
+        public uint[] GetMapLocation { get => mapLocation; }
 
         /// <summary>
         /// Gets and set the ID of the chesspiece. //maybe have some code that ensures the ID is unique 
