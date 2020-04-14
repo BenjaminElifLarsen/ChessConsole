@@ -4,7 +4,7 @@ using System.Runtime.InteropServices;
 
 namespace Chess
 {   //https://www.chessvariants.com/d.chess/chess.html
-
+    //team == false, player = black, else player = white. White top, black bottom
     public class MapMatrix
     {
         private MapMatrix()
@@ -31,7 +31,7 @@ namespace Chess
         }
         public static List<ChessPiece> GetList(bool team)
         {
-            return team == true ? chessListBlack : chessListWhite;
+            return team == false ? chessListBlack : chessListWhite;
         }
     }
 
@@ -259,7 +259,7 @@ namespace Chess
             };
         } //king cannot move next to another king
 
-        public bool IsInDanger()
+        public bool IsInChecked()
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
             //hmm... could also look check specific squares for specific chesspieces, e.g. check all left, right, up and down squares for rocks and queen, check specific squares that 3 squares away for knights and so on. 
@@ -270,7 +270,7 @@ namespace Chess
         private bool HasMoved { get; } //if moved, castling cannot be done
 
         private bool Castling()
-        { //king moves two squares in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, no of the squares should be threanten by
+        { //king moves two squares in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, none of the squares should be threanten by
             //hostile piece??? 
 
 
@@ -297,7 +297,9 @@ namespace Chess
     {
         private bool firstTurn = false;
         private bool canAttactLeft;
-        private bool canAttackRight; 
+        private bool canAttackRight;
+        private sbyte moveDirection;
+
         public Pawn(byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, design_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -306,6 +308,15 @@ namespace Chess
                 " | ",
                 "-P-"
             };
+            moveDirection = team ? (sbyte)1 : (sbyte)-1; 
+        }
+
+        protected override void EndLocations()
+        {
+            if(MapMatrix.map[mapLocation[0], mapLocation[1]+moveDirection] == "")
+            {
+
+            }
         }
 
         private void CheckAttackPossbilities()
@@ -318,6 +329,11 @@ namespace Chess
 
         private void Promotion()
         { //pawn can become any other type of chesspiece. It should remove itself and create a new instance of the chosen piece on the same location.
+            if((!team && mapLocation[1] == 0) || (team && mapLocation[1] == 7))
+            {
+                //how should the selection be designed? Text written below the board? Next to the board? How to select? Arrowkeys? Numberkeys? 
+
+            }
 
         }
 
@@ -467,6 +483,14 @@ namespace Chess
             LocationUpdate();
             Draw();
             //UpdateMapMatrix();
+        }
+
+        /// <summary>
+        /// Calculates the, legal, end locations that a chess piece can move too.
+        /// </summary>
+        protected virtual void EndLocations()
+        {
+
         }
 
         /// <summary>
