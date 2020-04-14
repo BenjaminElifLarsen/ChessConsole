@@ -239,7 +239,7 @@ namespace Chess
                     lastPiece = null;
                     lastMapLocationID = null;
                 }
-                string squareID = MapMatrix.Map[location[0], location[1]]; //for some reason this code is failing. 
+                string squareID = MapMatrix.Map[location[0], location[1]];
                 if (squareID != "")
 
                     if(squareID.Split(':')[0] == team)
@@ -275,7 +275,7 @@ namespace Chess
             uint[] currentLocation = location; //remember that both arrays point to the same memory.
 
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-            FeltHighLight(false); //it has managed to go out of bounds, currentLocation went to max value. From debugging the values are not to high
+            FeltHighLight(false);
             if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
             {
                 currentLocation[1]--;
@@ -283,13 +283,13 @@ namespace Chess
             {
                 currentLocation[1]++;
             }
-            else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[1] > 0)
+            else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
             {
                 currentLocation[0]--;
             }
-            else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[1] < 7)
+            else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
             {
-                currentLocation[1]++;
+                currentLocation[0]++;
             }else if(keyInfo.Key == ConsoleKey.Enter)
             {
                 //what to do if enter is pressed given the other code. 
@@ -586,6 +586,7 @@ namespace Chess
             MapLocation = mapLocation_; //what should this actually be done, is it the actually values on the console or is it values that fits the map matrix and location is then the actually console location...
             this.ID = ID; //String.Format("{0}n:{1}", team, i); team = currentTurn == true ? "-" : "+"; n being the chesspiece type
             LocationUpdate();
+            MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
         }
 
         /// <summary>
@@ -662,6 +663,7 @@ namespace Chess
             EndLocations();
             //calculate each possible, legal, end location. Maybe have, in the class scope, a variable byte[,] legalEndLocations that the DisplayPossibleMove can use. 
             DisplayPossibleMove(); //actually all of this is needed be done in the derived classes, since movement (and attacks) depends on the type of piece. 
+            //UpdateMapMatrix();
             //how to best do this and DisplayPossibleMove()... 
             //how to know which location they have selected out of all the possible location? Arraykeys, writting a legal square name, e.g. D5?
             //before fully starting to implement the move and display, focus on just moving a single piece around to ensure the (remove)draw function work and the matrix map is updated and all of that. 
