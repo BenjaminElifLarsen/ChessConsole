@@ -228,7 +228,7 @@ namespace Chess
             string lastMapLocationID;
             int? lastPiece = null;
             bool hasSelected = false;
-            location = ChessList.GetList(white)[0].GetMapLocation;
+            location = ChessList.GetList(white)[0].GetMapLocation();
             do
             {
                 bool selected = FeltMove();
@@ -241,7 +241,7 @@ namespace Chess
                 }
                 string squareID = MapMatrix.Map[location[0], location[1]];
                 if (squareID != "")
-
+                    //for some reason, the maplocation variable of the last piece is changed... arrays!!! Line 231 points the variable location to the mapLocation of first entry of ChessList.GetList(white)... 
                     if(squareID.Split(':')[0] == team)
                     {
                         int posistion = 0;
@@ -624,7 +624,11 @@ namespace Chess
 
         protected uint[] MapLocation { set => mapLocation = value; }
 
-        public uint[] GetMapLocation { get => mapLocation; }
+        public uint[] GetMapLocation()
+        {
+            uint[] mapLo = new uint[2] { mapLocation[0], mapLocation[1] };
+            return mapLo;
+        }
 
         /// <summary>
         /// Gets and set the ID of the chesspiece. //maybe have some code that ensures the ID is unique 
