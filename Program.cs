@@ -102,7 +102,9 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
+            whiteSpawnLocation = new uint[,] { {1,2 }, {2,3 } };
             BoardSetup();
+            PlayerSetup();
         }
 
 
@@ -163,11 +165,11 @@ namespace Chess
                 255,255,255
             };
             white = new Player(colourWhite, true, whiteSpawnLocation);
-            byte[] colourBlack =
-            {
-                0,0,0
-            };
-            black = new Player(colourBlack, false, blackSpawnLocation);
+            //byte[] colourBlack =
+            //{
+            //    0,0,0
+            //};
+            //black = new Player(colourBlack, false, blackSpawnLocation);
         }
 
     }
@@ -216,24 +218,27 @@ namespace Chess
             string team;
             team = currentTurn == true ? "+" : "-";
 
-            for (int i = 0; i < 8; i++)
-            {//loop that creates each piece 
-                string pawnID = String.Format("{0}:6:{1}", team, i);
-                //set other values for each piece and create them.
-                //chessPieces.Add
-            }
+            //for (int i = 0; i < 8; i++)
+            //{//loop that creates each piece 
+            //    string pawnID = String.Format("{0}:6:{1}", team, i);
+            //    //set other values for each piece and create them.
+            //    //chessPieces.Add
+            //}
 
-            for (int i = 0; i < 2; i++)
-            { //loop that creates each piece 
-                string rockID = String.Format("{0}:5:{1}", team, i);
-                string bishopID = String.Format("{0}:3:{1}", team, i);
-                string knightID = String.Format("{0}:4:{1}", team, i);
-                //set other values for each piece and create them.
-                //chessPieces.Add
-            }
+            //for (int i = 0; i < 2; i++)
+            //{ //loop that creates each piece 
+            //    string rockID = String.Format("{0}:5:{1}", team, i);
+            //    string bishopID = String.Format("{0}:3:{1}", team, i);
+            //    string knightID = String.Format("{0}:4:{1}", team, i);
+            //    //set other values for each piece and create them.
+            //    //chessPieces.Add
+            //}
 
-            string queenID = String.Format("{0}:2:{1}", team, 0);
-            string kingID = String.Format("{0}:1:{1}", team, 0);
+            //string queenID = String.Format("{0}:2:{1}", team, 0);
+            //string kingID = String.Format("{0}:1:{1}", team, 0);
+            string id_ = String.Format("{0}:6:{1}", team, 0);
+            uint[] spawn = new uint[] {  spawnLocations[0,0] , spawnLocations[0,1] };
+            ChessPiece pawn = new Pawn(colour, currentTurn, spawn, id_);
         }
 
         public bool Turn(bool turn)
