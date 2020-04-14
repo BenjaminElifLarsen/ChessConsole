@@ -230,7 +230,7 @@ namespace Chess
             string lastMapLocationID;
             int? lastPiece = null;
             bool hasSelected = false;
-            location = ChessList.GetList(white)[0].GetMapLocation();
+            location = ChessList.GetList(white)[0].GetMapLocation;
             do
             {
                 bool selected = FeltMove();
@@ -626,10 +626,13 @@ namespace Chess
 
         protected uint[] MapLocation { set => mapLocation = value; }
 
-        public uint[] GetMapLocation()
+        public uint[] GetMapLocation
         {
-            uint[] mapLo = new uint[2] { mapLocation[0], mapLocation[1] };
-            return mapLo;
+            get
+            {
+                uint[] mapLo = new uint[2] { mapLocation[0], mapLocation[1] };
+                return mapLo;
+            }
         }
 
         /// <summary>
