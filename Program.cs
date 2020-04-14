@@ -102,7 +102,7 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            whiteSpawnLocation = new uint[,] { {1,2 }, {1,3 } };
+            whiteSpawnLocation = new uint[,] { {1,1 }, {2,1 } };
             BoardSetup();
             PlayerSetup();
         }
@@ -180,12 +180,16 @@ namespace Chess
         private bool currentTurn; //rename to either black or white so it makes more sense 
         private List<ChessPiece> chessPieces = new List<ChessPiece>();
         private uint[,] spawnLocations; //start with the pawns, left to right and then the rest, left to right
+        private string team;
+        private string selectedID;
+        private int selectedChessPiece; 
 
         public Player(byte[] colour, bool startTurn, uint[,] spawnLocations)
         {
             this.colour = colour;
             this.currentTurn = startTurn;
             this.spawnLocations = spawnLocations;
+            team = currentTurn == true ? "+" : "-";
             CreatePieces();
         }
 
@@ -197,26 +201,31 @@ namespace Chess
 
         private void HoverOver()
         {
+            bool hasSelected = false;
+            do //so how is the hover over going to work... Going through a list? Let the player tourch every board felt and if there is a friendly chess piece highlight it? Write the location, e.g. D5
+            { //writting a location makes it quick to select a piece, but there is a chance for writting an invalid location (hostile piece, empty or outside the map). Going through all felts takes a while. List can jump a lot on the board.
+                
+                SelectPiece();
+            } while (!hasSelected);
             //go through the list, e.g. if player press left arror it goes - 1 and if at 0 it goes to 7? Or should the code let the player move through the board and hightlight the square they are standing on and if there 
             //is a chess piece in their control its gets highlighted instead of and they can select it? 
 
-            SelectPiece();
+
         }
 
         private void SelectPiece()
-        {
+        { //how this function will work will depent on the chosen method for hovering over, i.e. using the list or not.
+            selectedID = null; //will be needed to find the chosen chess piece in the list if the list is not the selected hover over method
 
         }
 
         private void MovePiece()
         {
-
+            chessPieces[selectedChessPiece].Control();
         }
 
         private void CreatePieces()
         {
-            string team;
-            team = currentTurn == true ? "+" : "-";
 
             //for (int i = 0; i < 8; i++)
             //{//loop that creates each piece 
@@ -239,7 +248,11 @@ namespace Chess
             string id_ = String.Format("{0}:6:{1}", team, 0);
             uint[] spawn = new uint[] {  spawnLocations[0,0] , spawnLocations[0,1] };
             ChessPiece pawn = new Pawn(colour, currentTurn, spawn, id_);
-
+            string id_2 = String.Format("{0}:6:{1}", team, 1);
+            uint[] spawn2 = new uint[] { spawnLocations[1, 0], spawnLocations[1, 1] };
+            ChessPiece pawn2 = new Pawn(colour, currentTurn, spawn2, id_2);
+            chessPieces.Add(pawn);
+            chessPieces.Add(pawn2);
         }
 
         public bool Turn(bool turn)
