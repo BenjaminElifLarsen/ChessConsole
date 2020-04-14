@@ -205,21 +205,88 @@ namespace Chess
 
         private void HoverOver()
         {
+            string lastMapLocationID;
+            int? lastPiece = null;
             bool hasSelected = false;
-            do //so how is the hover over going to work... Going through a list? Let the player tourch every board felt and if there is a friendly chess piece highlight it? Write the location, e.g. D5
-            { //writting a location makes it quick to select a piece, but there is a chance for writting an invalid location (hostile piece, empty or outside the map). Going through all felts takes a while. List can jump a lot on the board.
-                //perhaps go with the move over all felts, but set the start location as the location of the first piece
-                SelectPiece();
+            location = ChessList.GetList(white)[0].GetMapLocation;
+            do
+            {
+                FeltMove();
+                //both of the if-statements need to be called after the player either has moved to another felt or pressed enter.
+                if (lastPiece != null)
+                {
+                    ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                    lastPiece = null;
+                    lastMapLocationID = null;
+                }
+                string squareID = MapMatrix.map[location[0], location[1]];
+                if (squareID != "")
+
+                    if(squareID.Split(':')[0] == team)
+                    {
+                        int posistion = 0;
+                        foreach (ChessPiece piece in ChessList.GetList(white))
+                        {
+                            if(piece.GetID == squareID)
+                            {
+                                piece.IsHoveredOn(true);
+                                lastMapLocationID = piece.GetID;
+                                lastPiece = posistion;
+                            }
+                            posistion++;
+                        }
+                    }
+                                
             } while (!hasSelected);
-            //go through the list, e.g. if player press left arrow it goes - 1 and if at 0 it goes to 7? Or should the code let the player move through the board and hightlight the square they are standing on and if there 
-            //is a chess piece in their control its gets highlighted instead of and they can select it? 
+
+            SelectPiece();
 
         }
 
         private void FeltMove()
+        { //what should this class do?
+            uint[] oldLocation = new uint[2]; //needs to be saved, perhaps return it. As currently done, not needed.
+            uint[] currentLocation = location; //remember that both arrays point to the same memory.
+
+            ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+            FeltHighLight(false);
+            if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
+            {
+                currentLocation[1]--;
+            }else if(keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
+            {
+                currentLocation[1]++;
+            }
+            else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[1] > 0)
+            {
+                currentLocation[0]--;
+            }
+            else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[1] < 7)
+            {
+                currentLocation[1]++;
+            }else if(keyInfo.Key == ConsoleKey.Enter)
+            {
+                //what to do if enter is pressed given the other code. 
+            }
+
+            FeltHighLight(true);
+
+            void FeltHighLight(bool highlight)
+            {
+                //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //repurpose these codes to work with the highligtning. The calculated values 
+                //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0]; //are the top left corner of the square
+            }
+        }
+
+
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="isHighlighted">If true highlights the square. If false, it will remove the highligh.</param>
+        private void HighlightSquare(bool isHighlighted) 
         {
-            location = ChessList.GetList(white)[0].GetMapLocation;
-            
+
         }
 
         private void SelectPiece()
@@ -534,7 +601,9 @@ namespace Chess
         /// <summary>
         /// Gets and set the ID of the chesspiece. //maybe have some code that ensures the ID is unique 
         /// </summary>
-        protected string ID { get => id; set => id = value; } //maybe split into two. Get being protected and the set being public 
+        protected string ID { get => id; set => id = value; } //maybe split into two. Set being protected and the Get being public 
+
+        public string GetID { get => ID; }
 
         protected bool CanDoMove { get => canDoMove; set => canDoMove = value; } //what was the canDoMove suppose to be for again?
 
