@@ -7,13 +7,21 @@ namespace Chess
     //team == false, player = black, else player = white. White top, black bottom
     public class MapMatrix
     {
+        private static string[,] map = new string[8, 8];
+        private static bool mapPrepared = false;
         private MapMatrix()
         {
-            for (int n = 0; n < 8; n++)
-                for (int m = 0; m < 8; m++)
-                    map[n, m] = "";
+
         }
-        private static string[,] map = new string[8, 8];
+
+        public static void PrepareMap()
+        {
+            if(mapPrepared == false)
+                for (int n = 0; n < 8; n++)
+                    for (int m = 0; m < 8; m++)
+                        map[n, m] = "";
+            mapPrepared = true;
+        }
         public static string[,] GetMap { get => map; }
     }
 
@@ -91,6 +99,7 @@ namespace Chess
 
         public ChessTable()
         {
+            MapMatrix.PrepareMap();
             var handle = GetStdHandle(-11);
             int mode;
             GetConsoleMode(handle, out mode);
