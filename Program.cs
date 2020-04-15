@@ -56,6 +56,7 @@ namespace Chess
         private static byte[] squareColour1 = new byte[] { 182, 123, 91 };
         private static byte[] squareColour2 = new byte[] { 135, 68, 31 };
         private static byte[] hoverOverSquareColour = new byte[] { 200, 0, 0 };
+        private static byte[] chessPieceHoverOverSquareColour = new byte[] { 100, 100, 0 };
         private static byte[] offset = new byte[] { 2, 2 };
         public static byte SquareSize { get => squareSize; }
         public static byte[] LineColour { get => lineColour; }
@@ -63,6 +64,7 @@ namespace Chess
         public static byte[] SquareColour1 { get => squareColour1; }
         public static byte[] SquareColour2 { get => squareColour2; }
         public static byte[] SelectSquareColour { get => hoverOverSquareColour; }
+        public static byte[] SelectMoveSquareColour { get => chessPieceHoverOverSquareColour; }
         public static byte[] Offset { get => offset; } //remember the '|' and '-'
     }
 
