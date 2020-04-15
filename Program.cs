@@ -559,6 +559,54 @@ namespace Chess
             Draw();
         }
 
+        protected override void EndLocations()
+        { //implement a check for Castling and/or call the Castling function
+            //is there a better way to do this than the current way. Currently it can go out of bounds. 
+            //could most likely make a nested function of the do while loop
+            sbyte[] position = new sbyte[2] {-1,0 };
+            CheckPosistions(position); //left
+
+            position = new sbyte[2] { 1, 0 };
+            CheckPosistions(position); //right
+
+            position = new sbyte[2] { 0, -1 };
+            CheckPosistions(position); //up
+
+            position = new sbyte[2] { 0, 1 };
+            CheckPosistions(position); //down
+
+            void CheckPosistions(sbyte[] currentPosition)
+            {
+                bool currentCanMove = true;
+                do
+                {
+                    string feltID = MapMatrix.Map[position[0] + mapLocation[0], mapLocation[1] + position[1]];
+                    if (feltID == "")
+                    {
+                        Add(position);
+                        currentPosition[0] += currentPosition[0];
+                        currentPosition[1] += currentPosition[1];
+                    }
+                    else
+                    {
+                        if (teamString != feltID.Split(':')[0])
+                        {
+                            Add(position);
+                        }
+                        currentCanMove = false;
+                    }
+                    if ((currentPosition[0] + mapLocation[0] > 7 || currentPosition[0] + mapLocation[0] < 0) || (currentPosition[1] + mapLocation[1] > 7 || currentPosition[1] + mapLocation[1] < 0))
+                        currentCanMove = false; //that if-statement might not work in all conditions, e.g. if the piece is at the edge it will not be able to move... 
+                    //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
+                } while (currentCanMove);
+            }
+
+            void Add(sbyte[] posistions)
+            {
+                possibleEndLocations.Add(new uint[,] { { (uint)(mapLocation[0] + posistions[0]) }, { (uint)(mapLocation[1] + posistions[1]) } });
+            }
+        }
+
         private bool HasMoved { get; } //if moved, castling cannot be done
 
         private bool Castling()
@@ -726,7 +774,7 @@ namespace Chess
         /// <summary>
         /// Calculates the, legal, location(s) the chesspiece is able to move too. 
         /// </summary>
-        protected virtual void Move() //Currently play problem. If the piece cannot move, the player will become stuk on it. Need to ensrue that if there are no legal moves, it should return the control to the player and let them select another option
+        protected virtual void Move() //Currently play problem. If the piece cannot move, the player will become stuck on it. Need to ensrue that if there are no legal moves, it should return the control to the player and let them select another option
         {
             bool hasSelected = false;
             EndLocations();
