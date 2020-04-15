@@ -553,6 +553,7 @@ namespace Chess
 
     sealed class Rock : ChessPiece
     {
+        private bool hasMoved = false;
         public Rock(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -580,15 +581,14 @@ namespace Chess
             position = new sbyte[2] { 0, 1 };
             CheckPosistions(position); //down
 
+            hasMoved = true;
+
             void CheckPosistions(sbyte[] currentPosition)
             {
                 bool currentCanMove = true;
                 sbyte[] loc = new sbyte[2] { currentPosition[0], currentPosition[1] };
                 do
                 {
-                    //bug: not all options are saved. E.g. if a line is completely clear and thus all locations should be added, it will only add the first 2, skip the next and add the one after, finally it will skip the rest.
-                    //bug is found it is the += 
-                    //it can stand and move through on friendly pieces. Fixed, moved calculation of teamString into the base constructor
                     if ((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0))
                     {
 
@@ -621,7 +621,7 @@ namespace Chess
             }
         }
 
-        private bool HasMoved { get; } //if moved, castling cannot be done
+        private bool HasMoved { get => hasMoved; } //if moved, castling cannot be done. How is the king going to call this code. Currently, the king would only be able to call other's functions that are given in the base class.
 
         private bool Castling()
         {
@@ -645,6 +645,58 @@ namespace Chess
             Draw();
         }
 
+        protected override void EndLocations()
+        {
+            sbyte[] position = new sbyte[2] { -1, -1 };
+            CheckPosistions(position); //left, up
+
+            position = new sbyte[2] { 1, -1 };
+            CheckPosistions(position); //right, up
+
+            position = new sbyte[2] { -1, 1 };
+            CheckPosistions(position); //,left down
+
+            position = new sbyte[2] { 1, 1 };
+            CheckPosistions(position); //right, down
+
+
+            void CheckPosistions(sbyte[] currentPosition)
+            {
+                bool currentCanMove = true;
+                sbyte[] loc = new sbyte[2] { currentPosition[0], currentPosition[1] };
+                do
+                {
+                    if ((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0))
+                    {
+
+                        currentCanMove = false;
+                        break;
+                        //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
+                    }
+                    string feltID = MapMatrix.Map[currentPosition[0] + mapLocation[0], mapLocation[1] + currentPosition[1]];
+                    if (feltID == "")
+                    {
+                        Add(loc);
+                        loc[0] += currentPosition[0];
+                        loc[1] += currentPosition[1];
+                    }
+                    else
+                    {
+                        if (teamString != feltID.Split(':')[0])
+                        {
+                            Add(loc);
+                        }
+                        currentCanMove = false;
+                    }
+
+                } while (currentCanMove);
+            }
+
+            void Add(sbyte[] posistions)
+            {
+                possibleEndLocations.Add(new uint[,] { { (uint)(mapLocation[0] + posistions[0]) }, { (uint)(mapLocation[1] + posistions[1]) } });
+            }
+        }
     }
 
     sealed class Knight : ChessPiece
