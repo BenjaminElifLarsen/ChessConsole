@@ -16,7 +16,7 @@ namespace Chess
 
         public static void PrepareMap()
         {
-            if(mapPrepared == false)
+            if (mapPrepared == false)
                 for (int n = 0; n < 8; n++)
                     for (int m = 0; m < 8; m++)
                         map[n, m] = "";
@@ -119,7 +119,7 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            whiteSpawnLocation = new uint[,] { {1,1 }, {2,1 } };
+            whiteSpawnLocation = new uint[,] { { 1, 1 }, { 2, 1 } };
             blackSpawnLocation = new uint[,] { { 1, 6 }, { 2, 6 } };
             BoardSetup();
             PlayerSetup();
@@ -205,7 +205,7 @@ namespace Chess
     class Player //got to ensure that no spawnlocation is overlapping and deal with it in case there is an overlap. 
     { //this class is set to be an abstract in the UML, but is that really needed? 
         private byte[] colour;
-        private bool white; 
+        private bool white;
         private List<ChessPiece> chessPieces = new List<ChessPiece>();
         private uint[,] spawnLocations; //start with the pawns, left to right and then the rest, left to right
         private string team;
@@ -248,17 +248,17 @@ namespace Chess
                 }
                 string squareID = MapMatrix.Map[location[0], location[1]];
                 if (squareID != "")
-                    if(squareID.Split(':')[0] == team)
+                    if (squareID.Split(':')[0] == team)
                     {
                         int posistion = 0;
                         foreach (ChessPiece piece in ChessList.GetList(white))
                         {
-                            if(piece.GetID == squareID)
+                            if (piece.GetID == squareID)
                             {
                                 piece.IsHoveredOn(true);
                                 lastMapLocationID = piece.GetID;
                                 lastPiece = posistion;
-                                if(selected == true)
+                                if (selected == true)
                                 {
                                     hasSelected = true;
                                     selectedChessPiece = posistion;
@@ -268,7 +268,7 @@ namespace Chess
                             posistion++;
                         }
                     }
-                                
+
             } while (!hasSelected);
             SquareHighLight(false);
             SelectPiece();
@@ -289,7 +289,8 @@ namespace Chess
             if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
             {
                 currentLocation[1]--;
-            }else if(keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
+            }
+            else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
             {
                 currentLocation[1]++;
             }
@@ -300,7 +301,8 @@ namespace Chess
             else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
             {
                 currentLocation[0]++;
-            }else if(keyInfo.Key == ConsoleKey.Enter)
+            }
+            else if (keyInfo.Key == ConsoleKey.Enter)
             {
                 return true;
             }
@@ -315,7 +317,7 @@ namespace Chess
         /// Highlights or removes the hightlight of a sqaure. 
         /// </summary>
         /// <param name="isHighlighted">If true highlights the square. If false, it will remove the highligh.</param>
-        private void SquareHighLight(bool isHighlighted) 
+        private void SquareHighLight(bool isHighlighted)
         {
             byte squareSize = Settings.SquareSize;
             uint startLocationX = location[0] * squareSize + (location[0] + 1) * 1 + Settings.Offset[0];
@@ -390,7 +392,7 @@ namespace Chess
             //string queenID = String.Format("{0}:2:{1}", team, 0);
             //string kingID = String.Format("{0}:1:{1}", team, 0);
             string id_ = String.Format("{0}:6:{1}", team, 0);
-            uint[] spawn = new uint[] {  spawnLocations[0,0] , spawnLocations[0,1] };
+            uint[] spawn = new uint[] { spawnLocations[0, 0], spawnLocations[0, 1] };
             ChessPiece pawn = new Pawn(colour, white, spawn, id_);
             string id_2 = String.Format("{0}:6:{1}", team, 1);
             uint[] spawn2 = new uint[] { spawnLocations[1, 0], spawnLocations[1, 1] };
@@ -413,7 +415,7 @@ namespace Chess
 
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
-        public King(byte[] colour_,  bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public King(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
             {
@@ -463,7 +465,7 @@ namespace Chess
     {
         private bool firstTurn = true;
         private sbyte moveDirection;
-        
+
         public Pawn(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -482,13 +484,13 @@ namespace Chess
             //if (possibleEndLocations.Count != 0)
             //    possibleEndLocations.Clear();
             if ((!team && mapLocation[1] != 0) || (team && mapLocation[1] != 7))
-                if (MapMatrix.Map[mapLocation[0], mapLocation[1]+moveDirection] == "")
+                if (MapMatrix.Map[mapLocation[0], mapLocation[1] + moveDirection] == "")
                 {
                     possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection) } });
                 }
             if (firstTurn)
             {
-                possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection*2) } });
+                possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection * 2) } });
                 firstTurn = false;
             }
             CheckAttackPossbilities();
@@ -525,7 +527,7 @@ namespace Chess
 
         private void Promotion()
         { //pawn can become any other type of chesspiece. It should remove itself and create a new instance of the chosen piece on the same location.
-            if((!team && mapLocation[1] == 0) || (team && mapLocation[1] == 7))
+            if ((!team && mapLocation[1] == 0) || (team && mapLocation[1] == 7))
             {
                 //how should the selection be designed? Text written below the board? Next to the board? How to select? Arrowkeys? Numberkeys? 
                 DisplayPromotions();
@@ -584,7 +586,7 @@ namespace Chess
 
         //Knight(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : this(location_, colour_, design_, team_, spawnLocation_, ID) { }
 
-        public Knight(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_,spawnLocation_,ID)
+        public Knight(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         { //maybe do not have the moves and attacks, design and suck as parameters, but rather part of the code, since you have changed from abstract to non abstract class
           //redo the constructors when you are sure what you will need. So far: spawnlocation, id and team
             Design = new string[]
@@ -593,7 +595,7 @@ namespace Chess
                 " |>",
                 "-k-"
             };
-            MovePattern = new byte[][] { new byte[] {6} }; //maybe drop the idea of a movePattern variable and just write it into the specialised move code 
+            MovePattern = new byte[][] { new byte[] { 6 } }; //maybe drop the idea of a movePattern variable and just write it into the specialised move code 
             Draw();
 
         }
@@ -643,7 +645,20 @@ namespace Chess
         /// <summary>
         /// Gets and sets the location of the chesspiece on the console.  
         /// </summary>
-        protected uint[] Location { get { uint[] loc = new uint[2]; loc[0] = location[0]; loc[1] = location[1]; return loc; } set => location = value; } //consider for each of the properties what kind they should have
+        protected uint[] Location
+        {
+            set
+            {
+                location = value;
+            }
+            get
+            {
+                uint[] loc = new uint[2] { location[0], location[1] };
+                return loc;
+                //return location;
+            }
+
+        } //consider for each of the properties what kind they should have
 
         /// <summary>
         /// sets the colour of the chesspiece.
@@ -659,7 +674,7 @@ namespace Chess
         protected byte[][] MovePattern { set => movePattern = value; }
 
         //remove 
-        protected byte[][] AttackPattern { get => attack; set => attack = value; } 
+        protected byte[][] AttackPattern { get => attack; set => attack = value; }
 
         protected bool Team { get => team; } //need to know it own team, but does it need to know the others's teams, the IDs can be used for that or just the matrix map. 
 
@@ -689,7 +704,7 @@ namespace Chess
         public virtual void Control()
         {
             Move();
-            RemoveDraw(); 
+            RemoveDraw();
             LocationUpdate();
             Draw();
             //UpdateMapMatrix();
@@ -714,7 +729,7 @@ namespace Chess
             DisplayPossibleMove(); //actually all of this is needed be done in the derived classes, since movement (and attacks) depends on the type of piece. 
             uint[] cursorLocation = GetMapLocation;
             do
-            { 
+            {
                 hasSelected = FeltMove(cursorLocation);
 
             } while (!hasSelected);
@@ -762,7 +777,7 @@ namespace Chess
         /// updates the location that is used for displaying the chesspiece on the chessboard
         /// </summary>
         protected void LocationUpdate() //where should this one being called from
-        { 
+        {
             Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //(matpLocation[0]+1) is for the amount of spaces between the offsets and first square and the space between all the squares
             //7*5+8+2 = 35+10 = 45, x
             //1*5+2+2 = 5+4 = 9, y 
@@ -785,11 +800,11 @@ namespace Chess
             int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
             int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
             uint locationForColour = (mapLocation[0] + mapLocation[1]) % 2; //if zero, background colour is "white", else background colour is "black".
-            byte[] colours = locationForColour == 0 ? Settings.SquareColour1: Settings.SquareColour2; 
+            byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
             for (int i = 0; i < design[0].Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
             { //To fix, the background colour is overwritten with the default colour, black, rather than keeping the current background colour.
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}\x1b[0m", design[i], colours); 
+                Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}\x1b[0m", design[i], colours);
             }
         }
 
@@ -809,7 +824,7 @@ namespace Chess
                 for (int i = 0; i < design[0].Length; i++)
                 {
                     Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                    Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i], colours); 
+                    Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i], colours);
                 }
             }
             else
@@ -824,10 +839,10 @@ namespace Chess
             byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
             int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
             int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
-            for (int i = 0; i < design[0].Length; i++) 
+            for (int i = 0; i < design[0].Length; i++)
             {
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("".PadRight(design[0].Length,' ')); 
+                Console.Write("".PadRight(design[0].Length, ' '));
             }
         }
 
@@ -835,7 +850,7 @@ namespace Chess
         /// updates the map matrix with the new location of the chess piece and sets the old location to zero. 
         /// </summary>
         protected void UpdateMapMatrix(uint[] oldMapLocation) //need to call this before the LocationUpdate
-        { 
+        {
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
             MapMatrix.Map[oldMapLocation[0], oldMapLocation[1]] = "";
         }
@@ -878,7 +893,7 @@ namespace Chess
         {
             foreach (uint[,] end in possibleEndLocations)
             {
-                Paint(Settings.SelectSquareColour, end);
+                Paint(Settings.SelectMoveSquareColour, end);
             }
             //needs to draw at every end location
             //what should be drawn, where should it and how to restore back to the default design and colour
@@ -887,8 +902,8 @@ namespace Chess
         protected void Paint(byte[] colour, uint[,] locationEnd)
         {
             byte squareSize = Settings.SquareSize;
-            uint startLocationX = locationEnd[0,0] * squareSize + (locationEnd[0,0] + 1) * 1 + Settings.Offset[0];
-            uint startLocationY = locationEnd[1,0] * squareSize + (locationEnd[1, 0] + 1) * 1 + Settings.Offset[1];
+            uint startLocationX = locationEnd[0, 0] * squareSize + (locationEnd[0, 0] + 1) * 1 + Settings.Offset[0];
+            uint startLocationY = locationEnd[1, 0] * squareSize + (locationEnd[1, 0] + 1) * 1 + Settings.Offset[1];
             for (uint n = startLocationX; n < startLocationX + squareSize; n++)
             {
                 Console.SetCursorPosition((int)n, (int)startLocationY);
@@ -905,12 +920,12 @@ namespace Chess
             }
         }
 
-        protected void TakeEnemyPiece() 
+        protected void TakeEnemyPiece()
         {
             //consider this aproach: Player select a location. This chesspiece then checks the location for an ID string or "". If "" call the removeDraw, move the piece and call Draw.
-                //If there is an ID string, find that chesspiece and call its Taken. Then call removeDraw, move the piece and the call Draw. 
+            //If there is an ID string, find that chesspiece and call its Taken. Then call removeDraw, move the piece and the call Draw. 
             string newLocationCurrentValue = MapMatrix.Map[mapLocation[0], mapLocation[1]]; //should the map have been updated already or should this line of code some new location
-            if(newLocationCurrentValue != "")
+            if (newLocationCurrentValue != "")
             {
                 foreach (ChessPiece chesspiece in ChessList.GetList(Team)) //remember to ensure it gets the other teams list... so at some point figure out if false is white or black...
                 {
