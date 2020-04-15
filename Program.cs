@@ -596,7 +596,7 @@ namespace Chess
                         break;
                         //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
                     }
-                    string feltID = MapMatrix.Map[currentPosition[0] + mapLocation[0], mapLocation[1] + currentPosition[1]];
+                    string feltID = MapMatrix.Map[loc[0] + mapLocation[0], mapLocation[1] + loc[1]];
                     if (feltID == "")
                     {
                         Add(loc);
@@ -635,7 +635,7 @@ namespace Chess
     sealed class Bishop : ChessPiece
     {
         public Bishop(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
-        {
+        {  //both bishop and rock can move through enemies if they do not start right next to an enemy. 
             Design = new string[]
             {
                 "_+_",
@@ -673,7 +673,7 @@ namespace Chess
                         break;
                         //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
                     }
-                    string feltID = MapMatrix.Map[currentPosition[0] + mapLocation[0], mapLocation[1] + currentPosition[1]];
+                    string feltID = MapMatrix.Map[loc[0] + mapLocation[0], mapLocation[1] + loc[1]];
                     if (feltID == "")
                     {
                         Add(loc);
@@ -685,6 +685,7 @@ namespace Chess
                         if (teamString != feltID.Split(':')[0])
                         {
                             Add(loc);
+                            break;
                         }
                         currentCanMove = false;
                     }
