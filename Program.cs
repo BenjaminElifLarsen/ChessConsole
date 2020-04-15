@@ -591,8 +591,6 @@ namespace Chess
                 {
                     if ((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0))
                     {
-
-                        currentCanMove = false; 
                         break;
                         //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
                     }
@@ -633,9 +631,9 @@ namespace Chess
     }
 
     sealed class Bishop : ChessPiece
-    {
+    { 
         public Bishop(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
-        {  //both bishop and rock can move through enemies if they do not start right next to an enemy. 
+        {  
             Design = new string[]
             {
                 "_+_",
@@ -668,8 +666,6 @@ namespace Chess
                 {
                     if ((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0))
                     {
-
-                        currentCanMove = false;
                         break;
                         //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
                     }
