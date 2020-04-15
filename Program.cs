@@ -182,7 +182,11 @@ namespace Chess
             do
             {
                 white.Control();
-
+                for (int i = ChessList.GetList(false).Count-1; i >= 0; i--)
+                {
+                    if (ChessList.GetList(false)[i].BeenTaken)
+                        ChessList.GetList(false).RemoveAt(i);
+                }
             } while (true);
         }
 
