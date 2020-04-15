@@ -119,7 +119,7 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            whiteSpawnLocation = new uint[,] { { 1, 1 }, { 2, 1 } };
+            whiteSpawnLocation = new uint[,] { { 1, 1 }, { 2, 1 }};
             blackSpawnLocation = new uint[,] { { 1, 6 }, { 2, 6 } };
             BoardSetup();
             PlayerSetup();
