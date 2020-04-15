@@ -490,7 +490,9 @@ namespace Chess
     }
 
     sealed class Pawn : ChessPiece
-    { //does not check if a square two away from it is empty. 
+    { //does not check if a square two away from it is empty. Can jump over another piece with the double first turn move.
+        //bug: If the chess piece cannot move and have not moved and it is selected, its RemoveDraw code will be run and give an error with the oldMapLocation is null.
+        //oldMapLocation is only set in the Move function and is called by RemoveDraw right after. RemoveDraw needs to be able to handle and solve null arrays. 
         private bool firstTurn = true;
         private sbyte moveDirection;
         // https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance
@@ -521,7 +523,7 @@ namespace Chess
                 }
             if (firstTurn)
             {
-                if (MapMatrix.Map[mapLocation[0], (mapLocation[1] + moveDirection * 2)] == "")
+                if (MapMatrix.Map[mapLocation[0], (mapLocation[1] + moveDirection * 2)] == "" && MapMatrix.Map[mapLocation[0], (mapLocation[1] + moveDirection)] == "")
                 {
                     possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection * 2) } });
                 }
@@ -927,7 +929,7 @@ namespace Chess
                 uint[] endloc_ = new uint[2] { loc[0, 0], loc[1, 0] };
                 if(endloc_[0] == currentLocation[0] && endloc_[1] == currentLocation[1])
                 {
-                    Paint(Settings.SelectMoveSquareColour, loc);
+                    PaintBackground(Settings.SelectMoveSquareColour, loc);
                     break;
                 }
             }
@@ -997,17 +999,6 @@ namespace Chess
         /// </summary>
         protected void LocationUpdate() 
         {
-            //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //(matpLocation[0]+1) is for the amount of spaces between the offsets and first square and the space between all the squares
-            //7*5+8+2 = 35+10 = 45, x
-            //1*5+2+2 = 5+4 = 9, y 
-            /*{1,2}
-             * 1*5+2+2 = 9
-             * 2*5+3+2 = 15
-             * {0,0}
-             * 0*5+1+2 = 3
-             * 0*5+1+2 = 3
-             */
-            //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[1];
             Location = new uint[2] { mapLocation[0] * squareSize + (mapLocation[0] + Settings.Spacing) * 1 + Settings.Offset[0] , mapLocation[1] * squareSize + (mapLocation[1] + Settings.Spacing) * 1 + Settings.Offset[1] };
         }
 
@@ -1015,6 +1006,36 @@ namespace Chess
         /// Draws the chesspiece at its specific location
         /// </summary>
         protected void Draw()
+        {
+            PaintForeground();
+        }
+
+        /// <summary>
+        /// Displays a piece in another colour if it is hovered over. 
+        /// </summary>
+        /// <param name="hover">If true, the piece will be coloured in a different colour. If false, the piece will have its normal colour.</param>
+        public void IsHoveredOn(bool hover)
+        { 
+            if (hover)
+            { //a lot of this code is the same as in other functions, e.g. RemoveDraw and Draw, just with other colours. Consider making a new function with this code and parameters for colour.
+                PaintBoth();
+            }
+            else
+                Draw();
+        }
+
+
+        protected byte[] PaintCalculations()
+        { //replace a lot of code with this function
+            byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
+            int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
+            int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+            uint locationForColour = (mapLocation[0] + mapLocation[1]) % 2; //if zero, background colour is "white", else background colour is "black".
+            byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+            return colours;
+        }
+
+        protected void PaintForeground() //these did not really end up saving on code. Consider moving the first 3 or 5 lines of code into a function...
         {
             byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
             int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
@@ -1028,44 +1049,39 @@ namespace Chess
             }
         }
 
-        /// <summary>
-        /// Displays a piece in another colour if it is hovered over. 
-        /// </summary>
-        /// <param name="hover">If true, the piece will be coloured in a different colour. If false, the piece will have its normal colour.</param>
-        public void IsHoveredOn(bool hover) //when a player hovers over a piece all this code with true, if and when they move to another piece call this piece again but with false 
-        { //consider allowing a custom colour or just inverse colour. 
-            if (hover)
+        protected void PaintBoth()
+        {
+            byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
+            int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
+            int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+            uint locationForColour = (mapLocation[0] + mapLocation[1]) % 2; //if zero, background colour is "white", else background colour is "black".
+            byte[] backColours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+            byte[] colours = Settings.SelectPieceColour;
+            for (int i = 0; i < design[0].Length; i++)
             {
-                byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
-                int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
-                int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
-                uint locationForColour = (mapLocation[0] + mapLocation[1]) % 2; //if zero, background colour is "white", else background colour is "black".
-                byte[] backColours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
-                byte[] colours = Settings.SelectPieceColour;
-                for (int i = 0; i < design[0].Length; i++)
-                {
-                    Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                    Console.Write("\x1b[48;2;" + backColours[0] + ";" + backColours[1] + ";" + backColours[2] + "m\x1b[38;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i], colours);
-                }
+                Console.SetCursorPosition(drawLocationX, drawLocationY + i);
+                Console.Write("\x1b[48;2;" + backColours[0] + ";" + backColours[1] + ";" + backColours[2] + "m\x1b[38;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i]);
             }
-            else
-                Draw();
         }
+
 
         /// <summary>
         /// removes the visual identication of a chesspiece at its current location.
         /// </summary>
         protected void RemoveDraw(uint[] locationToRemove)
         {
-            byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
-            int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
-            int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
-            uint locationForColour = (locationToRemove[0] + locationToRemove[1]) % 2; //if zero, background colour is "white", else background colour is "black".
-            byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
-            for (int i = 0; i < design[0].Length; i++)
+            if (locationToRemove != null)
             {
-                Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m".PadRight(design[0].Length+1, ' ') + "\x1b[0m");
+                byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
+                int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
+                int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+                uint locationForColour = (locationToRemove[0] + locationToRemove[1]) % 2; //if zero, background colour is "white", else background colour is "black".
+                byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+                for (int i = 0; i < design[0].Length; i++)
+                {
+                    Console.SetCursorPosition(drawLocationX, drawLocationY + i);
+                    Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m".PadRight(design[0].Length + 1, ' ') + "\x1b[0m");
+                }
             }
         }
 
@@ -1074,8 +1090,11 @@ namespace Chess
         /// </summary>
         protected void UpdateMapMatrix(uint[] oldMapLocation) //need to call this before the LocationUpdate
         {
-            MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
-            MapMatrix.Map[oldMapLocation[0], oldMapLocation[1]] = "";
+            if(oldMapLocation != null)
+            {
+                MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
+                MapMatrix.Map[oldMapLocation[0], oldMapLocation[1]] = "";
+            }
         }
 
 
@@ -1105,7 +1124,7 @@ namespace Chess
             {
                 byte colourLoc = (byte)((end[0, 0] + end[1, 0]) % 2);
                 byte[] backColour = colourLoc == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
-                Paint(backColour, end);
+                PaintBackground(backColour, end);
             }
         }
 
@@ -1116,13 +1135,13 @@ namespace Chess
         {
             foreach (uint[,] end in possibleEndLocations)
             {
-                Paint(Settings.SelectMoveSquareColour, end);
+                PaintBackground(Settings.SelectMoveSquareColour, end);
             }
             //needs to draw at every end location
             //what should be drawn, where should it and how to restore back to the default design and colour
         }
 
-        protected void Paint(byte[] colour, uint[,] locationEnd)
+        protected void PaintBackground(byte[] colour, uint[,] locationEnd)
         {
             byte squareSize = Settings.SquareSize;
             uint startLocationX = locationEnd[0, 0] * squareSize + (locationEnd[0, 0] + 1) * 1 + Settings.Offset[0];
