@@ -230,6 +230,7 @@ namespace Chess
         private string selectedID;
         private int selectedChessPiece;
         private uint[] location; //x,y
+        private bool didMove = false;
 
         public Player(byte[] colour, bool startTurn, uint[,] spawnLocations)
         {
@@ -242,8 +243,12 @@ namespace Chess
 
         public void Control()
         {
-            HoverOver();
-            MovePiece();
+            do
+            {
+                HoverOver();
+                MovePiece();
+                didMove = ChessList.GetList(white)[selectedChessPiece].CouldMove;
+            } while (!didMove);
         }
 
         /// <summary>
@@ -835,7 +840,7 @@ namespace Chess
 
         protected bool CanDoMove { get => canDoMove; set => canDoMove = value; } //what was the canDoMove suppose to be for again?
 
-        public bool CouldMove { get => CouldMove; }
+        public bool CouldMove { get => couldMove; }
 
         /// <summary>
         /// Function that "controls" a piece. What to explain and how to..
