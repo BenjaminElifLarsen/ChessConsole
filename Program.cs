@@ -776,9 +776,9 @@ namespace Chess
         /// <summary>
         /// updates the location that is used for displaying the chesspiece on the chessboard
         /// </summary>
-        protected void LocationUpdate() //where should this one being called from
+        protected void LocationUpdate() 
         {
-            Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //(matpLocation[0]+1) is for the amount of spaces between the offsets and first square and the space between all the squares
+            //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //(matpLocation[0]+1) is for the amount of spaces between the offsets and first square and the space between all the squares
             //7*5+8+2 = 35+10 = 45, x
             //1*5+2+2 = 5+4 = 9, y 
             /*{1,2}
@@ -788,7 +788,8 @@ namespace Chess
              * 0*5+1+2 = 3
              * 0*5+1+2 = 3
              */
-            Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[1];
+            //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[1];
+            Location = new uint[2] { mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0] , mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[1] };
         }
 
         /// <summary>
