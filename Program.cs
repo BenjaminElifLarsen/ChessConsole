@@ -58,7 +58,7 @@ namespace Chess
         private static byte[] hoverOverSquareColour = new byte[] { 193, 76, 29 };
         private static byte[] chessPieceHoverOverSquareColour = new byte[] { 34, 124, 66 };
         private static byte[] chessPieceHoverOver = new byte[] { 31, 135, 113 };
-        private static byte[] offset = new byte[] { 2, 4 };
+        private static byte[] offset = new byte[] { 4, 2 };
         private static char lineX = '-';
         private static char lineY = '|';
         private static byte extraSpacing = 1;
@@ -141,17 +141,17 @@ namespace Chess
             for (int k = 0; k < distance; k++)
                 for (int i = 0; i < distance; i += 1 + squareSize)
                 {
-                    Console.SetCursorPosition(i + offset[0], k + offset[1]);
+                    Console.SetCursorPosition(i + Settings.Offset[0], k + Settings.Offset[1]);
                     Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
-                    Console.SetCursorPosition(i + offset[0], k + offset[1]);
+                    Console.SetCursorPosition(i + Settings.Offset[0], k + Settings.Offset[1]);
                     Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m|" + "\x1b[0m");
                 }
             for (int k = 0; k < distance; k += 1 + squareSize)
                 for (int i = 1; i < distance - 1; i++)
                 {
-                    Console.SetCursorPosition(i + offset[0], k + offset[1]);
+                    Console.SetCursorPosition(i + Settings.Offset[0], k + Settings.Offset[1]);
                     Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
-                    Console.SetCursorPosition(i + offset[0], k + offset[1]);
+                    Console.SetCursorPosition(i + Settings.Offset[0], k + Settings.Offset[1]);
                     Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m-" + "\x1b[0m");
                 }
             BoardColouring();
@@ -170,7 +170,7 @@ namespace Chess
                     {
                         for (int k = 0; k < squareSize; k++)
                         {
-                            Console.SetCursorPosition(i + offset[0] + 1 + n, k + offset[1] + 1 + m);
+                            Console.SetCursorPosition(i + Settings.Offset[0] + 1 + n, k + Settings.Offset[1] + 1 + m);
                             if (location % 2 == 1)
                                 Console.Write("\x1b[48;2;" + squareColour1[0] + ";" + squareColour1[1] + ";" + squareColour1[2] + "m " + "\x1b[0m");
                             else if (location % 2 == 0)
