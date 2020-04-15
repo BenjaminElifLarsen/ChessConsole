@@ -55,9 +55,13 @@ namespace Chess
         private static byte[] lineColourBase = new byte[] { 87, 65, 47 };
         private static byte[] squareColour1 = new byte[] { 182, 123, 91 };
         private static byte[] squareColour2 = new byte[] { 135, 68, 31 };
-        private static byte[] hoverOverSquareColour = new byte[] { 200, 0, 0 };
-        private static byte[] chessPieceHoverOverSquareColour = new byte[] { 100, 100, 0 };
+        private static byte[] hoverOverSquareColour = new byte[] { 193, 76, 29 };
+        private static byte[] chessPieceHoverOverSquareColour = new byte[] { 34, 124, 66 };
+        private static byte[] chessPieceHoverOver = new byte[] { 31, 135, 113 };
         private static byte[] offset = new byte[] { 2, 2 };
+        private static char lineX = '-';
+        private static char lineY = '|';
+        private static byte extraSpacing = 1;
         public static byte SquareSize { get => squareSize; }
         public static byte[] LineColour { get => lineColour; }
         public static byte[] LineColourBase { get => lineColourBase; }
@@ -65,7 +69,11 @@ namespace Chess
         public static byte[] SquareColour2 { get => squareColour2; }
         public static byte[] SelectSquareColour { get => hoverOverSquareColour; }
         public static byte[] SelectMoveSquareColour { get => chessPieceHoverOverSquareColour; }
+        public static byte[] SelectPieceColour { get => chessPieceHoverOver; }
         public static byte[] Offset { get => offset; } //remember the '|' and '-'
+        public static char GetLineX { get => lineX; }
+        public static char GetLineY { get => lineY; }
+        public static byte Spacing { get => extraSpacing};
     }
 
     class Program
