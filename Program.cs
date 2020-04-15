@@ -401,7 +401,7 @@ namespace Chess
             ChessPiece pawn = new Pawn(colour, white, spawn, id_);
             string id_2 = String.Format("{0}:6:{1}", team, 1);
             uint[] spawn2 = new uint[] { spawnLocations[1, 0], spawnLocations[1, 1] };
-            ChessPiece pawn2 = new Pawn(colour, white, spawn2, id_2);
+            ChessPiece pawn2 = new Bishop(colour, white, spawn2, id_2);
             string id_3 = String.Format("{0}:5:{1}", team, 0);
             uint[] spawn3 = new uint[] { spawnLocations[2, 0], spawnLocations[2, 1] };
             ChessPiece rock1 = new Rock(colour, white, spawn3, id_3);
