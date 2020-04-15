@@ -73,7 +73,7 @@ namespace Chess
         public static byte[] Offset { get => offset; } //remember the '|' and '-'
         public static char GetLineX { get => lineX; }
         public static char GetLineY { get => lineY; }
-        public static byte Spacing { get => extraSpacing};
+        public static byte Spacing { get => extraSpacing; }
     }
 
     class Program
