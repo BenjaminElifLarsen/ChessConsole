@@ -119,8 +119,8 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            whiteSpawnLocation = new uint[,] { { 1, 1 }, { 2, 1 }};
-            blackSpawnLocation = new uint[,] { { 1, 6 }, { 2, 6 } };
+            whiteSpawnLocation = new uint[,] { { 1, 1 }, { 2, 1 }, { 0, 0 } };
+            blackSpawnLocation = new uint[,] { { 1, 6 }, { 2, 6 }, { 0, 7 } };
             BoardSetup();
             PlayerSetup();
         }
@@ -241,6 +241,7 @@ namespace Chess
             int? lastPiece = null;
             bool hasSelected = false;
             location = ChessList.GetList(white)[0].GetMapLocation;
+            SquareHighLight(true);
             do
             {
                 bool selected = FeltMove(location);
@@ -401,8 +402,12 @@ namespace Chess
             string id_2 = String.Format("{0}:6:{1}", team, 1);
             uint[] spawn2 = new uint[] { spawnLocations[1, 0], spawnLocations[1, 1] };
             ChessPiece pawn2 = new Pawn(colour, white, spawn2, id_2);
+            string id_3 = String.Format("{0}:5:{1}", team, 0);
+            uint[] spawn3 = new uint[] { spawnLocations[2, 0], spawnLocations[2, 1] };
+            ChessPiece rock1 = new Rock(colour, white, spawn3, id_3);
             chessPieces.Add(pawn);
             chessPieces.Add(pawn2);
+            chessPieces.Add(rock1);
             ChessList.SetChessList(chessPieces, white);
         }
 
@@ -479,7 +484,7 @@ namespace Chess
                 "-P-"
             };
             moveDirection = team ? (sbyte)1 : (sbyte)-1;
-            teamString = team ? "+" : "-";
+            //teamString = team ? "+" : "-";
             Draw();
         }
 
@@ -578,26 +583,35 @@ namespace Chess
             void CheckPosistions(sbyte[] currentPosition)
             {
                 bool currentCanMove = true;
+                sbyte[] loc = new sbyte[2] { currentPosition[0], currentPosition[1] };
                 do
                 {
-                    string feltID = MapMatrix.Map[position[0] + mapLocation[0], mapLocation[1] + position[1]];
+                    //bug: not all options are saved. E.g. if a line is completely clear and thus all locations should be added, it will only add the first 2, skip the next and add the one after, finally it will skip the rest.
+                    //bug is found it is the += 
+                    //it can stand and move through on friendly pieces. Fixed, moved calculation of teamString into the base constructor
+                    if ((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0))
+                    {
+
+                        currentCanMove = false; 
+                        break;
+                        //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
+                    }
+                    string feltID = MapMatrix.Map[currentPosition[0] + mapLocation[0], mapLocation[1] + currentPosition[1]];
                     if (feltID == "")
                     {
-                        Add(position);
-                        currentPosition[0] += currentPosition[0];
-                        currentPosition[1] += currentPosition[1];
+                        Add(loc);
+                        loc[0] += currentPosition[0];
+                        loc[1] += currentPosition[1];
                     }
                     else
                     {
                         if (teamString != feltID.Split(':')[0])
                         {
-                            Add(position);
+                            Add(loc);
                         }
                         currentCanMove = false;
                     }
-                    if ((currentPosition[0] + mapLocation[0] > 7 || currentPosition[0] + mapLocation[0] < 0) || (currentPosition[1] + mapLocation[1] > 7 || currentPosition[1] + mapLocation[1] < 0))
-                        currentCanMove = false; //that if-statement might not work in all conditions, e.g. if the piece is at the edge it will not be able to move... 
-                    //Solucation might not work as intended as it the current values cannot go negative and if posistion is 0 - 1 it will reach the max value. This will be caugt, but consider a different approach. 
+
                 } while (currentCanMove);
             }
 
@@ -683,6 +697,7 @@ namespace Chess
             this.ID = ID; //String.Format("{0}n:{1}", team, i); team = currentTurn == true ? "-" : "+"; n being the chesspiece type
             LocationUpdate();
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
+            teamString = team ? "+" : "-";
         }
 
         /// <summary>
