@@ -614,6 +614,7 @@ namespace Chess
         protected byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
         protected bool team;
         protected uint[] mapLocation;
+        protected uint[] oldMapLocation; 
         protected string id;
         protected bool canDoMove;
         protected bool hasBeenTaken = false;
@@ -704,10 +705,10 @@ namespace Chess
         public virtual void Control()
         {
             Move();
-            RemoveDraw();
+            RemoveDraw(oldMapLocation);
             LocationUpdate();
             Draw();
-            //UpdateMapMatrix();
+            UpdateMapMatrix(oldMapLocation);
         }
 
         /// <summary>
@@ -721,7 +722,7 @@ namespace Chess
         /// <summary>
         /// Calculates the, legal, location(s) the chesspiece is able to move too. 
         /// </summary>
-        protected virtual void Move()
+        protected virtual void Move() //Currently play problem. If the piece cannot move, the player will become stuk on it. Need to ensrue that if there are no legal moves, it should return the control to the player and let them select another option
         {
             bool hasSelected = false;
             EndLocations();
@@ -730,8 +731,22 @@ namespace Chess
             uint[] cursorLocation = GetMapLocation;
             do
             {
-                hasSelected = FeltMove(cursorLocation);
-
+                bool selected = FeltMove(cursorLocation);
+                if (selected)
+                {
+                    foreach (uint[,] loc in possibleEndLocations)
+                    {
+                        uint[] endloc_ = new uint[2] { loc[0, 0], loc[1, 0] };
+                        if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+                        {
+                            oldMapLocation = new uint[2] { mapLocation[0], mapLocation[1] }; //need to call some code that checks if this piece is about to take another piece. 
+                            TakeEnemyPiece(cursorLocation);
+                            mapLocation = new uint[2] { cursorLocation[0], cursorLocation[1] };
+                            hasSelected = true;
+                            break;
+                        }
+                    }
+                }
             } while (!hasSelected);
             //UpdateMapMatrix();
             //how to best do this and DisplayPossibleMove()... 
@@ -745,9 +760,35 @@ namespace Chess
             possibleEndLocations.Clear();
         }
 
-        protected bool FeltMove(uint[] currentLocation)
+        protected void TakeEnemyPiece(uint[] locationToCheck)
+        {
+            string feltID = MapMatrix.Map[locationToCheck[0], locationToCheck[1]];
+            if (feltID != "")
+                if (teamString != feltID.Split(':')[0])
+                {
+                    foreach (ChessPiece chessHostile in ChessList.GetList(!team))
+                    {
+                      if(chessHostile.GetID == feltID)
+                        {
+                            chessHostile.Taken();
+                        }  
+                    }
+                } 
+        }
+
+        protected bool FeltMove(uint[] currentLocation) //currently it overwrites the colour of an endlocation. Endlocations need to be repainted, but what is the best method? Repaint all? Track down the one to repaint? 
         {
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+            SquareHighLight(false, currentLocation);
+            foreach (uint[,] loc in possibleEndLocations)
+            {
+                uint[] endloc_ = new uint[2] { loc[0, 0], loc[1, 0] };
+                if(endloc_[0] == currentLocation[0] && endloc_[1] == currentLocation[1])
+                {
+                    Paint(Settings.SelectMoveSquareColour, loc);
+                    break;
+                }
+            }
             if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
             {
                 currentLocation[1]--;
@@ -768,9 +809,45 @@ namespace Chess
             {
                 return true;
             }
-
+            SquareHighLight(true, currentLocation);
             return false;
 
+        }
+
+        protected void SquareHighLight(bool isHighlighted, uint[] currentLocation)
+        {
+            byte squareSize = Settings.SquareSize;
+            uint startLocationX = currentLocation[0] * squareSize + (currentLocation[0] + 1) * 1 + Settings.Offset[0];
+            uint startLocationY = currentLocation[1] * squareSize + (currentLocation[1] + 1) * 1 + Settings.Offset[1];
+            if (isHighlighted)
+            {
+                byte[] colour = Settings.SelectSquareColour;
+                Paint(colour);
+            }
+            else
+            {
+                byte colorLocator = (byte)((currentLocation[0] + currentLocation[1]) % 2);
+                byte[] colour = colorLocator == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+                Paint(colour);
+            }
+
+            void Paint(byte[] colour)
+            {
+                for (uint n = startLocationX; n < startLocationX + squareSize; n++)
+                {
+                    Console.SetCursorPosition((int)n, (int)startLocationY);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.SetCursorPosition((int)n, (int)startLocationY + squareSize - 1);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                }
+                for (uint n = startLocationY; n < startLocationY + squareSize; n++)
+                {
+                    Console.SetCursorPosition((int)startLocationX, (int)n);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                }
+            }
         }
 
         /// <summary>
@@ -835,15 +912,17 @@ namespace Chess
         /// <summary>
         /// removes the visual identication of a chesspiece at its current location.
         /// </summary>
-        protected void RemoveDraw()
+        protected void RemoveDraw(uint[] locationToRemove)
         {
             byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
             int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
             int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+            uint locationForColour = (locationToRemove[0] + locationToRemove[1]) % 2; //if zero, background colour is "white", else background colour is "black".
+            byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
             for (int i = 0; i < design[0].Length; i++)
             {
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("".PadRight(design[0].Length, ' '));
+                Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m".PadRight(design[0].Length+1, ' ') + "\x1b[0m");
             }
         }
 
@@ -864,7 +943,7 @@ namespace Chess
         {//call by another piece, the one that takes this piece. 
             hasBeenTaken = true;
             //it should remove itself from the map matrix. 
-            RemoveDraw(); //if the piece is taken, the other piece stands on this ones location, so removeDraw might remove the other piece. Consider how to implement the Taken/Move regarding that. 
+            RemoveDraw(mapLocation); //if the piece is taken, the other piece stands on this ones location, so removeDraw might remove the other piece. Consider how to implement the Taken/Move regarding that. 
         }
 
         /// <summary>
@@ -921,29 +1000,29 @@ namespace Chess
             }
         }
 
-        protected void TakeEnemyPiece()
-        {
-            //consider this aproach: Player select a location. This chesspiece then checks the location for an ID string or "". If "" call the removeDraw, move the piece and call Draw.
-            //If there is an ID string, find that chesspiece and call its Taken. Then call removeDraw, move the piece and the call Draw. 
-            string newLocationCurrentValue = MapMatrix.Map[mapLocation[0], mapLocation[1]]; //should the map have been updated already or should this line of code some new location
-            if (newLocationCurrentValue != "")
-            {
-                foreach (ChessPiece chesspiece in ChessList.GetList(Team)) //remember to ensure it gets the other teams list... so at some point figure out if false is white or black...
-                {
-                    if (chesspiece.ID == newLocationCurrentValue)
-                    {
-                        chesspiece.Taken(); //huh, got access to all functions and class scope values... guess that makes sense... Figure out some way to prevent that, so read
-                        break;
-                    }
-                }
-            }
-            RemoveDraw();
-            //UpdateMapMatrix();
-            //call move function
-            Draw();
+    //    protected void TakeEnemyPiece()
+    //    {
+    //        //consider this aproach: Player select a location. This chesspiece then checks the location for an ID string or "". If "" call the removeDraw, move the piece and call Draw.
+    //        //If there is an ID string, find that chesspiece and call its Taken. Then call removeDraw, move the piece and the call Draw. 
+    //        string newLocationCurrentValue = MapMatrix.Map[mapLocation[0], mapLocation[1]]; //should the map have been updated already or should this line of code some new location
+    //        if (newLocationCurrentValue != "")
+    //        {
+    //            foreach (ChessPiece chesspiece in ChessList.GetList(!Team)) //remember to ensure it gets the other teams list... so at some point figure out if false is white or black...
+    //            {
+    //                if (chesspiece.ID == newLocationCurrentValue)
+    //                {
+    //                    chesspiece.Taken(); //huh, got access to all functions and class scope values... guess that makes sense... Figure out some way to prevent that, so read
+    //                    break;
+    //                }
+    //            }
+    //        }
+    //        RemoveDraw(mapLocation);
+    //        //UpdateMapMatrix();
+    //        //call move function
+    //        Draw();
 
 
-        }
+    //    }
 
     }
 
