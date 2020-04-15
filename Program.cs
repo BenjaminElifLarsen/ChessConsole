@@ -485,9 +485,12 @@ namespace Chess
     }
 
     sealed class Pawn : ChessPiece
-    {
+    { //does not check if a square two away from it is empty. 
         private bool firstTurn = true;
         private sbyte moveDirection;
+        // https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance
+        // https://stackoverflow.com/questions/210601/accessing-a-property-of-derived-class-from-the-base-class-in-c-sharp
+        //consider added a function in the base call that returns whatever is needed, e.g. can castle, has double moved and not moved after etc. Most likely being a bool. 
 
         public Pawn(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
@@ -513,7 +516,10 @@ namespace Chess
                 }
             if (firstTurn)
             {
-                possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection * 2) } });
+                if (MapMatrix.Map[mapLocation[0], (mapLocation[1] + moveDirection * 2)] == "")
+                {
+                    possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection * 2) } });
+                }
                 firstTurn = false;
             }
             CheckAttackPossbilities();
@@ -522,8 +528,8 @@ namespace Chess
         /// <summary>
         /// Checks if there possible hostile piece that can be taken. If there is, they locations are added to the possibleEndLocations.
         /// </summary>
-        private void CheckAttackPossbilities()
-        {
+        private void CheckAttackPossbilities() //consider making it take an array, so it can be called in the firstTurn code regarding the en-passant rule. 
+        { //again, since the list of pieces only show the base functions and not the pawn functions, it will become a problem
             if ((!team && mapLocation[1] != 0) || (team && mapLocation[1] != 7))
             {
                 if (mapLocation[0] != 0) //check square to the left side
@@ -542,7 +548,6 @@ namespace Chess
                         possibleEndLocations.Add(new uint[,] { { (uint)(mapLocation[0] + direction) }, { (uint)(mapLocation[1] + moveDirection) } });
                 }
             }
-            //should check if it can take a piece and if it can, ensure that it is given to the displayPossibleMoves. 
             //read up on the "en-passant" rule regarding taking another pawn that has double moved. With the current functions you cannot check if a double move have been made this turn by a pawn or not, only if it has moved or not
         }
 
@@ -750,6 +755,7 @@ namespace Chess
         protected byte squareSize = Settings.SquareSize;
         protected List<uint[,]> possibleEndLocations = new List<uint[,]>();
         protected string teamString; //come up with a better name
+        protected bool couldMove; 
 
         public ChessPiece(byte[] colour_, bool team_, uint[] mapLocation_, string ID)
         { //for testing the code, just create a single player and a single piece. 
@@ -829,6 +835,8 @@ namespace Chess
 
         protected bool CanDoMove { get => canDoMove; set => canDoMove = value; } //what was the canDoMove suppose to be for again?
 
+        public bool CouldMove { get => CouldMove; }
+
         /// <summary>
         /// Function that "controls" a piece. What to explain and how to..
         /// </summary>
@@ -856,38 +864,37 @@ namespace Chess
         {
             bool hasSelected = false;
             EndLocations();
-            //calculate each possible, legal, end location. Maybe have, in the class scope, a variable byte[,] legalEndLocations that the DisplayPossibleMove can use. 
-            DisplayPossibleMove(); //actually all of this is needed be done in the derived classes, since movement (and attacks) depends on the type of piece. 
-            uint[] cursorLocation = GetMapLocation;
-            do
+            if (possibleEndLocations.Count != 0)
             {
-                bool selected = FeltMove(cursorLocation);
-                if (selected)
+                DisplayPossibleMove();
+                uint[] cursorLocation = GetMapLocation;
+                do
                 {
-                    foreach (uint[,] loc in possibleEndLocations)
+                    bool selected = FeltMove(cursorLocation);
+                    if (selected)
                     {
-                        uint[] endloc_ = new uint[2] { loc[0, 0], loc[1, 0] };
-                        if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+                        foreach (uint[,] loc in possibleEndLocations)
                         {
-                            oldMapLocation = new uint[2] { mapLocation[0], mapLocation[1] }; //need to call some code that checks if this piece is about to take another piece. 
-                            TakeEnemyPiece(cursorLocation);
-                            mapLocation = new uint[2] { cursorLocation[0], cursorLocation[1] };
-                            hasSelected = true;
-                            break;
+                            uint[] endloc_ = new uint[2] { loc[0, 0], loc[1, 0] };
+                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+                            {
+                                couldMove = true;
+                                oldMapLocation = new uint[2] { mapLocation[0], mapLocation[1] };
+                                TakeEnemyPiece(cursorLocation);
+                                mapLocation = new uint[2] { cursorLocation[0], cursorLocation[1] };
+                                hasSelected = true;
+                                break;
+                            }
                         }
                     }
-                }
-            } while (!hasSelected);
-            //UpdateMapMatrix();
-            //how to best do this and DisplayPossibleMove()... 
-            //how to know which location they have selected out of all the possible location? Arraykeys, writting a legal square name, e.g. D5?
-            //before fully starting to implement the move and display, focus on just moving a single piece around to ensure the (remove)draw function work and the matrix map is updated and all of that. 
-            //Then set up two pieces, one of each player, and see if the map and such are working correctly and if they got the same location if the correct one is removed. 
-            //Should this function also figure out which location the player chose, set the new location and all that or should another function do that? 
-            //This function should just allow the player to select a specific end location.
-            //When an end location has been selected, clear the possibleEndLocation list. 
-            NoneDisplayPossibleMove();
-            possibleEndLocations.Clear();
+                } while (!hasSelected);
+                NoneDisplayPossibleMove();
+                possibleEndLocations.Clear();
+            }
+            else
+            {
+                couldMove = false;
+            }
         }
 
         protected void TakeEnemyPiece(uint[] locationToCheck)
