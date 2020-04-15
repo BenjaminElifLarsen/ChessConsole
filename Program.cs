@@ -641,7 +641,7 @@ namespace Chess
         /// <summary>
         /// Gets and sets the location of the chesspiece on the console.  
         /// </summary>
-        protected uint[] Location { get => location; set => location = value; } //consider for each of the properties what kind they should have
+        protected uint[] Location { get { uint[] loc = new uint[2]; loc[0] = location[0]; loc[1] = location[1]; return loc; } set => location = value; } //consider for each of the properties what kind they should have
 
         /// <summary>
         /// sets the colour of the chesspiece.
@@ -706,9 +706,16 @@ namespace Chess
         /// </summary>
         protected virtual void Move()
         {
+            bool hasSelected = false;
             EndLocations();
             //calculate each possible, legal, end location. Maybe have, in the class scope, a variable byte[,] legalEndLocations that the DisplayPossibleMove can use. 
             DisplayPossibleMove(); //actually all of this is needed be done in the derived classes, since movement (and attacks) depends on the type of piece. 
+            uint[] cursorLocation = GetMapLocation;
+            do
+            { 
+                hasSelected = FeltMove(cursorLocation);
+
+            } while (!hasSelected);
             //UpdateMapMatrix();
             //how to best do this and DisplayPossibleMove()... 
             //how to know which location they have selected out of all the possible location? Arraykeys, writting a legal square name, e.g. D5?
@@ -717,6 +724,36 @@ namespace Chess
             //Should this function also figure out which location the player chose, set the new location and all that or should another function do that? 
             //This function should just allow the player to select a specific end location.
             //When an end location has been selected, clear the possibleEndLocation list. 
+            NoneDisplayPossibleMove();
+            possibleEndLocations.Clear();
+        }
+
+        protected bool FeltMove(uint[] currentLocation)
+        {
+            ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+            if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
+            {
+                currentLocation[1]--;
+            }
+            else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
+            {
+                currentLocation[1]++;
+            }
+            else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
+            {
+                currentLocation[0]--;
+            }
+            else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
+            {
+                currentLocation[0]++;
+            }
+            else if (keyInfo.Key == ConsoleKey.Enter)
+            {
+                return true;
+            }
+
+            return false;
+
         }
 
         /// <summary>
@@ -821,13 +858,49 @@ namespace Chess
             team = team_;
         }
 
+
+        protected void NoneDisplayPossibleMove()
+        {
+            foreach (uint[,] end in possibleEndLocations)
+            {
+                byte colourLoc = (byte)((end[0, 0] + end[1, 0]) % 2);
+                byte[] backColour = colourLoc == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+                Paint(backColour, end);
+            }
+        }
+
         /// <summary>
         /// Display the possible, legal, moves a chesspiece can take. 
         /// </summary>
         protected void DisplayPossibleMove()
         {
+            foreach (uint[,] end in possibleEndLocations)
+            {
+                Paint(Settings.SelectSquareColour, end);
+            }
             //needs to draw at every end location
             //what should be drawn, where should it and how to restore back to the default design and colour
+        }
+
+        protected void Paint(byte[] colour, uint[,] locationEnd)
+        {
+            byte squareSize = Settings.SquareSize;
+            uint startLocationX = locationEnd[0,0] * squareSize + (locationEnd[0,0] + 1) * 1 + Settings.Offset[0];
+            uint startLocationY = locationEnd[1,0] * squareSize + (locationEnd[1, 0] + 1) * 1 + Settings.Offset[1];
+            for (uint n = startLocationX; n < startLocationX + squareSize; n++)
+            {
+                Console.SetCursorPosition((int)n, (int)startLocationY);
+                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                Console.SetCursorPosition((int)n, (int)startLocationY + squareSize - 1);
+                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+            }
+            for (uint n = startLocationY; n < startLocationY + squareSize; n++)
+            {
+                Console.SetCursorPosition((int)startLocationX, (int)n);
+                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
+                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+            }
         }
 
         protected void TakeEnemyPiece() 
