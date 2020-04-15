@@ -58,7 +58,7 @@ namespace Chess
         private static byte[] hoverOverSquareColour = new byte[] { 193, 76, 29 };
         private static byte[] chessPieceHoverOverSquareColour = new byte[] { 34, 124, 66 };
         private static byte[] chessPieceHoverOver = new byte[] { 31, 135, 113 };
-        private static byte[] offset = new byte[] { 2, 2 };
+        private static byte[] offset = new byte[] { 2, 4 };
         private static char lineX = '-';
         private static char lineY = '|';
         private static byte extraSpacing = 1;
@@ -990,7 +990,7 @@ namespace Chess
              * 0*5+1+2 = 3
              */
             //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[1];
-            Location = new uint[2] { mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0] , mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[1] };
+            Location = new uint[2] { mapLocation[0] * squareSize + (mapLocation[0] + Settings.Spacing) * 1 + Settings.Offset[0] , mapLocation[1] * squareSize + (mapLocation[1] + Settings.Spacing) * 1 + Settings.Offset[1] };
         }
 
         /// <summary>
@@ -1022,11 +1022,12 @@ namespace Chess
                 int drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
                 int drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
                 uint locationForColour = (mapLocation[0] + mapLocation[1]) % 2; //if zero, background colour is "white", else background colour is "black".
-                byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+                byte[] backColours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+                byte[] colours = Settings.SelectPieceColour;
                 for (int i = 0; i < design[0].Length; i++)
                 {
                     Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                    Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i], colours);
+                    Console.Write("\x1b[48;2;" + backColours[0] + ";" + backColours[1] + ";" + backColours[2] + "m\x1b[38;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i], colours);
                 }
             }
             else
