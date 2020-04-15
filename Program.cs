@@ -118,6 +118,7 @@ namespace Chess
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
             whiteSpawnLocation = new uint[,] { {1,1 }, {2,1 } };
+            blackSpawnLocation = new uint[,] { { 1, 6 }, { 2, 6 } };
             BoardSetup();
             PlayerSetup();
         }
@@ -190,16 +191,16 @@ namespace Chess
                 255,255,255
             };
             white = new Player(colourWhite, true, whiteSpawnLocation);
-            //byte[] colourBlack =
-            //{
-            //    0,0,0
-            //};
-            //black = new Player(colourBlack, false, blackSpawnLocation);
+            byte[] colourBlack =
+            {
+                0,0,0
+            };
+            black = new Player(colourBlack, false, blackSpawnLocation);
         }
 
     }
 
-    class Player
+    class Player //got to ensure that no spawnlocation is overlapping and deal with it in case there is an overlap. 
     { //this class is set to be an abstract in the UML, but is that really needed? 
         private byte[] colour;
         private bool white; 
@@ -225,6 +226,9 @@ namespace Chess
             MovePiece();
         }
 
+        /// <summary>
+        /// Lets the player hover over a felt on the boardgame and gets the ID of that felt. If the ID is a chesspiece, it will be highlighted. 
+        /// </summary>
         private void HoverOver()
         {
             string lastMapLocationID;
@@ -233,8 +237,7 @@ namespace Chess
             location = ChessList.GetList(white)[0].GetMapLocation;
             do
             {
-                bool selected = FeltMove();
-                //both of the if-statements need to be called after the player either has moved to another felt or pressed enter.
+                bool selected = FeltMove(location);
                 if (lastPiece != null)
                 {
                     ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
@@ -243,7 +246,6 @@ namespace Chess
                 }
                 string squareID = MapMatrix.Map[location[0], location[1]];
                 if (squareID != "")
-                    //for some reason, the maplocation variable of the last piece is changed... arrays!!! Line 231 points the variable location to the mapLocation of first entry of ChessList.GetList(white)... 
                     if(squareID.Split(':')[0] == team)
                     {
                         int posistion = 0;
@@ -271,9 +273,14 @@ namespace Chess
 
         }
 
-        private bool FeltMove()
+        /// <summary>
+        /// Allows the player to either move to a connecting square to <paramref name="currentLocation"/> or select the <paramref name="currentLocation"/>.
+        /// </summary>
+        /// <param name="currentLocation">The current location on the board.</param>
+        /// <returns></returns>
+        private bool FeltMove(uint[] currentLocation)
         {
-            uint[] currentLocation = location; //remember that both arrays point to the same memory.
+            //uint[] currentLocation = location; //remember that both arrays point to the same memory.
 
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
             SquareHighLight(false);
@@ -303,13 +310,43 @@ namespace Chess
 
 
         /// <summary>
-        /// 
+        /// Highlights or removes the hightlight of a sqaure. 
         /// </summary>
         /// <param name="isHighlighted">If true highlights the square. If false, it will remove the highligh.</param>
         private void SquareHighLight(bool isHighlighted) 
         {
-            //Location[0] = mapLocation[0] * squareSize + (mapLocation[0] + 1) * 1 + Settings.Offset[0]; //repurpose these codes to work with the highligtning. The calculated values 
-            //Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0]; //are the top left corner of the square. Those + 1s should be turned into a setting too, so you can easier add felt markers in the board setup
+            byte squareSize = Settings.SquareSize;
+            uint startLocationX = location[0] * squareSize + (location[0] + 1) * 1 + Settings.Offset[0];
+            uint startLocationY = location[1] * squareSize + (location[1] + 1) * 1 + Settings.Offset[1];
+            if (isHighlighted)
+            {
+                byte[] colour = Settings.SelectSquareColour;
+                Paint(colour);
+            }
+            else
+            {
+                byte colorLocator = (byte)((location[0] + location[1]) % 2);
+                byte[] colour = colorLocator == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+                Paint(colour);
+            }
+
+            void Paint(byte[] colour)
+            {
+                for (uint n = startLocationX; n < startLocationX + squareSize; n++)
+                {
+                    Console.SetCursorPosition((int)n, (int)startLocationY);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.SetCursorPosition((int)n, (int)startLocationY + squareSize - 1);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                }
+                for (uint n = startLocationY; n < startLocationY + squareSize; n++)
+                {
+                    Console.SetCursorPosition((int)startLocationX, (int)n);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
+                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                }
+            }
         }
 
         private void SelectPiece()
@@ -318,11 +355,17 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Function that calls the selected chess piece control function. 
+        /// </summary>
         private void MovePiece()
         {
             chessPieces[selectedChessPiece].Control();
         }
 
+        /// <summary>
+        /// Creates the chess pieces. 
+        /// </summary>
         private void CreatePieces()
         {
 
@@ -691,7 +734,7 @@ namespace Chess
              * 0*5+1+2 = 3
              * 0*5+1+2 = 3
              */
-            Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[0];
+            Location[1] = mapLocation[1] * squareSize + (mapLocation[1] + 1) * 1 + Settings.Offset[1];
         }
 
         /// <summary>
