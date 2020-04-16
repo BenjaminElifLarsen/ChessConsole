@@ -127,8 +127,14 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            whiteSpawnLocation = new uint[,] { { 1, 1 }, { 2, 1 }, { 0, 0 } };
-            blackSpawnLocation = new uint[,] { { 1, 6 }, { 2, 6 }, { 0, 7 } };
+            whiteSpawnLocation = new uint[,] {
+                { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 }, { 7, 1 },
+                { 1, 0 }, { 2, 0 }, { 3, 0 }, { 4, 0 }, { 5, 0 }, { 6, 0 }, { 7, 0 }
+            };
+            blackSpawnLocation = new uint[,] {
+                { 1, 6 }, { 2, 6 }, { 3, 6 }, { 4, 6 }, { 5, 6 }, { 6, 6 }, { 7, 6 },
+                { 1, 7 }, { 2, 7 }, { 3, 7 }, { 4, 7 }, { 5, 7 }, { 6, 7 }, { 7, 7 }
+            }; 
             BoardSetup();
             PlayerSetup();
         }
@@ -528,7 +534,7 @@ namespace Chess
             }
         }
 
-        public bool IsInChecked()
+        public bool IsInChecked() //maybe make this the specialChessPieceFunction
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
             //hmm... could also look check specific squares for specific chesspieces, e.g. check all left, right, up and down squares for rocks and queen, check specific squares that 3 squares away for knights and so on. 
@@ -541,7 +547,7 @@ namespace Chess
             return Castling();
         }
 
-        private bool Castling()
+        private bool Castling() //should this return a bool?
         { //king moves two squares (some say three) in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, none of the squares should be threanten by
             //hostile piece??? 
 
