@@ -700,22 +700,31 @@ namespace Chess
         private bool HasDoubleSquareMoved { get; set; }
 
         private void Promotion()
-        { //pawn can become any other type of chesspiece. It should remove itself and create a new instance of the chosen piece on the same location.
+        {
             if ((!team && mapLocation[1] == 0) || (team && mapLocation[1] == 7))
             {
-                //how should the selection be designed? Text written below the board? Next to the board? How to select? Arrowkeys? Numberkeys? 
+                Taken();
+                //how should the selection be designed? Text written below the board? Next to the board? How to select? Arrowkeys? Numberkeys? Written?
                 DisplayPromotions();
 
                 //test code
-                Taken();
-                ChessList.GetList(team).Add(new King(colour, team, mapLocation, GetID));
+                ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, GetID)); //the final version should update the ID to match the new chesspiece. This leaves a question for building up the ID, e.g. if the pawn is pawn number 1, team white,
+                //and it becomes a queen, it cannot be set as +:2:1 as the start queen is already that. 
+                //Since the last part of the ID is never used by anything else than in combination with the entire ID, maybe add a symbol after. The symbol could be the chesspiece type part of the ID, e.g. 2 for queen
+                //so it will becokme +:2:12
             }
 
         }
 
         private void DisplayPromotions()
         { //writes to a location what chesspieces it can be promoted too.
-
+            string[] promotions =
+            {
+                "Knight",
+                "Bishop",
+                "Rock",
+                "Queen"
+            };
         }
 
     }
@@ -867,23 +876,47 @@ namespace Chess
 
     sealed class Knight : ChessPiece
     {
-
-        //Knight(uint[] location_, byte[] colour_, string[] design_, bool team_, uint[] spawnLocation_, string ID) : this(location_, colour_, design_, team_, spawnLocation_, ID) { }
-
         public Knight(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
-        { //maybe do not have the moves and attacks, design and suck as parameters, but rather part of the code, since you have changed from abstract to non abstract class
-          //redo the constructors when you are sure what you will need. So far: spawnlocation, id and team
+        { 
             Design = new string[]
             {
                 " ^_",
                 " |>",
                 "-k-"
             };
-            MovePattern = new byte[][] { new byte[] { 6 } }; //maybe drop the idea of a movePattern variable and just write it into the specialised move code 
             Draw();
 
         }
 
+        protected override void EndLocations()
+        {
+            sbyte[] potenieltLocation = { -2, -2 };
+            if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] >= 0)
+            {
+                Add(potenieltLocation);
+            }
+            potenieltLocation = new sbyte[2]{ (sbyte)(mapLocation[0] + 2), (sbyte)(mapLocation[1] - 2)};
+            if (mapLocation[0] + potenieltLocation[0] <= 7 && mapLocation[1] + potenieltLocation[1] >= 0)
+            {
+                Add(potenieltLocation);
+            }
+            potenieltLocation = new sbyte[2] { (sbyte)(mapLocation[0] + 2), (sbyte)(mapLocation[1] + 2) };
+            if (mapLocation[0] + potenieltLocation[0] <= 7 && mapLocation[1] + potenieltLocation[1] <= 7)
+            {
+                Add(potenieltLocation);
+            }
+            potenieltLocation = new sbyte[2] { (sbyte)(mapLocation[0] - 2), (sbyte)(mapLocation[1] + 2) };
+            if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] <= 7)
+            {
+                Add(potenieltLocation);
+            }
+
+
+            void Add(sbyte[] posistions)
+            {
+                possibleEndLocations.Add(new uint[,] { { (uint)(mapLocation[0] + posistions[0]) }, { (uint)(mapLocation[1] + posistions[1]) } });
+            }
+        }
 
     }
 
@@ -906,6 +939,8 @@ namespace Chess
         protected List<uint[,]> possibleEndLocations = new List<uint[,]>();
         protected string teamString; //come up with a better name
         protected bool couldMove;
+
+        //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
         public ChessPiece(byte[] colour_, bool team_, uint[] mapLocation_, string ID)
         { //for testing the code, just create a single player and a single piece. 
