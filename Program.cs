@@ -458,7 +458,7 @@ namespace Chess
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
 
-        private List<string> checkLocations = new List<string>(); //contain the locations of the chesspieces that treatens the king.
+        private List<uint[]> checkLocations = new List<uint[]>(); //contain the locations of the chesspieces that treatens the king.
 
         public King(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
@@ -510,11 +510,7 @@ namespace Chess
                 //Lastly, it should check if the hostile king is touching that square. 
                 sbyte[] loc = new sbyte[2] { currentPosition[0], currentPosition[1] };
 
-                if ((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0))
-                {
-
-                }
-                else
+                if (!((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0)))
                 {
                     string feltID = MapMatrix.Map[loc[0] + mapLocation[0], mapLocation[1] + loc[1]];
                     if (feltID == "")
@@ -531,8 +527,6 @@ namespace Chess
                         }
                     }
                 }
-
-
             }
 
             void Add(sbyte[] posistions)
@@ -541,9 +535,10 @@ namespace Chess
             }
         }
 
-        public bool IsInChecked()
+        public bool IsInChecked(uint[] location_)
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
-            //should also check if it even can move, if it cannot the game should end. //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
+            //should also check if it even can move, if it cannot the game should end. 
+            //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
             //hmm... could also look check specific squares for specific chesspieces, e.g. check all left, right, up and down squares for rocks and queen, check specific squares that 3 squares away for knights and so on. 
             //the king can, however, take a chesspiece as long time that piece is not protected by another nor is the other king. Cannot move next to the hostile king 
             //used to check if the king is check mate or check
@@ -552,58 +547,63 @@ namespace Chess
             //how much should the game hold the player in hand?
             //Should the game write to a location that the king is check and the location (letter and number) of the hostile pieces that threatens the king?
             //should the king's constructor have a write location, so the king can do the writting and not the board/player?
-            uint[] checkLocation = new uint[2] { mapLocation[0], mapLocation[1] };
-            if (checkLocation[0] - 1 >0) //check left side
-            {
-                sbyte posistion = -1;
-                bool end = false;
-                do
-                {
-                    string feltID = MapMatrix.Map[checkLocation[0] + posistion, checkLocation[1]];
-                    if(feltID != "")
-                    {
-                        string[] IDstrings = feltID.Split(':');
-                        if (IDstrings[0] != teamString)
-                        {
-                            if (IDstrings[1] == "5" || IDstrings[1] == "2")
-                                checkLocations.Add(feltID);
-                            break;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    posistion--;
-                } while (!end);
-            }
-            if (checkLocation[0] + 1 < 7) //check right side
-            { //consider a way to combine all directions into a function so you just have to call the function with the parameters for directions
-                sbyte posistion = 1;
-                bool end = false;
-                do
-                {
-                    string feltID = MapMatrix.Map[checkLocation[0] + posistion, checkLocation[1]];
-                    if (feltID != "")
-                    {
-                        string[] IDstrings = feltID.Split(':');
-                        if (IDstrings[0] != teamString)
-                        {
-                            if (IDstrings[1] == "5" || IDstrings[1] == "2")
-                                checkLocations.Add(feltID);
-                            break;
-                        }
-                        else
-                        {
-                            break;
-                        }
-                    }
-                    posistion--;
-                } while (!end);
-            }
+            //When should this code be called? Ideally, at the start of the player turn. But should it be called at other moments? E.g. before or after a king movement or should the move code check by itself 
+            //should the move code double check the checkLocations list to see if a location in possibleEndLocations should be removed?
+            sbyte[,] moveDirection;
+            string[] toLookFor;
+            moveDirection = new sbyte[,] { { -1, 0 } }; //left
+            toLookFor = new string[] {"2", "5" };
+            QRBCheck(moveDirection, toLookFor);
 
-            return false;
 
+            if (checkLocations.Count != 0)
+                return true;
+            else
+                return false;
+
+            void QRBCheck(sbyte[,] directions, string[] checkpiecesToCheckFor) 
+            { //can be used to check for queens, rocks and bishops. Need other functions for knights and pawns.
+                //consider coding it such that it can work with a sbyte[,] and go through multiple directions in a single call.
+                //should the checkPiecesToCheckFor also be altered or is it fine 
+                for (int i = 0; i < directions.GetLength(0); i++) 
+                {
+
+                    uint[] checkLocation = new uint[2] { location_[0], location_[1] };
+                    sbyte[] directions_ = new sbyte[2] { directions[i,0], directions[i,1] };
+                    if ((checkLocation[0] + directions_[0] >= 0 && checkLocation[0] + directions_[0] <= 7 && checkLocation[1] + directions_[1] >= 0 && checkLocation[1] + directions_[1] <= 7)) 
+                    {
+
+                        bool end = false;
+                        do
+                        {
+                            string feltID = MapMatrix.Map[checkLocation[0] + directions_[0], checkLocation[1] + directions_[1]];
+                            if (feltID != "")
+                            {
+                                string[] IDstrings = feltID.Split(':');
+                                if (IDstrings[0] != teamString)
+                                {
+                                    foreach (string pieceNumber in checkpiecesToCheckFor)
+                                    {
+                                        if (IDstrings[1] == pieceNumber)
+                                            checkLocations.Add(new uint[2] { (uint)(checkLocation[0] + directions_[0]), (uint)(checkLocation[1] + directions_[1]) });
+                                        break;
+                                    }
+                                }
+                                else
+                                {
+                                    break;
+                                }
+                            }
+                            directions_[0] += directions[i,0];
+                            directions_[1] += directions[i,1];
+                            if ((checkLocation[0] + directions_[0] >= 0 || checkLocation[0] + directions_[0] <= 7 || checkLocation[1] + directions_[1] >= 0 || checkLocation[1] + directions_[1] <= 7))
+                            {
+                                end = true;
+                            }
+                            } while (!end);
+                    }
+                }
+            }
         }
 
         protected override bool SpecialChessPieceFunction()
@@ -713,7 +713,8 @@ namespace Chess
         // https://stackoverflow.com/questions/210601/accessing-a-property-of-derived-class-from-the-base-class-in-c-sharp
         //consider added a function in the base call that returns whatever is needed, e.g. can castle, has double moved and not moved after etc. Most likely being a bool. 
 
-        
+        //was a bug at a moment where a pawn could not double move in a game, even through it had not moved. Something, I think, had stod on the location before. 
+        //found it what is causing it, if a pawn is selected and cannot move, its firstTurn is still set to false.
         public Pawn(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
