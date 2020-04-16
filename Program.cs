@@ -414,29 +414,7 @@ namespace Chess
                 chessPieces.Add(new Pawn(colour, white, spawn, ID));
             }
 
-            //for (int i = 0; i < 2; i++)
-            //{ //loop that creates each piece 
-            //    string rockID = String.Format("{0}:5:{1}", team, i);
-            //    string bishopID = String.Format("{0}:3:{1}", team, i);
-            //    string knightID = String.Format("{0}:4:{1}", team, i);
-            //    //set other values for each piece and create them.
-            //    //chessPieces.Add
-            //}
 
-            //string queenID = String.Format("{0}:2:{1}", team, 0);
-            //string kingID = String.Format("{0}:1:{1}", team, 0);
-            //string id_ = String.Format("{0}:6:{1}", team, 0);
-            //uint[] spawn = new uint[] { spawnLocations[0, 0], spawnLocations[0, 1] };
-            //ChessPiece pawn = new Pawn(colour, white, spawn, id_);
-            //string id_2 = String.Format("{0}:6:{1}", team, 1);
-            //uint[] spawn2 = new uint[] { spawnLocations[1, 0], spawnLocations[1, 1] };
-            //ChessPiece pawn2 = new Pawn(colour, white, spawn2, id_2);
-            //string id_3 = String.Format("{0}:5:{1}", team, 0);
-            //uint[] spawn3 = new uint[] { spawnLocations[2, 0], spawnLocations[2, 1] };
-            //ChessPiece rock1 = new Rock(colour, white, spawn3, id_3);
-            //chessPieces.Add(pawn);
-            //chessPieces.Add(pawn2);
-            //chessPieces.Add(rock1);
             ChessList.SetChessList(chessPieces, white);
         }
 
@@ -754,16 +732,17 @@ namespace Chess
                 {
                     possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection * 2) } });
                 }
-                CheckAttackPossbilities();
-                firstTurn = false;
+
             }
+            CheckAttackPossbilities();
+            firstTurn = firstTurn ? false : false;
         }
 
         /// <summary>
         /// Checks if there possible hostile piece that can be taken. If there is, they locations are added to the possibleEndLocations.
         /// </summary>
-        private void CheckAttackPossbilities() //consider making it take an array, so it can be called in the firstTurn code regarding the en-passant rule. 
-        { //again, since the list of pieces only show the base functions and not the pawn functions, it will become a problem
+        private void CheckAttackPossbilities()
+        { //bug: does not allow anymore to take an hostile piece 
             if ((!team && mapLocation[1] != 0) || (team && mapLocation[1] != 7))
             {
                 if (mapLocation[0] != 0) //check square to the left side
@@ -786,7 +765,6 @@ namespace Chess
                         possibleEndLocations.Add(new uint[,] { { (uint)(mapLocation[0] + direction) }, { (uint)(mapLocation[1] + moveDirection) } });
                 }
             }
-            //read up on the "en-passant" rule regarding taking another pawn that has double moved. With the current functions you cannot check if a double move have been made this turn by a pawn or not, only if it has moved or not
 
             void EnPassant()
             { //needs not have to moved
