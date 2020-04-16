@@ -420,7 +420,7 @@ namespace Chess
             ChessPiece pawn = new Pawn(colour, white, spawn, id_);
             string id_2 = String.Format("{0}:6:{1}", team, 1);
             uint[] spawn2 = new uint[] { spawnLocations[1, 0], spawnLocations[1, 1] };
-            ChessPiece pawn2 = new Knight(colour, white, spawn2, id_2);
+            ChessPiece pawn2 = new Pawn(colour, white, spawn2, id_2);
             string id_3 = String.Format("{0}:5:{1}", team, 0);
             uint[] spawn3 = new uint[] { spawnLocations[2, 0], spawnLocations[2, 1] };
             ChessPiece rock1 = new Rock(colour, white, spawn3, id_3);
@@ -641,6 +641,76 @@ namespace Chess
             Draw();
         }
 
+        /// <summary>
+        /// Function that check if the pawn has double moved as its last move. If it has not, or moved after, it return negative.
+        /// Needed for the en-passant rule. 
+        /// </summary>
+        /// <returns></returns>
+        protected override bool SpecialChessPieceFunction()
+        {
+            /* Rules: 
+             * The capturing pawn must be on its fifth rank;
+             * The captured pawn must be on an adjacent file and must have just moved two squares in a single move (i.e. a double-step move);
+             * The capture can only be made on the move immediately after the enemy pawn makes the double-step move; otherwise, the right to capture it en passant is lost.
+             */
+             //how to implement this... 
+             //Got a SpecialBool get/set to use together with this one
+             //If the player choose to double move with their pawn, SpecialBool is set to true.
+             //This means the pawn needs to override the move function.
+             //Most likely the play code need to check after a player has moved if the other player has a pawn that has doubled moved on their turn, call SpecialBool and set it to false. 
+            return false;
+        }
+
+        /// <summary>
+        /// A modified version of the base Move function. Designed to check if the player uses a double move. 
+        /// </summary>
+        protected override void Move()
+        {
+            oldMapLocation = null;
+            bool hasSelected = false;
+            EndLocations();
+            if (possibleEndLocations.Count != 0)
+            {
+                DisplayPossibleMove();
+                uint[] cursorLocation = GetMapLocation;
+                do
+                {
+                    bool selected = FeltMove(cursorLocation);
+                    if (selected)
+                    {
+                        foreach (uint[,] loc in possibleEndLocations)
+                        {
+                            uint[] endloc_ = new uint[2] { loc[0, 0], loc[1, 0] };
+                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+                            {
+
+                                couldMove = true;
+                                oldMapLocation = new uint[2] { mapLocation[0], mapLocation[1] };
+                                TakeEnemyPiece(cursorLocation);
+                                mapLocation = new uint[2] { cursorLocation[0], cursorLocation[1] };
+                                hasSelected = true;
+                                if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
+                                {
+                                    SpecialBool = true;
+                                }
+                                else
+                                {
+                                    SpecialBool = false;
+                                }
+                                break;
+                            }
+                        }
+                    }
+                } while (!hasSelected);
+                NoneDisplayPossibleMove();
+                possibleEndLocations.Clear();
+            }
+            else
+            {
+                couldMove = false;
+            }
+        }
+
         public override void Control()
         {
             Move();
@@ -666,9 +736,9 @@ namespace Chess
                 {
                     possibleEndLocations.Add(new uint[,] { { mapLocation[0] }, { (uint)(mapLocation[1] + moveDirection * 2) } });
                 }
+                CheckAttackPossbilities();
                 firstTurn = false;
             }
-            CheckAttackPossbilities();
         }
 
         /// <summary>
@@ -682,6 +752,10 @@ namespace Chess
                     LocationCheck(-1);
                 if (mapLocation[0] != 7) //check square to the right side
                     LocationCheck(1);
+                if (firstTurn)
+                {
+                    EnPassant();
+                }
             }
 
             void LocationCheck(sbyte direction) //find a better name
@@ -695,6 +769,28 @@ namespace Chess
                 }
             }
             //read up on the "en-passant" rule regarding taking another pawn that has double moved. With the current functions you cannot check if a double move have been made this turn by a pawn or not, only if it has moved or not
+
+            void EnPassant()
+            { //needs not have to moved
+                byte chessAmount = (byte)ChessList.GetList(!team).Count;
+                for (byte i = 0; i < chessAmount; i++) //goes through all chess pieces
+                {
+                    string idCheck = ChessList.GetList(!team)[i].GetID;
+                    if (idCheck.Split(':')[1] == "6") //checks if the current piece is a pawn
+                    {
+                        if (ChessList.GetList(!team)[i].SpecialBool) //checks if the pawn as double moved and en passant is allowed.
+                        {
+                            uint[] hostileLocation = ChessList.GetList(!team)[i].GetMapLocation;
+                            if (hostileLocation[0] == mapLocation[0] + 1 || hostileLocation[0] == mapLocation[0] - 1) //Checks if the pawn is a location that allows it to be en passant.  
+                            {
+                                possibleEndLocations.Add(new uint[,] { { hostileLocation[0] }, { hostileLocation[1] } });
+                            }
+                        }
+                    }
+                }
+
+            }
+
         }
 
         private bool HasDoubleSquareMoved { get; set; }
@@ -983,7 +1079,7 @@ namespace Chess
         protected List<uint[,]> possibleEndLocations = new List<uint[,]>();
         protected string teamString; //come up with a better name
         protected bool couldMove;
-
+        protected bool specialBool; 
         //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
         public ChessPiece(byte[] colour_, bool team_, uint[] mapLocation_, string ID)
@@ -1054,6 +1150,8 @@ namespace Chess
         public string GetID { get => ID; }
 
         public bool CouldMove { get => couldMove; }
+
+        public bool SpecialBool { get => specialBool; set => specialBool = value; }
 
         /// <summary>
         /// Function that "controls" a piece. What to explain and how to..
