@@ -547,8 +547,8 @@ namespace Chess
         }
 
         protected override bool SpecialChessPieceFunction()
-        {
-            return Castling();
+        { //used to check if the king is checkmate or mate
+            return false;
         }
 
         private bool Castling() //should this return a bool?
@@ -646,10 +646,12 @@ namespace Chess
         //oldMapLocation is only set in the Move function and is called by RemoveDraw right after. RemoveDraw needs to be able to handle and solve null arrays. 
         private bool firstTurn = true;
         private sbyte moveDirection;
+        private Dictionary<string, byte> promotions = new Dictionary<string, byte>(4);
         // https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance
         // https://stackoverflow.com/questions/210601/accessing-a-property-of-derived-class-from-the-base-class-in-c-sharp
         //consider added a function in the base call that returns whatever is needed, e.g. can castle, has double moved and not moved after etc. Most likely being a bool. 
 
+        
         public Pawn(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -661,6 +663,10 @@ namespace Chess
             moveDirection = team ? (sbyte)-1 : (sbyte)1;
             //teamString = team ? "+" : "-";
             Draw();
+            promotions.Add("Knight", 4);
+            promotions.Add("Rock", 5);
+            promotions.Add("Bishop", 3);
+            promotions.Add("Queen", 2);
         }
 
         /// <summary>
@@ -675,11 +681,6 @@ namespace Chess
              * The captured pawn must be on an adjacent file and must have just moved two squares in a single move (i.e. a double-step move);
              * The capture can only be made on the move immediately after the enemy pawn makes the double-step move; otherwise, the right to capture it en passant is lost.
              */
-             //how to implement this... 
-             //Got a SpecialBool get/set to use together with this one
-             //If the player choose to double move with their pawn, SpecialBool is set to true.
-             //This means the pawn needs to override the move function.
-             //Most likely the play code need to check after a player has moved if the other player has a pawn that has doubled moved on their turn, call SpecialBool and set it to false. 
             return false;
         }
 
@@ -819,7 +820,7 @@ namespace Chess
 
         private void Promotion()
         {
-            if ((!team && mapLocation[1] == 0) || (team && mapLocation[1] == 7))
+            if ((!team && mapLocation[1] == 7) || (team && mapLocation[1] == 1))
             {
                 Taken();
                 //how should the selection be designed? Text written below the board? Next to the board? How to select? Arrowkeys? Numberkeys? Written?
@@ -836,13 +837,7 @@ namespace Chess
 
         private void DisplayPromotions()
         { //writes to a location what chesspieces it can be promoted too.
-            string[] promotions =
-            {
-                "Knight",
-                "Bishop",
-                "Rock",
-                "Queen"
-            };
+
         }
 
     }
