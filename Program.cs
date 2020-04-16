@@ -457,6 +457,9 @@ namespace Chess
 
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
+
+        private List<string> checkLocations = new List<string>(); //contain the locations of the chesspieces that treatens the king.
+
         public King(byte[] colour_, bool team_, uint[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -538,23 +541,82 @@ namespace Chess
             }
         }
 
-        public bool IsInChecked() //maybe make this the specialChessPieceFunction
+        public bool IsInChecked()
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
             //hmm... could also look check specific squares for specific chesspieces, e.g. check all left, right, up and down squares for rocks and queen, check specific squares that 3 squares away for knights and so on. 
             //the king can, however, take a chesspiece as long time that piece is not protected by another nor is the other king. Cannot move next to the hostile king 
+            //used to check if the king is check mate or check
+            //the king does not need to move in a check as long time there is a friendly chesspiece that can take the hostile piece. 
+            //should all the pieces that can move to prevent a mate be highlighted? Should their endlocations be forced to only those that can prevent a check?
+            //how much should the game hold the player in hand?
+            //Should the game write to a location that the king is check and the location (letter and number) of the hostile pieces that threatens the king?
+            //should the king's constructor have a write location, so the king can do the writting and not the board/player?
+            uint[] checkLocation = new uint[2] { mapLocation[0], mapLocation[1] };
+            if (checkLocation[0] - 1 >0) //check left side
+            {
+                sbyte posistion = -1;
+                bool end = false;
+                do
+                {
+                    string feltID = MapMatrix.Map[checkLocation[0] + posistion, checkLocation[1]];
+                    if(feltID != "")
+                    {
+                        string[] IDstrings = feltID.Split(':');
+                        if (IDstrings[0] != teamString)
+                        {
+                            if (IDstrings[1] == "5" || IDstrings[1] == "2")
+                                checkLocations.Add(feltID);
+                            break;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    posistion--;
+                } while (!end);
+            }
+            if (checkLocation[0] + 1 < 7) //check right side
+            { //consider a way to combine all directions into a function so you just have to call the function with the parameters for directions
+                sbyte posistion = 1;
+                bool end = false;
+                do
+                {
+                    string feltID = MapMatrix.Map[checkLocation[0] + posistion, checkLocation[1]];
+                    if (feltID != "")
+                    {
+                        string[] IDstrings = feltID.Split(':');
+                        if (IDstrings[0] != teamString)
+                        {
+                            if (IDstrings[1] == "5" || IDstrings[1] == "2")
+                                checkLocations.Add(feltID);
+                            break;
+                        }
+                        else
+                        {
+                            break;
+                        }
+                    }
+                    posistion--;
+                } while (!end);
+            }
+
             return false;
+
         }
 
         protected override bool SpecialChessPieceFunction()
-        { //used to check if the king is checkmate or mate
+        { //used to set its position after castling. So RemoveDraw, update locations, Draw, set variable regarding if it has moved to true. 
+            //called by the active piece, so its own and the one it is castling with. 
             return false;
         }
 
         private bool Castling() //should this return a bool?
-        { //king moves two squares (some say three) in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, none of the squares should be threanten by
+        { //king moves two squares (some say three squares) in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, none of the squares should be threanten by
             //hostile piece??? 
-
+            //idea: the piece that is wanting to castle, checks if the other piece can castle (has not move), then check if there is a clear line between them. If there are, the active piece sets the position of both...
+            //Problem: Need a dedicated function in the base class 
 
             return false;
         }
