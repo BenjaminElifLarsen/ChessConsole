@@ -127,11 +127,11 @@ namespace Chess
             windowsSize[0] = (byte)(9 + 8 * squareSize + 10);
             windowsSize[1] = (byte)(9 + 8 * squareSize + 10);
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            whiteSpawnLocation = new uint[,] {
+            blackSpawnLocation = new uint[,] {
                 { 0, 1 }, { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 }, { 7, 1 },
                 { 0, 0 }, { 1, 0 }, { 2, 0 }, { 3, 0 }, { 4, 0 }, { 5, 0 }, { 6, 0 }, { 7, 0 }
             };
-            blackSpawnLocation = new uint[,] {
+            whiteSpawnLocation = new uint[,] {
                 { 0, 6 }, { 1, 6 }, { 2, 6 }, { 3, 6 }, { 4, 6 }, { 5, 6 }, { 6, 6 }, { 7, 6 },
                 { 0, 7 }, { 1, 7 }, { 2, 7 }, { 3, 7 }, { 4, 7 }, { 5, 7 }, { 6, 7 }, { 7, 7 }
             }; 
@@ -406,13 +406,39 @@ namespace Chess
         /// </summary>
         private void CreatePieces()
         {
+            string ID;
+            uint[] spawn;
 
             for (int i = 0; i < 8; i++)
             {
-                string ID = String.Format("{0}:6:{1}", team, i);
-                uint[] spawn = new uint[] { spawnLocations[i, 0], spawnLocations[i, 1] };
+                ID = String.Format("{0}:6:{1}", team, i);
+                spawn = new uint[] { spawnLocations[i, 0], spawnLocations[i, 1] };
                 chessPieces.Add(new Pawn(colour, white, spawn, ID));
             }
+            ID = String.Format("{0}:5:{1}", team, 1);
+            spawn = new uint[] { spawnLocations[8, 0], spawnLocations[8, 1] };
+            chessPieces.Add(new Rock(colour, white, spawn, ID));
+            ID = String.Format("{0}:5:{1}", team, 2);
+            spawn = new uint[] { spawnLocations[15, 0], spawnLocations[15, 1] };
+            chessPieces.Add(new Rock(colour, white, spawn, ID));
+            ID = String.Format("{0}:4:{1}", team, 1);
+            spawn = new uint[] { spawnLocations[9, 0], spawnLocations[9, 1] };
+            chessPieces.Add(new Knight(colour, white, spawn, ID));
+            ID = String.Format("{0}:4:{1}", team, 2);
+            spawn = new uint[] { spawnLocations[14, 0], spawnLocations[14, 1] };
+            chessPieces.Add(new Knight(colour, white, spawn, ID));
+            ID = String.Format("{0}:3:{1}", team, 1);
+            spawn = new uint[] { spawnLocations[10, 0], spawnLocations[10, 1] };
+            chessPieces.Add(new Bishop(colour, white, spawn, ID));
+            ID = String.Format("{0}:3:{1}", team, 2);
+            spawn = new uint[] { spawnLocations[13, 0], spawnLocations[13, 1] };
+            chessPieces.Add(new Bishop(colour, white, spawn, ID));
+            ID = String.Format("{0}:2:{1}", team, 1);
+            spawn = new uint[] { spawnLocations[11, 0], spawnLocations[11, 1] };
+            chessPieces.Add(new Queen(colour, white, spawn, ID));
+            ID = String.Format("{0}:1:{1}", team, 1);
+            spawn = new uint[] { spawnLocations[12, 0], spawnLocations[12, 1] };
+            chessPieces.Add(new King(colour, white, spawn, ID));
 
 
             ChessList.SetChessList(chessPieces, white);
@@ -632,7 +658,7 @@ namespace Chess
                 " | ",
                 "-P-"
             };
-            moveDirection = team ? (sbyte)1 : (sbyte)-1;
+            moveDirection = team ? (sbyte)-1 : (sbyte)1;
             //teamString = team ? "+" : "-";
             Draw();
         }
