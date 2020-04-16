@@ -889,28 +889,75 @@ namespace Chess
         }
 
         protected override void EndLocations()
-        {
-            sbyte[] potenieltLocation = { -2, -2 };
+        { //there must be a better way to do this...
+            sbyte[] potenieltLocation = { -2, -1 }; //2 down left
             if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] >= 0)
             {
-                Add(potenieltLocation);
+                if (CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
             }
-            potenieltLocation = new sbyte[2]{ (sbyte)(mapLocation[0] + 2), (sbyte)(mapLocation[1] - 2)};
+            potenieltLocation = new sbyte[2]{ 2, - 1}; //2 up left
             if (mapLocation[0] + potenieltLocation[0] <= 7 && mapLocation[1] + potenieltLocation[1] >= 0)
             {
-                Add(potenieltLocation);
+                if (CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
             }
-            potenieltLocation = new sbyte[2] { (sbyte)(mapLocation[0] + 2), (sbyte)(mapLocation[1] + 2) };
+            potenieltLocation = new sbyte[2] { 2, 1 }; //2 up right
             if (mapLocation[0] + potenieltLocation[0] <= 7 && mapLocation[1] + potenieltLocation[1] <= 7)
             {
-                Add(potenieltLocation);
+                if (CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
             }
-            potenieltLocation = new sbyte[2] { (sbyte)(mapLocation[0] - 2), (sbyte)(mapLocation[1] + 2) };
+            potenieltLocation = new sbyte[2] { -2 , 1 }; //2 down right
             if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] <= 7)
             {
-                Add(potenieltLocation);
+                if (CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
+            }
+            potenieltLocation = new sbyte[2] { -1, -2 }; //down 2 left
+            if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] >= 0)
+            {
+                if (CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
+            }
+            potenieltLocation = new sbyte[2] { 1, -2 }; //up 2 left
+            if (mapLocation[0] + potenieltLocation[0] <= 7 && mapLocation[1] + potenieltLocation[1] >= 0)
+            {
+                if (CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
+            }
+            potenieltLocation = new sbyte[2] { 1, 2 }; //up 2 right
+            if (mapLocation[0] + potenieltLocation[0] <= 7 && mapLocation[1] + potenieltLocation[1] <= 7)
+            {
+                if (CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
+            }
+            potenieltLocation = new sbyte[2] { -1, 2 }; //down 2 right
+            if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] <= 7)
+            {
+                if(CheckPosistions(potenieltLocation))
+                    Add(potenieltLocation);
             }
 
+            bool CheckPosistions(sbyte[] posistions)
+            { //returns true if the piece can legal move there, false otherwise. 
+                string feltID = MapMatrix.Map[mapLocation[0] + posistions[0], mapLocation[1] + posistions[1]];
+                if (feltID != "")
+                {
+                    if (feltID.Split(':')[0] != teamString)
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        return false;
+                    }
+                }
+                else
+                {
+                    return true;
+                }
+            }
 
             void Add(sbyte[] posistions)
             {
@@ -927,13 +974,10 @@ namespace Chess
         protected uint[] location = new uint[2]; //x,y
         protected byte[] colour; // https://docs.microsoft.com/en-us/dotnet/csharp/tutorials/inheritance 
         protected string[] design;
-        protected byte[][] movePattern;
-        protected byte[][] attack; //in almost everycase it is the same as movePattern, so it can be set to null. If it is not null, i.e. pawn, it should be called when moving if there are enemies at the right location
         protected bool team;
         protected uint[] mapLocation;
         protected uint[] oldMapLocation;
         protected string id;
-        protected bool canDoMove;
         protected bool hasBeenTaken = false;
         protected byte squareSize = Settings.SquareSize;
         protected List<uint[,]> possibleEndLocations = new List<uint[,]>();
@@ -943,15 +987,14 @@ namespace Chess
         //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
         public ChessPiece(byte[] colour_, bool team_, uint[] mapLocation_, string ID)
-        { //for testing the code, just create a single player and a single piece. 
-            //location should be the console x,y values, but instead of being given, it should be calculated out from the maplocation and square size
+        { 
             Colour = colour_;
             SetTeam(team_);
-            MapLocation = mapLocation_; //what should this actually be done, is it the actually values on the console or is it values that fits the map matrix and location is then the actually console location...
-            this.ID = ID; //String.Format("{0}n:{1}", team, i); team = currentTurn == true ? "-" : "+"; n being the chesspiece type
+            MapLocation = mapLocation_; 
+            this.ID = ID; //String.Format("{0}n:{1}", team, i); team = team_ == true ? "-" : "+"; n being the chesspiece type
             LocationUpdate();
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
-            teamString = team ? "+" : "-";
+            teamString = ID.Split(':')[0];
         }
 
         /// <summary>
@@ -980,7 +1023,7 @@ namespace Chess
                 //return location;
             }
 
-        } //consider for each of the properties what kind they should have
+        } 
 
         /// <summary>
         /// sets the colour of the chesspiece.
@@ -991,14 +1034,6 @@ namespace Chess
         /// Sets and gets the design of the chesspieice. 
         /// </summary>
         protected string[] Design { get => design; set => design = value; }
-
-        //remove 
-        protected byte[][] MovePattern { set => movePattern = value; }
-
-        //remove 
-        protected byte[][] AttackPattern { get => attack; set => attack = value; }
-
-        protected bool Team { get => team; } //need to know it own team, but does it need to know the others's teams, the IDs can be used for that or just the matrix map. 
 
         protected uint[] MapLocation { set => mapLocation = value; }
 
@@ -1018,8 +1053,6 @@ namespace Chess
 
         public string GetID { get => ID; }
 
-        protected bool CanDoMove { get => canDoMove; set => canDoMove = value; } //what was the canDoMove suppose to be for again?
-
         public bool CouldMove { get => couldMove; }
 
         /// <summary>
@@ -1035,6 +1068,16 @@ namespace Chess
         }
 
         /// <summary>
+        /// The function of this function depends on the chesspiece. Rock, pawn, and king got different implementations.
+        /// </summary>
+        /// <returns></returns>
+        protected virtual bool SpecialChessPieceFunction()
+        {
+
+            return false;
+        }
+
+        /// <summary>
         /// Calculates the, legal, end locations that a chess piece can move too.
         /// </summary>
         protected virtual void EndLocations()
@@ -1043,10 +1086,11 @@ namespace Chess
         }
 
         /// <summary>
-        /// Calculates the, legal, location(s) the chesspiece is able to move too. 
+        /// Allows the chesspiece to move. 
         /// </summary>
-        protected virtual void Move() //Currently play problem. If the piece cannot move, the player will become stuck on it. Need to ensrue that if there are no legal moves, it should return the control to the player and let them select another option
+        protected virtual void Move() 
         {
+            oldMapLocation = null;
             bool hasSelected = false;
             EndLocations();
             if (possibleEndLocations.Count != 0)
