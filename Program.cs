@@ -192,12 +192,16 @@ namespace Chess
                 white.Control();
                 for (int i = ChessList.GetList(false).Count - 1; i >= 0; i--)
                 {
+                    if (ChessList.GetList(false)[i].SpecialBool)
+                        ChessList.GetList(false)[i].SpecialBool = false;
                     if (ChessList.GetList(false)[i].BeenTaken)
                         ChessList.GetList(false).RemoveAt(i);
                 }
                 black.Control();
                 for (int i = ChessList.GetList(true).Count - 1; i >= 0; i--)
                 {
+                    if (ChessList.GetList(true)[i].SpecialBool)
+                        ChessList.GetList(true)[i].SpecialBool = false;
                     if (ChessList.GetList(true)[i].BeenTaken)
                         ChessList.GetList(true).RemoveAt(i);
                 }
