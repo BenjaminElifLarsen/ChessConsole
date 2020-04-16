@@ -482,6 +482,11 @@ namespace Chess
             position = new sbyte[2] { 1, 1 };
             CheckPosistions(position); //right, down
 
+            if(possibleEndLocations.Count != 0)
+            { //need to make sure that if a player selects the king and it cannot move, it does not prevent castling from happening. 
+                SpecialBool = true;
+            }
+
             void CheckPosistions(sbyte[] currentPosition)
             { //need to have code implemented that check each square and wether a hostile piece can take it on that square. E.g. need to check if there is a knight in a location that can jump there
                 //if there is a straight line with a rock or queen on it. Diagnoal lines with a queen or a bishop. If a pawn is up or below (depending on team) and to the side of that square.
@@ -527,10 +532,13 @@ namespace Chess
             return false;
         }
 
-        private bool HasMoved { get; } //if moved, castling cannot be done
+        protected override bool SpecialChessPieceFunction()
+        {
+            return Castling();
+        }
 
         private bool Castling()
-        { //king moves two squares in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, none of the squares should be threanten by
+        { //king moves two squares (some say three) in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, none of the squares should be threanten by
             //hostile piece??? 
 
 
@@ -856,6 +864,11 @@ namespace Chess
             CheckPosistions(position); //down
 
             hasMoved = true;
+
+            if (possibleEndLocations.Count != 0)
+            { //need to make sure that if a player selects the rock and it cannot move, it does not prevent castling from happening. 
+                SpecialBool = true;
+            }
 
             void CheckPosistions(sbyte[] currentPosition)
             {
