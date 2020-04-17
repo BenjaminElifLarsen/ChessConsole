@@ -74,7 +74,7 @@ namespace Chess
         public static byte[] Offset { get => offset; } //remember the '|' and '-'
         public static char GetLineX { get => lineX; }
         public static char GetLineY { get => lineY; }
-        public static byte Spacing { get => extraSpacing; }
+        public static byte Spacing { get => extraSpacing; } //not all paint functions are used this one properly. 
         public static byte EdgeSpacing { get => edgeSize; }
     }
 
@@ -146,22 +146,42 @@ namespace Chess
         {//8 squares in each direction. Each piece is 3*3 currently, each square is 5*5 currently. 
             Console.CursorVisible = false;
             ushort distance = (ushort)(9 + 8 * squareSize);
+            string[] letters = {"a","b","c","d","e","f","g","h" };
+            string[] numbers = {"1","2","3","4","5","6","7","8" };
+            byte alignment = (byte)Math.Ceiling(Settings.SquareSize / 2f);
             for (int k = 0; k < distance; k++)
                 for (int i = 0; i < distance; i += 1 + squareSize)
                 {
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing - Settings.Spacing, k + Settings.Offset[1] + Settings.EdgeSpacing - Settings.Spacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
                     Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing - Settings.Spacing, k + Settings.Offset[1] + Settings.EdgeSpacing - Settings.Spacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
                     Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m|" + "\x1b[0m");
                 }
             for (int k = 0; k < distance; k += 1 + squareSize)
                 for (int i = 1; i < distance - 1; i++)
                 {
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing - Settings.Spacing, k + Settings.Offset[1] + Settings.EdgeSpacing - Settings.Spacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
                     Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing - Settings.Spacing, k + Settings.Offset[1] + Settings.EdgeSpacing - Settings.Spacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
                     Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m-" + "\x1b[0m");
                 }
+
+            for (int k = 0; k < numbers.Length; k++)
+            {
+                Console.SetCursorPosition(Settings.Offset[0], k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize*k));
+                Console.Write(numbers[k]);
+                Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)); //consider those 2 multiplications
+                Console.Write(numbers[k]);
+            }
+
+            for (int k = 0; k < letters.Length; k++)
+            {
+                Console.SetCursorPosition(k + Settings.EdgeSpacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] );
+                Console.Write(letters[k]);
+                Console.SetCursorPosition(k + Settings.EdgeSpacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + distance + Settings.Spacing + Settings.EdgeSpacing);
+                Console.Write(letters[k]);
+            }
+
             BoardColouring();
 
         }
@@ -178,7 +198,7 @@ namespace Chess
                     {
                         for (int k = 0; k < squareSize; k++)
                         {
-                            Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + n, k + Settings.Offset[1] + Settings.EdgeSpacing + m);
+                            Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing + n, k + Settings.Offset[1] + Settings.Spacing + Settings.EdgeSpacing + m);
                             if (location % 2 == 1)
                                 Console.Write("\x1b[48;2;" + squareColour1[0] + ";" + squareColour1[1] + ";" + squareColour1[2] + "m " + "\x1b[0m");
                             else if (location % 2 == 0)
@@ -356,8 +376,8 @@ namespace Chess
         private void SquareHighLight(bool isHighlighted)
         {
             byte squareSize = Settings.SquareSize;
-            uint startLocationX = location[0] * squareSize + (location[0] + Settings.EdgeSpacing) * 1 + Settings.Offset[0];
-            uint startLocationY = location[1] * squareSize + (location[1] + Settings.EdgeSpacing) * 1 + Settings.Offset[1];
+            uint startLocationX = location[0] * squareSize + (location[0] + Settings.Spacing + Settings.EdgeSpacing) * 1 + Settings.Offset[0];
+            uint startLocationY = location[1] * squareSize + (location[1] + Settings.Spacing + Settings.EdgeSpacing) * 1 + Settings.Offset[1];
             if (isHighlighted)
             {
                 byte[] colour = Settings.SelectSquareColour;
@@ -1382,8 +1402,8 @@ namespace Chess
         protected void SquareHighLight(bool isHighlighted, uint[] currentLocation)
         {
             byte squareSize = Settings.SquareSize;
-            uint startLocationX = currentLocation[0] * squareSize + (currentLocation[0] + Settings.EdgeSpacing) * 1 + Settings.Offset[0];
-            uint startLocationY = currentLocation[1] * squareSize + (currentLocation[1] + Settings.EdgeSpacing) * 1 + Settings.Offset[1];
+            uint startLocationX = currentLocation[0] * squareSize + (currentLocation[0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0];
+            uint startLocationY = currentLocation[1] * squareSize + (currentLocation[1] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1];
             if (isHighlighted)
             {
                 byte[] colour = Settings.SelectSquareColour;
@@ -1420,7 +1440,7 @@ namespace Chess
         /// </summary>
         protected void LocationUpdate()
         {
-            Location = new uint[2] { mapLocation[0] * squareSize + (mapLocation[0] + Settings.EdgeSpacing) * 1 + Settings.Offset[0], mapLocation[1] * squareSize + (mapLocation[1] + Settings.EdgeSpacing) * 1 + Settings.Offset[1] };
+            Location = new uint[2] { mapLocation[0] * squareSize + (mapLocation[0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0], mapLocation[1] * squareSize + (mapLocation[1] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1] };
         }
 
         /// <summary>
@@ -1572,8 +1592,8 @@ namespace Chess
         protected void PaintBackground(byte[] colour, uint[,] locationEnd)
         {
             byte squareSize = Settings.SquareSize;
-            uint startLocationX = locationEnd[0, 0] * squareSize + (locationEnd[0, 0] + Settings.EdgeSpacing) * 1 + Settings.Offset[0];
-            uint startLocationY = locationEnd[1, 0] * squareSize + (locationEnd[1, 0] + Settings.EdgeSpacing) * 1 + Settings.Offset[1];
+            uint startLocationX = locationEnd[0, 0] * squareSize + (locationEnd[0, 0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0];
+            uint startLocationY = locationEnd[1, 0] * squareSize + (locationEnd[1, 0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1];
             for (uint n = startLocationX; n < startLocationX + squareSize; n++)
             {
                 Console.SetCursorPosition((int)n, (int)startLocationY);
