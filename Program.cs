@@ -58,11 +58,11 @@ namespace Chess
         private static byte[] hoverOverSquareColour = new byte[] { 193, 76, 29 };
         private static byte[] chessPieceHoverOverSquareColour = new byte[] { 34, 124, 66 };
         private static byte[] chessPieceHoverOver = new byte[] { 31, 135, 113 };
-        private static byte[] offset = new byte[] { 4, 2 };
-        private static char lineX = '-';
-        private static char lineY = '|';
-        private static byte extraSpacing = 1;
-        private static byte edgeSize = (byte)(extraSpacing + 1);
+        private static byte[] offset = new byte[] { 4, 2 }; //works as it should
+        private static char lineX = '-'; //works as it should
+        private static char lineY = '|'; //works as it should
+        private static byte extraSpacing = 1; //if changes, numbers and letters do not move down, edges moves the correct amount and the squares moves to very much wrong locations
+        private static byte edgeSize = (byte)(extraSpacing + 1); //does not affect top and left side numbers and letters in the correct way
         public static byte SquareSize { get => squareSize; }
         public static byte[] LineColour { get => lineColour; }
         public static byte[] LineColourBase { get => lineColourBase; }
@@ -71,7 +71,7 @@ namespace Chess
         public static byte[] SelectSquareColour { get => hoverOverSquareColour; }
         public static byte[] SelectMoveSquareColour { get => chessPieceHoverOverSquareColour; }
         public static byte[] SelectPieceColour { get => chessPieceHoverOver; }
-        public static byte[] Offset { get => offset; } //remember the '|' and '-'
+        public static byte[] Offset { get => offset; } 
         public static char GetLineX { get => lineX; }
         public static char GetLineY { get => lineY; }
         public static byte Spacing { get => extraSpacing; } //not all paint functions are used this one properly. 
@@ -155,7 +155,7 @@ namespace Chess
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
                     Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
-                    Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m|" + "\x1b[0m");
+                    Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + "\x1b[0m",Settings.GetLineY);
                 }
             for (int k = 0; k < distance; k += 1 + squareSize)
                 for (int i = 1; i < distance - 1; i++)
@@ -163,7 +163,7 @@ namespace Chess
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
                     Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing , k + Settings.Offset[1] + Settings.EdgeSpacing);
-                    Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m-" + "\x1b[0m");
+                    Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineX);
                 }
 
             for (int k = 0; k < numbers.Length; k++)
