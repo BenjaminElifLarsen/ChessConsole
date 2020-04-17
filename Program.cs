@@ -62,6 +62,7 @@ namespace Chess
         private static char lineX = '-';
         private static char lineY = '|';
         private static byte extraSpacing = 1;
+        private static byte edgeSize = (byte)(extraSpacing + 1);
         public static byte SquareSize { get => squareSize; }
         public static byte[] LineColour { get => lineColour; }
         public static byte[] LineColourBase { get => lineColourBase; }
@@ -74,6 +75,7 @@ namespace Chess
         public static char GetLineX { get => lineX; }
         public static char GetLineY { get => lineY; }
         public static byte Spacing { get => extraSpacing; }
+        public static byte EdgeSpacing { get => edgeSize; }
     }
 
     class Program
