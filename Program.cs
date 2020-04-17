@@ -504,6 +504,7 @@ namespace Chess
             //If there are no endlocations left and the current location is under threat... the player should not be allowed to move the king and they should move another piece. if the turn ends with the king still threaten, checkmate. 
             //so if the player's king is under threat at the start of the turn, check again at the end of the turn
 
+            //when the king has moved, it should clear the checkLocations list. 
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
 
@@ -606,7 +607,7 @@ namespace Chess
 
             void PawnCheck() //need testing
             {
-                sbyte hostileDirection = team ? (sbyte)1 : (sbyte)-1; //if white, pawns to look out for comes for the top. If black, they come from the bottom.
+                sbyte hostileDirection = team ? (sbyte)-1 : (sbyte)1; //if white, pawns to look out for comes for the top. If black, they come from the bottom.
                 byte edge = team ? (byte)0 : (byte)7; 
                 if (mapLocation[0] != 0 && mapLocation[1] != edge) //check left side
                 {
@@ -964,7 +965,7 @@ namespace Chess
 
         private void Promotion()
         {
-            if ((!team && mapLocation[1] == 7) || (team && mapLocation[1] == 1))
+            if ((!team && mapLocation[1] == 7) || (team && mapLocation[1] == 0))
             {
                 Taken();
                 //how should the selection be designed? Text written below the board? Next to the board? How to select? Arrowkeys? Numberkeys? Written?
