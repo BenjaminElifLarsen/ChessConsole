@@ -497,6 +497,9 @@ namespace Chess
         { //implement a check for Castling and/or call the Castling function
             //is there a better way to do this than the current way. Currently it can go out of bounds. 
             //could most likely make a nested function of the do while loop
+
+            IsInChecked(mapLocation); //not proper location, just there for testing.
+
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
 
@@ -557,6 +560,11 @@ namespace Chess
             }
         }
 
+        /// <summary>
+        /// Functions that check if <paramref name="location_"/> is under threat by a hostile chess piece. Returns true if it is.
+        /// </summary>
+        /// <param name="location_">Location to check for being threaten.</param>
+        /// <returns>Returns true if <paramref name="location_"/>is under threat, false otherwise. </returns>
         public bool IsInChecked(uint[] location_)
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. 
@@ -573,10 +581,19 @@ namespace Chess
             //should the move code double check the checkLocations list to see if a location in possibleEndLocations should be removed?
             sbyte[,] moveDirection;
             string[] toLookFor;
-            moveDirection = new sbyte[,] { { -1, 0 } }; //left
-            toLookFor = new string[] {"2", "5" };
+            moveDirection = new sbyte[,] { { -1, 0 }, { 0, -1 }, { -1, -1 }, { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, 1 }, { 1, -1 },}; 
+            //                              left        up          left/up   left/down   down     right    right/down right/up   
+            //The code that ensures that the king cannot move to the locations that are going to be added needs to ensure the king can move and take a piece that is next to the king. 
+            //Also, code is needed to ensure the king does/cannot move to a location that is threaten by a piece. 
+            //...
+            //how to do that... One way is to call this function, but with another locatin_ than maplocation. If it returns true, the king can move there, else that square is being threaten by a piece.  
+            //best place to do that? 
+            toLookFor = new string[] {"1", "2", "4", "5" }; //knights and pawns need different way of being checked. 
             QRBCheck(moveDirection, toLookFor);
 
+            //check for pawn
+
+            //check for knights
 
             if (checkLocations.Count != 0)
                 return true;
@@ -599,17 +616,20 @@ namespace Chess
                         do
                         {
                             string feltID = MapMatrix.Map[checkLocation[0] + directions_[0], checkLocation[1] + directions_[1]];
-                            if (feltID != "")
+                            if (feltID != "") //checks if there is a piece on the current square or not
                             {
                                 string[] IDstrings = feltID.Split(':');
-                                if (IDstrings[0] != teamString)
+                                if (IDstrings[0] != teamString) //checks if it is hostile or not 
                                 {
-                                    foreach (string pieceNumber in checkpiecesToCheckFor)
+                                    foreach (string pieceNumber in checkpiecesToCheckFor) //loops to it find the hostile one
                                     {
-                                        if (IDstrings[1] == pieceNumber)
+                                        if (IDstrings[1] == pieceNumber) //checks if the hostile piece is one of the chess pieces that can threaten the current location. 
+                                        {
                                             checkLocations.Add(new uint[2] { (uint)(checkLocation[0] + directions_[0]), (uint)(checkLocation[1] + directions_[1]) });
-                                        break;
+                                            break;
+                                        }
                                     }
+                                    break;
                                 }
                                 else
                                 {
@@ -618,11 +638,11 @@ namespace Chess
                             }
                             directions_[0] += directions[i,0];
                             directions_[1] += directions[i,1];
-                            if ((checkLocation[0] + directions_[0] >= 0 || checkLocation[0] + directions_[0] <= 7 || checkLocation[1] + directions_[1] >= 0 || checkLocation[1] + directions_[1] <= 7))
+                            if (!((checkLocation[0] + directions_[0] >= 0 && checkLocation[0] + directions_[0] <= 7) && (checkLocation[1] + directions_[1] >= 0 && checkLocation[1] + directions_[1] <= 7)))
                             {
                                 end = true;
                             }
-                            } while (!end);
+                        } while (!end);
                     }
                 }
             }
@@ -631,6 +651,8 @@ namespace Chess
         protected override bool SpecialChessPieceFunction()
         { //used to set its position after castling. So RemoveDraw, update locations, Draw, set variable regarding if it has moved to true. 
             //called by the active piece, so its own and the one it is castling with. 
+            //it is possible to SpciealBool can be overriden and can active functions.
+            //Something still need to allow the play function to check for check and checkmate regarding the king. Be it this function or the SpecialBool. 
             return false;
         }
 
