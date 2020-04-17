@@ -498,7 +498,10 @@ namespace Chess
             //is there a better way to do this than the current way. Currently it can go out of bounds. 
             //could most likely make a nested function of the do while loop
 
-            IsInChecked(mapLocation); //not proper location, just there for testing.
+            IsInChecked(mapLocation); //not proper location, just there for testing. This version should be called after the other player has moved a piece to check if the king is threaten or not. 
+            //other versions, each with a different endlocation should be called in the Move function and any threaten endlocation should be removed. 
+            //If there are no endlocations left and the current location is under threat... the player should not be allowed to move the king and they should move another piece. if the turn ends with the king still threaten, checkmate. 
+            //so if the player's king is under threat at the start of the turn, check again at the end of the turn
 
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
@@ -588,7 +591,7 @@ namespace Chess
             //...
             //how to do that... One way is to call this function, but with another locatin_ than maplocation. If it returns true, the king can move there, else that square is being threaten by a piece.  
             //best place to do that? 
-            toLookFor = new string[] {"1", "2", "4", "5" }; //knights and pawns need different way of being checked. 
+            toLookFor = new string[] {"1", "2", "3", "5" }; //knights and pawns need different way of being checked. 
             QRBCheck(moveDirection, toLookFor);
 
             //check for pawn
