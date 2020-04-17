@@ -500,6 +500,7 @@ namespace Chess
 
             IsInChecked(mapLocation); //not proper location, just there for testing. This version should be called after the other player has moved a piece to check if the king is threaten or not. 
             //other versions, each with a different endlocation should be called in the Move function and any threaten endlocation should be removed. 
+            //maybe have the endlocation removal in this function or at least call a function that does that from this function?
             //If there are no endlocations left and the current location is under threat... the player should not be allowed to move the king and they should move another piece. if the turn ends with the king still threaten, checkmate. 
             //so if the player's king is under threat at the start of the turn, check again at the end of the turn
 
@@ -594,7 +595,7 @@ namespace Chess
             toLookFor = new string[] {"1", "2", "3", "5" }; //knights and pawns need different way of being checked. 
             QRBCheck(moveDirection, toLookFor);
 
-            //check for pawn
+            PawnCheck();
 
             //check for knights
 
@@ -602,6 +603,39 @@ namespace Chess
                 return true;
             else
                 return false;
+
+            void PawnCheck() //need testing
+            {
+                sbyte hostileDirection = team ? (sbyte)1 : (sbyte)-1; //if white, pawns to look out for comes for the top. If black, they come from the bottom.
+                byte edge = team ? (byte)0 : (byte)7; 
+                if (mapLocation[0] != 0 && mapLocation[1] != edge) //check left side
+                {
+                    string feltID = MapMatrix.Map[mapLocation[0] - 1, mapLocation[1] + hostileDirection];
+                    FeltChecker(feltID, -1);
+                }
+                if (mapLocation[0] != 7 && mapLocation[1] != edge) //check right side
+                {
+                    string feltID = MapMatrix.Map[mapLocation[0] + 1, mapLocation[1] + hostileDirection];
+                    FeltChecker(feltID, 1);
+                }
+
+
+                void FeltChecker(string toCheck, sbyte direction)
+                {
+                    if (toCheck != "")
+                    {
+                        string[] idParts = toCheck.Split(':');
+                        if (idParts[0] != teamString)
+                        {
+                            if(idParts[1] == "6")
+                            {
+                                checkLocations.Add(new uint[2] { (uint)(mapLocation[0] + direction) , (uint)(mapLocation[1] + hostileDirection)});
+                            }
+                        }
+                    }
+                }
+            }
+
 
             void QRBCheck(sbyte[,] directions, string[] checkpiecesToCheckFor) 
             { //can be used to check for queens, rocks and bishops. Need other functions for knights and pawns.
