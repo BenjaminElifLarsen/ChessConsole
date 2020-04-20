@@ -487,8 +487,8 @@ namespace Chess
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
 
-        private List<uint[]> checkLocations = new List<uint[]>(); //contain the locations of the chesspieces that treatens the king.
-        private List<string> castLingCandidates = new List<string>();
+        private List<int[]> checkLocations = new List<int[]>(); //contain the locations of the chesspieces that treatens the king.
+        private List<string> castLingCandidates;
         private bool isChecked;
         private bool hasMoved = false;
         public King(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
@@ -518,6 +518,8 @@ namespace Chess
             //maybe have the endlocation removal in this function or at least call a function that does that from this function?
             //If there are no endlocations left and the current location is under threat... the player should not be allowed to move the king and they should move another piece. if the turn ends with the king still threaten, checkmate. 
             //so if the player's king is under threat at the start of the turn, check again at the end of the turn
+
+            FindCastlingOptions();
 
             //when the king has moved, it should clear the checkLocations list. 
             sbyte[] position = new sbyte[2] { -1, 0 };
@@ -586,7 +588,7 @@ namespace Chess
         /// <param name="location_">Location to check for being threaten.</param>
         /// <param name="toAddToList">List that contains the locations of hostile pieces that are threating the <paramref name="location_"/>.</param>
         /// <returns>Returns true if <paramref name="location_"/>is under threat, false otherwise. </returns>
-        public bool IsInChecked(int[] location_, List<uint[]> toAddToList)
+        public bool IsInChecked(int[] location_, List<int[]> toAddToList)
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. 
             //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
@@ -643,7 +645,7 @@ namespace Chess
 
                 void Placement(int[] direction_) //at some point, just change all of the uint variables, related to the map, to int
                 { //could rewrite this function to take a jaggered array and operate on it instead of calling the function multiple times. 
-                    uint[] feltLocation = new uint[] { (uint)(direction_[0] + mapLocation[0]), (uint)(direction_[1] + mapLocation[1]) };
+                    int[] feltLocation = new int[] { (int)(direction_[0] + location_[0]), (int)(direction_[1] + location_[1]) };
                     if (feltLocation[0] >= 0 && feltLocation[0] <= 7 && feltLocation[1] >= 0 && feltLocation[1] <= 7)
                     {
                         string feltID = MapMatrix.Map[feltLocation[0], feltLocation[1]];
@@ -654,7 +656,7 @@ namespace Chess
                             {
                                 if(feltIDParts[1] == "4")
                                 {
-                                    toAddToList.Add(new uint[2] { feltLocation[0], feltLocation[1] });
+                                    toAddToList.Add(new int[2] { feltLocation[0], feltLocation[1] });
                                 }
                             }
                         }
@@ -667,14 +669,14 @@ namespace Chess
             {
                 sbyte hostileDirection = team ? (sbyte)-1 : (sbyte)1; //if white, pawns to look out for comes for the top. If black, they come from the bottom.
                 byte edge = team ? (byte)0 : (byte)7; 
-                if (mapLocation[0] != 0 && mapLocation[1] != edge) //check left side
+                if (location_[0] != 0 && location_[1] != edge) //check left side
                 {
-                    string feltID = MapMatrix.Map[mapLocation[0] - 1, mapLocation[1] + hostileDirection];
+                    string feltID = MapMatrix.Map[location_[0] - 1, location_[1] + hostileDirection];
                     FeltChecker(feltID, -1);
                 }
-                if (mapLocation[0] != 7 && mapLocation[1] != edge) //check right side
+                if (location_[0] != 7 && location_[1] != edge) //check right side
                 {
-                    string feltID = MapMatrix.Map[mapLocation[0] + 1, mapLocation[1] + hostileDirection];
+                    string feltID = MapMatrix.Map[location_[0] + 1, location_[1] + hostileDirection];
                     FeltChecker(feltID, 1);
                 }
 
@@ -688,7 +690,7 @@ namespace Chess
                         {
                             if(idParts[1] == "6")
                             {
-                                toAddToList.Add(new uint[2] { (uint)(mapLocation[0] + direction) , (uint)(mapLocation[1] + hostileDirection)});
+                                toAddToList.Add(new int[2] { (int)(location_[0] + direction) , (int)(location_[1] + hostileDirection)});
                             }
                         }
                     }
@@ -721,7 +723,7 @@ namespace Chess
                                     {
                                         if (IDstrings[1] == pieceNumber) //checks if the hostile piece is one of the chess pieces that can threaten the current location. 
                                         {
-                                            toAddToList.Add(new uint[2] { (uint)(checkLocation[0] + directions_[0]), (uint)(checkLocation[1] + directions_[1]) });
+                                            toAddToList.Add(new int[2] { (int)(checkLocation[0] + directions_[0]), (int)(checkLocation[1] + directions_[1]) });
                                             break;
                                         }
                                     }
@@ -768,23 +770,63 @@ namespace Chess
 
         private void FindCastlingOptions()
         {
-            foreach (ChessPiece chepie in ChessList.GetList(team))
-            {
-                if(chepie is Rock)
+            if (!HasMoved)
+            { //by the officel rules, castling is considered a king move. 
+                castLingCandidates = new List<string>();
+                foreach (ChessPiece chepie in ChessList.GetList(team))
                 {
-                    if (!chepie.SpecialBool)
+                    if(chepie is Rock)
                     {
-                        //before adding, check all locations between this piece and chepie. 
-                        int direction = (int)(chepie.GetMapLocation[0] - mapLocation[0]); //if positive, go left. If negative, go right
-                        int[] currentFeltLocation = new int[] { mapLocation[0], mapLocation[1] };
-                        sbyte moveDirection = direction < 0 ? (sbyte)1: (sbyte)-1;
-                        do
+                        if (!chepie.SpecialBool)
                         {
-                            currentFeltLocation[0] += moveDirection;
-
-                        } while (chepie.GetMapLocation[0] != currentFeltLocation[0]);
-                        castLingCandidates.Add(chepie.GetID);
+                            List<int[]> location_ = new List<int[]>();
+                            bool isEmptyRow = false;
+                            int direction = (int)(chepie.GetMapLocation[0] - mapLocation[0]); //if positive, go left. If negative, go right
+                            int[] currentFeltLocation = new int[] { mapLocation[0], mapLocation[1] };
+                            sbyte moveDirection = direction > 0 ? (sbyte)1: (sbyte)-1;
+                            byte squareGoneThrough = 0;
+                            do
+                            {
+                                squareGoneThrough++;
+                                currentFeltLocation[0] += moveDirection;
+                                string feltID = MapMatrix.Map[currentFeltLocation[0], currentFeltLocation[1]];
+                                if (chepie.GetMapLocation[0] == currentFeltLocation[0])
+                                {
+                                    isEmptyRow = true; 
+                                    break;
+                                }
+                                else if (feltID != "")
+                                {
+                                    isEmptyRow = false;
+                                    break;
+                                }
+                                else
+                                {
+                                    if (squareGoneThrough <= 2)
+                                    {
+                                        IsInChecked(currentFeltLocation, location_);
+                                    }
+                                    //check if the empty square is under threat.
+                                    //only the first two squares that is.
+                                    //the second square is the end location of the king
+                                    //the first square is the end location of the rock
+                                }
+                                //need to ensure that the end locations of the king and of the rock are not under threat.  
+                            } while (chepie.GetMapLocation[0] != currentFeltLocation[0]);
+                            if(isEmptyRow)
+                            {
+                                bool rockFeltThreat = false;
+                                bool kigFeltThreat = false;
+                                //check if the end locations are threaten
+                                //those locations depends on the direction 
+                                //okay... from the rules, castling cannot happen if the king is checked. Also, it does not matter if the rock's endlocation is under threat
+                                //but all sqaures the king moves through also needs not be under threat. 
+                                if(location_.Count == 0)
+                                    castLingCandidates.Add(chepie.GetID);
+                            }
+                        }
                     }
+                
                 }
             }
         }
@@ -794,7 +836,7 @@ namespace Chess
             //hostile piece??? 
             //idea: the piece that is wanting to castle, checks if the other piece can castle (has not move), then check if there is a clear line between them. If there are, the active piece sets the position of both...
             //Problem: Need a dedicated function in the base class 
-            foreach (ChessPiece chepie in ChessList.GetList(team))
+            if (castLingCandidates.Count != 0)
             {
 
             }
