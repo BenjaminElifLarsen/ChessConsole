@@ -626,7 +626,7 @@ namespace Chess
                 placement_ = new int[] { 1, 2 }; //right, 2 down
                 Placement(placement_);
 
-                void Placement(int[] direction_) //at some point, just change all of the uint variables to int
+                void Placement(int[] direction_) //at some point, just change all of the uint variables, related to the map, to int
                 { //could rewrite this function to take a jaggered array and operate on it instead of calling the function multiple times. 
                     uint[] feltLocation = new uint[] { (uint)(direction_[0] + mapLocation[0]), (uint)(direction_[1] + mapLocation[1]) };
                     if (feltLocation[0] >= 0 && feltLocation[0] <= 7 && feltLocation[1] >= 0 && feltLocation[1] <= 7)
