@@ -746,14 +746,11 @@ namespace Chess
             }
         }
 
-        protected override bool SpecialChessPieceFunction(bool shouldCastle)
-        { //used to set its position after castling. So RemoveDraw, update locations, Draw, set variable regarding if it has moved to true. 
-            //called by the active piece, so its own and the one it is castling with. 
-            //if it was moved, it return false, true if it can castle. 
+        public override bool SpecialChessPieceFunction()
+        {
 
-            if (shouldCastle && !HasMoved)
-                Castling();
-            return false;
+            List<int[]> checkList = new List<int[]>();
+            return IsInChecked(mapLocation, checkList);
         }
 
         private bool HasMoved
@@ -806,8 +803,6 @@ namespace Chess
                                     {
                                         IsInChecked(currentFeltLocation, location_);
                                     }
-                                    //check if the empty square is under threat.
-                                    //only the first two squares that is.
                                     //the second square is the end location of the king
                                     //the first square is the end location of the rock
                                 }
@@ -815,11 +810,7 @@ namespace Chess
                             } while (chepie.GetMapLocation[0] != currentFeltLocation[0]);
                             if(isEmptyRow)
                             {
-                                bool rockFeltThreat = false;
-                                bool kigFeltThreat = false;
-                                //check if the end locations are threaten
-                                //those locations depends on the direction 
-                                //okay... from the rules, castling cannot happen if the king is checked. Also, it does not matter if the rock's endlocation is under threat
+                                //from the rules, castling cannot happen if the king is checked. Also, it does not matter if the rock's end location is under threat
                                 //but all sqaures the king moves through also needs not be under threat. 
                                 if(location_.Count == 0)
                                     castLingCandidates.Add(chepie.GetID);
@@ -831,17 +822,23 @@ namespace Chess
             }
         }
 
-        private void Castling() //should this return a bool?
-        { //king moves two squares (some say three squares) in the direction of the chosen rock, the rock moves to the other side of the king. Neither should have moved in the game and the space between them needs to be empty. Also, none of the squares should be threanten by
-            //hostile piece??? 
-            //idea: the piece that is wanting to castle, checks if the other piece can castle (has not move), then check if there is a clear line between them. If there are, the active piece sets the position of both...
-            //Problem: Need a dedicated function in the base class 
-            if (castLingCandidates.Count != 0)
+        private void Castling(int[] locationOfRock) //should this return a bool?
+        {
+            //should call that specific rook's SpecialChessPieceFunction
+            string rockID = MapMatrix.Map[locationOfRock[0], locationOfRock[1]];
+            byte posistion = 0;
+            foreach (ChessPiece chePie in ChessList.GetList(team)) //does chePie point at the same memory as the one if the GetList or not?
             {
-
+                if(chePie.GetID == rockID)
+                {
+                    chePie.SpecialChessPieceFunction();
+                    break;
+                }
             }
-
-            hasMoved = true;
+            //RemoveDraw(mapLocation); //these are not needed since the Move function does not care about the movement of the chesspiece and thus can be used for moving the king. 
+            //move itself
+            //Draw();
+            //hasMoved = true; //call from the move function
         }
 
     }
@@ -1207,6 +1204,16 @@ namespace Chess
             }
         } //if moved, castling cannot be done. How is the king going to call this code. Currently, the king would only be able to call other's functions that are given in the base class.
 
+        public override bool SpecialChessPieceFunction()
+        { //used to set its position after castling. So RemoveDraw, update locations, Draw, set variable regarding if it has moved to true. 
+          //called by the active piece, so its own and the one it is castling with. 
+          //if it was moved, it return false, true if it can castle. 
+
+            //if (shouldCastle && !HasMoved)
+            //Castling();
+            return false;
+        }
+
         private bool Castling()
         {
             if (!HasMoved)
@@ -1484,7 +1491,7 @@ namespace Chess
         /// The function of this function depends on the chesspiece. Rock, pawn, and king got different implementations.
         /// </summary>
         /// <returns></returns>
-        protected virtual bool SpecialChessPieceFunction(bool option)
+        public virtual bool SpecialChessPieceFunction()
         {
             return false;
         }
