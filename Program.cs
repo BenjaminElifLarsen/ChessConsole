@@ -498,7 +498,7 @@ namespace Chess
             //is there a better way to do this than the current way. Currently it can go out of bounds. 
             //could most likely make a nested function of the do while loop
 
-            IsInChecked(mapLocation); //not proper location, just there for testing. This version should be called after the other player has moved a piece to check if the king is threaten or not. 
+            IsInChecked(mapLocation,checkLocations); //not proper location, just there for testing. This version should be called after the other player has moved a piece to check if the king is threaten or not. 
             //other versions, each with a different endlocation should be called in the Move function and any threaten endlocation should be removed. 
             //maybe have the endlocation removal in this function or at least call a function that does that from this function?
             //If there are no endlocations left and the current location is under threat... the player should not be allowed to move the king and they should move another piece. if the turn ends with the king still threaten, checkmate. 
@@ -569,8 +569,9 @@ namespace Chess
         /// Functions that check if <paramref name="location_"/> is under threat by a hostile chess piece. Returns true if it is.
         /// </summary>
         /// <param name="location_">Location to check for being threaten.</param>
+        /// <param name="toAddToList">List that contains the locations of hostile pieces that are threating the <paramref name="location_"/>.</param>
         /// <returns>Returns true if <paramref name="location_"/>is under threat, false otherwise. </returns>
-        public bool IsInChecked(uint[] location_)
+        public bool IsInChecked(uint[] location_, List<uint[]> toAddToList)
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. 
             //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
@@ -591,19 +592,61 @@ namespace Chess
             //The code that ensures that the king cannot move to the locations that are going to be added needs to ensure the king can move and take a piece that is next to the king. 
             //Also, code is needed to ensure the king does/cannot move to a location that is threaten by a piece. 
             //...
-            //how to do that... One way is to call this function, but with another locatin_ than maplocation. If it returns true, the king can move there, else that square is being threaten by a piece.  
+            //how to do that... One way is to call this function, but with another locatin_ than maplocation and a new toAddToList. If it returns true, the king can move there, else that square is being threaten by a piece.  
             //best place to do that? 
             toLookFor = new string[] {"1", "2", "3", "5" }; //knights and pawns need different way of being checked. 
             QRBCheck(moveDirection, toLookFor);
 
             PawnCheck();
 
-            //check for knights
+            KnightCheck();
 
             if (checkLocations.Count != 0)
                 return true;
             else
                 return false;
+
+            void KnightCheck()
+            { //two in one direction, one in another direction
+                int[] placement_;
+                placement_ = new int[] {-2,-1 }; //two left, up
+                Placement(placement_);
+                placement_ = new int[] { -2, 1 }; //two left, down
+                Placement(placement_);
+                placement_ = new int[] { 2, -1 }; //two right, up
+                Placement(placement_);
+                placement_ = new int[] { 2, -1 }; //two right, down
+                Placement(placement_);
+                placement_ = new int[] { -1, -2 }; //left, 2 up
+                Placement(placement_);
+                placement_ = new int[] { -1, 2 }; //left, 2 down
+                Placement(placement_);
+                placement_ = new int[] { 1, -2 }; //right, 2 up
+                Placement(placement_);
+                placement_ = new int[] { 1, 2 }; //right, 2 down
+                Placement(placement_);
+
+                void Placement(int[] direction_) //at some point, just change all of the uint variables to int
+                { //could rewrite this function to take a jaggered array and operate on it instead of calling the function multiple times. 
+                    uint[] feltLocation = new uint[] { (uint)(direction_[0] + mapLocation[0]), (uint)(direction_[1] + mapLocation[1]) };
+                    if (feltLocation[0] >= 0 && feltLocation[0] <= 7 && feltLocation[1] >= 0 && feltLocation[1] <= 7)
+                    {
+                        string feltID = MapMatrix.Map[feltLocation[0], feltLocation[1]];
+                        if(feltID != "")
+                        {
+                            string[] feltIDParts = feltID.Split(':');
+                            if(feltIDParts[0] != teamString)
+                            {
+                                if(feltIDParts[1] == "4")
+                                {
+                                    toAddToList.Add(new uint[2] { feltLocation[0], feltLocation[1] });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
 
             void PawnCheck() //need testing
             {
@@ -630,7 +673,7 @@ namespace Chess
                         {
                             if(idParts[1] == "6")
                             {
-                                checkLocations.Add(new uint[2] { (uint)(mapLocation[0] + direction) , (uint)(mapLocation[1] + hostileDirection)});
+                                toAddToList.Add(new uint[2] { (uint)(mapLocation[0] + direction) , (uint)(mapLocation[1] + hostileDirection)});
                             }
                         }
                     }
@@ -663,7 +706,7 @@ namespace Chess
                                     {
                                         if (IDstrings[1] == pieceNumber) //checks if the hostile piece is one of the chess pieces that can threaten the current location. 
                                         {
-                                            checkLocations.Add(new uint[2] { (uint)(checkLocation[0] + directions_[0]), (uint)(checkLocation[1] + directions_[1]) });
+                                            toAddToList.Add(new uint[2] { (uint)(checkLocation[0] + directions_[0]), (uint)(checkLocation[1] + directions_[1]) });
                                             break;
                                         }
                                     }
