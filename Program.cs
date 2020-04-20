@@ -5,6 +5,9 @@ using System.Runtime.InteropServices;
 namespace Chess
 {   //https://www.chessvariants.com/d.chess/chess.html
     //team == false, player = black, else player = white. White top, black bottom
+    /// <summary>
+    /// Class that contains a 2D array that is used to keep the location of all chess pieces on the board.
+    /// </summary>
     public class MapMatrix
     {
         private static string[,] map = new string[8, 8];
@@ -14,6 +17,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Prepares the map for usages.
+        /// </summary>
         public static void PrepareMap()
         {
             if (mapPrepared == false)
@@ -22,9 +28,16 @@ namespace Chess
                         map[n, m] = "";
             mapPrepared = true;
         }
+
+        /// <summary>
+        /// Used to get and set values on the board.
+        /// </summary>
         public static string[,] Map { get => map; set => map = value; }
     }
 
+    /// <summary>
+    /// Class that contains two lists, one of white chess pieces and one of black chess pieces.
+    /// </summary>
     public class ChessList
     {
         private ChessList() { }
@@ -34,6 +47,11 @@ namespace Chess
         //{
         //    chessListBlack = list;
         //}
+        /// <summary>
+        /// Sets the chess pieces.
+        /// </summary>
+        /// <param name="list">The list containing the chess pieces.</param>
+        /// <param name="team">The team that <paramref name="list"/> belongs too.</param>
         public static void SetChessList(List<ChessPiece> list, bool team)
         {
             if (team)
@@ -41,14 +59,22 @@ namespace Chess
             else
                 chessListBlack = list;
         }
+        /// <summary>
+        /// Returns a list depending on <paramref name="team"/>.
+        /// </summary>
+        /// <param name="team">True for white, false for black.</param>
+        /// <returns>Returns a list of either black or white chess pieces depending on <paramref name="team"/>.</returns>
         public static List<ChessPiece> GetList(bool team)
         {
             return team == false ? chessListBlack : chessListWhite;
         }
     }
 
+    /// <summary>
+    /// Class that contains the settings used in the chess game. 
+    /// </summary>
     public class Settings
-    {
+    { //consider having settings for write locations related to the king check. Also what should be written should be location, perhaps, e.g. e5. So convert the first number of each location to a letter.
         private Settings() { }
         private static byte squareSize = 5;
         private static byte[] lineColour = new byte[] { 122, 122, 122 };
@@ -63,18 +89,57 @@ namespace Chess
         private static char lineY = '|'; //works as it should
         private static byte extraSpacing = 1; //if changes, numbers and letters do not move down, edges moves the correct amount and the squares moves to very much wrong locations
         private static byte edgeSize = (byte)(extraSpacing + 1); //does not affect top and left side numbers and letters in the correct way
+        /// <summary>
+        /// Gets the size of the squares. 
+        /// </summary>
         public static byte SquareSize { get => squareSize; }
+        /// <summary>
+        /// ???
+        /// </summary>
         public static byte[] LineColour { get => lineColour; }
+        /// <summary>
+        /// ???
+        /// </summary>
         public static byte[] LineColourBase { get => lineColourBase; }
+        /// <summary>
+        /// Gets the first square board colour.
+        /// </summary>
         public static byte[] SquareColour1 { get => squareColour1; }
+        /// <summary>
+        /// Gets the second square board colour.
+        /// </summary>
         public static byte[] SquareColour2 { get => squareColour2; }
+        /// <summary>
+        /// Gets the colour used to display the possible end locations a chess piece can move too.
+        /// </summary>
         public static byte[] SelectSquareColour { get => hoverOverSquareColour; }
+        /// <summary>
+        /// Gets the colour used to display the hovered over square for a chess piece move. 
+        /// </summary>
         public static byte[] SelectMoveSquareColour { get => chessPieceHoverOverSquareColour; }
+        /// <summary>
+        /// Gets the colour used to display a chess piece if it is hovered over.
+        /// </summary>
         public static byte[] SelectPieceColour { get => chessPieceHoverOver; }
+        /// <summary>
+        /// Gets the offset from the top left corner to the top left part of the board.
+        /// </summary>
         public static byte[] Offset { get => offset; } 
+        /// <summary>
+        /// Gets the char used for the x line on the board.
+        /// </summary>
         public static char GetLineX { get => lineX; }
+        /// <summary>
+        /// Gets the char used for the y line on the board.
+        /// </summary>
         public static char GetLineY { get => lineY; }
+        /// <summary>
+        /// Get the spacing...
+        /// </summary>
         public static byte Spacing { get => extraSpacing; } //not all paint functions are used this one properly. 
+        /// <summary>
+        /// Get the edge size...
+        /// </summary>
         public static byte EdgeSpacing { get => edgeSize; }
     }
 
@@ -141,7 +206,9 @@ namespace Chess
             PlayerSetup();
         }
 
-
+        /// <summary>
+        /// Sets up the board and paint the outlines. 
+        /// </summary>
         private void BoardSetup()
         {//8 squares in each direction. Each piece is 3*3 currently, each square is 5*5 currently. 
             Console.CursorVisible = false;
@@ -170,7 +237,7 @@ namespace Chess
             {
                 Console.SetCursorPosition(Settings.Offset[0], k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize*k));
                 Console.Write(numbers[k]);
-                Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)); //consider those 2 multiplications
+                Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)); 
                 Console.Write(numbers[k]);
             }
 
@@ -186,6 +253,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Colour the board. 
+        /// </summary>
         private void BoardColouring()
         {
             ushort distance = (ushort)(8 + 8 * squareSize);
@@ -213,6 +283,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Runs the loop and code that plays the game.
+        /// </summary>
         public void Play()
         {
             do
@@ -236,6 +309,9 @@ namespace Chess
             } while (true);
         }
 
+        /// <summary>
+        /// Sets up the two players.
+        /// </summary>
         private void PlayerSetup()
         {
             byte[] colourWhite =
@@ -273,6 +349,9 @@ namespace Chess
             CreatePieces();
         }
 
+        /// <summary>
+        /// Function that calls functions needed for playing the game.
+        /// </summary>
         public void Control()
         {
             do
@@ -483,7 +562,9 @@ namespace Chess
     }
 
 
-
+    /// <summary>
+    /// The class for kings
+    /// </summary>
     sealed class King : ChessPiece
     { //this one really need to keep an eye on all other pieces and their location
 
@@ -491,6 +572,14 @@ namespace Chess
         private List<string> castLingCandidates;
         private bool isChecked;
         private bool hasMoved = false;
+
+        /// <summary>
+        /// The constructor for the king chess piece. 
+        /// </summary>
+        /// <param name="colour_">The colour of the chess piece.</param>
+        /// <param name="team_">The team of the chess piece.</param>
+        /// <param name="spawnLocation_">The start location of the chess piece.</param>
+        /// <param name="ID">The ID of the chess piece.</param>
         public King(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -507,6 +596,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Calculates end locations and if legal add them to a list. 
+        /// </summary>
         protected override void EndLocations()
         { //implement a check for Castling and/or call the Castling function
             //is there a better way to do this than the current way. Currently it can go out of bounds. 
@@ -746,6 +838,10 @@ namespace Chess
             }
         }
 
+        /// <summary>
+        /// Returns true if the king is checked, false otherwise. 
+        /// </summary>
+        /// <returns></returns>
         public override bool SpecialChessPieceFunction()
         {
 
@@ -753,6 +849,9 @@ namespace Chess
             return IsInChecked(mapLocation, checkList);
         }
 
+        /// <summary>
+        /// Returns true if the chess piece has moved. False otherwise. 
+        /// </summary>
         private bool HasMoved
         {
             get
@@ -765,11 +864,15 @@ namespace Chess
             }
         } 
 
+        /// <summary>
+        /// Find any legal candidate for the castling move. Requirements are that the king is not treaten. Neither king nor rock has moved. The king does not move to a treaten location or pass trough a treaten location.
+        /// Any found candidate is addded to a list. 
+        /// </summary>
         private void FindCastlingOptions()
         {
             if (!HasMoved)
             { //by the officel rules, castling is considered a king move. 
-                castLingCandidates = new List<string>();
+                castLingCandidates = new List<string>(); //does a string list make sense? 
                 foreach (ChessPiece chepie in ChessList.GetList(team))
                 {
                     if(chepie is Rock)
@@ -822,7 +925,11 @@ namespace Chess
             }
         }
 
-        private void Castling(int[] locationOfRock) //should this return a bool?
+        /// <summary>
+        /// Selects a rock using 
+        /// </summary>
+        /// <param name="locationOfRock"></param>
+        private void Castling(int[] locationOfRock) 
         {
             //should call that specific rook's SpecialChessPieceFunction
             string rockID = MapMatrix.Map[locationOfRock[0], locationOfRock[1]];
@@ -843,8 +950,18 @@ namespace Chess
 
     }
 
+    /// <summary>
+    /// The class for queens.
+    /// </summary>
     sealed class Queen : ChessPiece
     {
+        /// <summary>
+        /// The constructor for the queen chess piece. 
+        /// </summary>
+        /// <param name="colour_">The colour of the chess piece.</param>
+        /// <param name="team_">The team of the chess piece.</param>
+        /// <param name="spawnLocation_">The start location of the chess piece.</param>
+        /// <param name="ID">The ID of the chess piece.</param>
         public Queen(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -856,6 +973,9 @@ namespace Chess
             Draw();
         }
 
+        /// <summary>
+        /// Calculates end locations and if legal add them to a list. 
+        /// </summary>
         protected override void EndLocations()
         { //implement a check for Castling and/or call the Castling function
             //is there a better way to do this than the current way. Currently it can go out of bounds. 
@@ -922,6 +1042,9 @@ namespace Chess
 
     }
 
+    /// <summary>
+    /// The class for pawns.
+    /// </summary>
     sealed class Pawn : ChessPiece
     { //does not check if a square two away from it is empty. Can jump over another piece with the double first turn move.
         //bug: If the chess piece cannot move and have not moved and it is selected, its RemoveDraw code will be run and give an error with the oldMapLocation is null.
@@ -935,6 +1058,13 @@ namespace Chess
 
         //was a bug at a moment where a pawn could not double move in a game, even through it had not moved. Something, I think, had stod on the location before. 
         //found it what is causing it, if a pawn is selected and cannot move, its firstTurn is still set to false.
+        /// <summary>
+        /// The constructor for the pawn chess piece. 
+        /// </summary>
+        /// <param name="colour_">The colour of the chess piece.</param>
+        /// <param name="team_">The team of the chess piece.</param>
+        /// <param name="spawnLocation_">The start location of the chess piece.</param>
+        /// <param name="ID">The ID of the chess piece.</param>
         public Pawn(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -1002,6 +1132,9 @@ namespace Chess
             }
         }
 
+        /// <summary>
+        /// Overriden control function of the base class. Checks if the chess piece is ready for a promotion. 
+        /// </summary>
         public override void Control()
         {
             Move();
@@ -1012,6 +1145,9 @@ namespace Chess
             Promotion();
         }
 
+        /// <summary>
+        /// Calculates end locations and if legal add them to a list. 
+        /// </summary>
         protected override void EndLocations()
         {
             //if (possibleEndLocations.Count != 0)
@@ -1084,6 +1220,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Promotes the pawn. 
+        /// </summary>
         private void Promotion()
         {
             if ((!team && mapLocation[1] == 7) || (team && mapLocation[1] == 0))
@@ -1101,6 +1240,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Displays the possible promotions
+        /// </summary>
         private void DisplayPromotions()
         { //writes to a location what chesspieces it can be promoted too.
 
@@ -1108,9 +1250,20 @@ namespace Chess
 
     }
 
+    /// <summary>
+    /// The class for rocks.
+    /// </summary>
     sealed class Rock : ChessPiece
     {
         private bool hasMoved = false;
+
+        /// <summary>
+        /// The constructor for the rock chess piece. 
+        /// </summary>
+        /// <param name="colour_">The colour of the chess piece.</param>
+        /// <param name="team_">The team of the chess piece.</param>
+        /// <param name="spawnLocation_">The start location of the chess piece.</param>
+        /// <param name="ID">The ID of the chess piece.</param>
         public Rock(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -1122,6 +1275,9 @@ namespace Chess
             Draw();
         }
 
+        /// <summary>
+        /// Calculates end locations and if legal add them to a list. 
+        /// </summary>
         protected override void EndLocations()
         { //implement a check for Castling and/or call the Castling function
             //is there a better way to do this than the current way. Currently it can go out of bounds. 
@@ -1137,8 +1293,6 @@ namespace Chess
 
             position = new sbyte[2] { 0, 1 };
             CheckPosistions(position); //down
-
-            hasMoved = true;
 
             if (possibleEndLocations.Count != 0)
             { //need to make sure that if a player selects the rock and it cannot move, it does not prevent castling from happening. 
@@ -1181,6 +1335,9 @@ namespace Chess
             }
         }
 
+        /// <summary>
+        /// Returns true if the ches piece has moved at any point, false otherwise. 
+        /// </summary>
         public override bool SpecialBool
         {
             get
@@ -1193,6 +1350,9 @@ namespace Chess
             }
         }
 
+        /// <summary>
+        /// Returns true if the chess piece has moved at any point, false otherwise. 
+        /// </summary>
         private bool HasMoved { 
             get
             {
@@ -1204,6 +1364,10 @@ namespace Chess
             }
         } //if moved, castling cannot be done. How is the king going to call this code. Currently, the king would only be able to call other's functions that are given in the base class.
 
+        /// <summary>
+        /// Calss the castling function. 
+        /// </summary>
+        /// <returns></returns>
         public override bool SpecialChessPieceFunction()
         { //used to set its position after castling. So RemoveDraw, update locations, Draw, set variable regarding if it has moved to true. 
           //called by the active piece, so its own and the one it is castling with. 
@@ -1211,23 +1375,45 @@ namespace Chess
 
             //if (shouldCastle && !HasMoved)
             //Castling();
+            Castling();
             return false;
         }
 
-        private bool Castling()
+        /// <summary>
+        /// Moves the chess piece after the rules of castling. 
+        /// </summary>
+        private void Castling()
         {
-            if (!HasMoved)
+            //need to figure out the direction to move in. Can do it by using the king's map location, but go trough the list or just hardwrite it? 
+            //or just look if the rock's maplocation[0] is lower or higher than a specific value, e.g. 4
+            RemoveDraw(mapLocation);
+            if(mapLocation[0] == 0)
             {
-                //find the king and get its 
+                mapLocation[0] = 3;
             }
-
-            return false;
+            else
+            {
+                mapLocation[0] = 5;
+            }
+            Draw();
+            hasMoved = true;
         }
 
     }
 
+    /// <summary>
+    /// The class for bishops. 
+    /// </summary>
     sealed class Bishop : ChessPiece
     {
+        /// <summary>
+        /// The constructor for the bishop chess piece. 
+        /// </summary>
+        /// <param name="colour_">The colour of the chess piece.</param>
+        /// <param name="team_">The team of the chess piece.</param>
+        /// <param name="spawnLocation_">The start location of the chess piece.</param>
+        /// <param name="ID">The ID of the chess piece.</param>
+
         public Bishop(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
@@ -1239,6 +1425,9 @@ namespace Chess
             Draw();
         }
 
+        /// <summary>
+        /// Calculates end locations and if legal add them to a list. 
+        /// </summary>
         protected override void EndLocations()
         {
             sbyte[] position = new sbyte[2] { -1, -1 };
@@ -1292,8 +1481,18 @@ namespace Chess
         }
     }
 
+    /// <summary>
+    /// The class for knights.
+    /// </summary>
     sealed class Knight : ChessPiece
     {
+        /// <summary>
+        /// The constructor for the knight chess piece. 
+        /// </summary>
+        /// <param name="colour_">The colour of the chess piece.</param>
+        /// <param name="team_">The team of the chess piece.</param>
+        /// <param name="spawnLocation_">The start location of the chess piece.</param>
+        /// <param name="ID">The ID of the chess piece.</param>
         public Knight(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         { 
             Design = new string[]
@@ -1306,6 +1505,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Calculates end locations and if legal add them to a list. 
+        /// </summary>
         protected override void EndLocations()
         { //there must be a better way to do this...
             sbyte[] potenieltLocation = { -2, -1 }; //2 down left
@@ -1386,7 +1588,9 @@ namespace Chess
     }
 
 
-
+    /// <summary>
+    /// The base class for chess pieces. Any chess piece should derive from this class.
+    /// </summary>
     abstract public class ChessPiece //still got a lot to read and learn about what is the best choice for a base class, class is abstract, everything is abstract, nothing is abstract and so on. 
     {//when put on a location, check if there is an allie, if there is invalid move, if enemy, call that pieces removeDraw and call their Taken using TakeEnemyPiece
         protected int[] location = new int[2]; //x,y
@@ -1404,6 +1608,14 @@ namespace Chess
         protected bool specialBool; 
         //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
+
+        /// <summary>
+        /// The default chess piece constructor. 
+        /// </summary>
+        /// <param name="colour_">The colour of the chess piece.</param>
+        /// <param name="team_">The team of the chess piece, true for white, false for black.</param>
+        /// <param name="mapLocation_">The start location on the map.</param>
+        /// <param name="ID">The ID of the chess piece. The constructor does nothing to ensure the ID is unique.</param>
         public ChessPiece(byte[] colour_, bool team_, int[] mapLocation_, string ID)
         { 
             Colour = colour_;
@@ -1453,8 +1665,14 @@ namespace Chess
         /// </summary>
         protected string[] Design { get => design; set => design = value; }
 
+        /// <summary>
+        /// Sets the location on the map.
+        /// </summary>
         protected int[] MapLocation { set => mapLocation = value; }
 
+        /// <summary>
+        /// Returns the location on the map. 
+        /// </summary>
         public int[] GetMapLocation
         {
             get
@@ -1469,10 +1687,19 @@ namespace Chess
         /// </summary>
         protected string ID { get => id; set => id = value; } //maybe split into two. Set being protected and the Get being public 
 
+        /// <summary>
+        /// Returns the ID of the chess piece.
+        /// </summary>
         public string GetID { get => ID; }
 
+        /// <summary>
+        /// Returns true if the chess piece could move, false if it could not move.
+        /// </summary>
         public bool CouldMove { get => couldMove; }
 
+        /// <summary>
+        /// What the bool is related to depends on the chess piece type. For a rock, it returns true if it has moved, else false. For...
+        /// </summary>
         public virtual bool SpecialBool { get => specialBool; set => specialBool = value; }
 
         /// <summary>
