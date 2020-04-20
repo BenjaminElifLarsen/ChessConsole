@@ -420,6 +420,13 @@ namespace Chess
         /// </summary>
         private void MovePiece()
         {
+            //if (chessPieces[selectedChessPiece] is King working)
+            //{
+            //    //King working = (King)chessPieces[selectedChessPiece];
+            //    //working.KingTest
+            //    //do stuff, replace the old one with the updated one
+            //    //works, but are there better ways...
+            //}
             chessPieces[selectedChessPiece].Control();
         }
 
@@ -492,6 +499,11 @@ namespace Chess
             };
             Draw();
         } //king cannot move next to another king
+
+        public void KingTest()
+        {
+
+        }
 
         protected override void EndLocations()
         { //implement a check for Castling and/or call the Castling function
