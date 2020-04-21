@@ -610,11 +610,19 @@ namespace Chess
                 "-K-"
             };
             Draw();
-        } //king cannot move next to another king
+        }
 
-        public void KingTest()
-        {
-
+        /// <summary>
+        /// Returns true if the king is checked, false otherwise. 
+        /// </summary>
+        public override bool SpecialBool {
+            get
+            {
+                isChecked = IsInChecked(mapLocation, checkLocations);
+                CheckWriteOut();
+                return isChecked;
+            }
+            set => specialBool = value; 
         }
 
         public override void Control()
@@ -624,20 +632,35 @@ namespace Chess
             LocationUpdate();
             Draw();
             UpdateMapMatrix(oldMapLocation);
+            //CheckWriteOut();
             checkLocations.Clear();
             castLingCandidates.Clear();
         }
 
+        private void CheckWriteOut()
+        {
+            if (isChecked) //have a class variable used to know how many lines need to be cleared from last time. 
+            {
+                //string writeLout = "";
+                int[,] writeLocation = Settings.CheckWriteLocation; //should be modified so it return a new array rather than the existing array. 
+                foreach (int[] loc in checkLocations)
+                {
+                    char letter = (char)(97 + loc[0]);
+                    string writeLout = String.Format("{0}{1}",letter,loc[1]);
+                }
+            }
+        }
+
         /// <summary>
-        /// Calculates end locations and if legal add them to a list. 
+        /// Calculates end locations and if legal and is not under threat adds them to a list. 
         /// </summary>
         protected override void EndLocations()
         { //implement a check for Castling and/or call the Castling function
             //is there a better way to do this than the current way. Currently it can go out of bounds. 
             //could most likely make a nested function of the do while loop
 
-            isChecked = IsInChecked(mapLocation,checkLocations); //not proper location, just there for testing. This version should be called after the other player has moved a piece to check if the king is threaten or not. 
-            SpecialBool = isChecked;
+            //isChecked = IsInChecked(mapLocation,checkLocations); //not proper location, just there for testing. This version should be called after the other player has moved a piece to check if the king is threaten or not. 
+            //SpecialBool = isChecked;
             //other versions, each with a different endlocation should be called in the Move function and any threaten endlocation should be removed. 
             //maybe have the endlocation removal in this function or at least call a function that does that from this function?
             //If there are no endlocations left and the current location is under threat... the player should not be allowed to move the king and they should move another piece. if the turn ends with the king still threaten, checkmate. 
@@ -645,7 +668,6 @@ namespace Chess
 
             FindCastlingOptions();
 
-            //when the king has moved, it should clear the checkLocations list. 
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
 
@@ -665,21 +687,18 @@ namespace Chess
             CheckPosistions(position); //right, up
 
             position = new sbyte[2] { -1, 1 };
-            CheckPosistions(position); //,left down
+            CheckPosistions(position); //left down
 
             position = new sbyte[2] { 1, 1 };
             CheckPosistions(position); //right, down
 
             if(possibleEndLocations.Count != 0)
-            { //need to make sure that if a player selects the king and it cannot move, it does not prevent castling from happening. 
-                //SpecialBool = true;
+            {
                 hasMoved = true;
             }
 
             void CheckPosistions(sbyte[] currentPosition)
-            { //need to have code implemented that check each square and wether a hostile piece can take it on that square. E.g. need to check if there is a knight in a location that can jump there
-                //if there is a straight line with a rock or queen on it. Diagnoal lines with a queen or a bishop. If a pawn is up or below (depending on team) and to the side of that square.
-                //Lastly, it should check if the hostile king is touching that square. 
+            { 
                 sbyte[] loc = new sbyte[2] { currentPosition[0], currentPosition[1] };
                 int[] loc_ = new int[] {loc[0] + mapLocation[0], loc[1] + mapLocation[1] };
                 if (!((loc_[0] > 7 || loc_[0] < 0) || (loc_[1] > 7 || loc_[1] < 0)))
@@ -687,17 +706,15 @@ namespace Chess
                     List<int[]> locationUnderThreat = new List<int[]>();
                     string feltID = MapMatrix.Map[loc[0] + mapLocation[0], mapLocation[1] + loc[1]];
                     if (feltID == "")
-                    { //somehow a location is added even though the location is under threat, yet the isInChecked seem to do its job. 
+                    { 
                         
                         if(!IsInChecked(loc_,locationUnderThreat))
                             Add(loc_);
-                        //loc[0] += currentPosition[0]; //?? What are these here for??
-                        //loc[1] += currentPosition[1]; ////maybe have the isInCheck function called here. 
                     }
                     else
                     {
                         if (teamString != feltID.Split(':')[0])
-                        { //maybe have the isInCheck function called here. 
+                        { 
                             if (!IsInChecked(loc_, locationUnderThreat))
                                 Add(loc_);
                         }
@@ -712,6 +729,17 @@ namespace Chess
         }
 
         /// <summary>
+        /// Function that checks if <paramref name="location_"/> is under threat by a hostile chess piece. Returns true if it is.
+        /// </summary>
+        /// <param name="location_">Location to check for being threaten.</param>
+        /// <returns>Returns true if <paramref name="location_"/>is under threat, false otherwise. </returns>
+        public bool IsInChecked(int[] location_)
+        {
+            List<int[]> list_ = new List<int[]>();
+            return IsInChecked(location_, list_);
+        }
+
+        /// <summary>
         /// Functions that check if <paramref name="location_"/> is under threat by a hostile chess piece. Returns true if it is.
         /// </summary>
         /// <param name="location_">Location to check for being threaten.</param>
@@ -720,26 +748,16 @@ namespace Chess
         public bool IsInChecked(int[] location_, List<int[]> toAddToList)
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. 
-            //find the other player's chesspieces on the map matrix, look at the IDs and see if there is a clear legal move that touces the king.
-            //hmm... could also look check specific squares for specific chesspieces, e.g. check all left, right, up and down squares for rocks and queen, check specific squares that 3 squares away for knights and so on. 
-            //the king can, however, take a chesspiece as long time that piece is not protected by another nor is the other king. Cannot move next to the hostile king 
-            //used to check if the king is check mate or check
             //the king does not need to move in a check as long time there is a friendly chesspiece that can take the hostile piece. 
             //should all the pieces that can move to prevent a mate be highlighted? Should their endlocations be forced to only those that can prevent a check?
             //how much should the game hold the player in hand?
             //Should the game write to a location that the king is check and the location (letter and number) of the hostile pieces that threatens the king?
             //should the king's constructor have a write location, so the king can do the writting and not the board/player?
             //When should this code be called? Ideally, at the start of the player turn. But should it be called at other moments? E.g. before or after a king movement or should the move code check by itself 
-            //should the move code double check the checkLocations list to see if a location in possibleEndLocations should be removed?
             sbyte[,] moveDirection;
             string[][] toLookFor;
             moveDirection = new sbyte[,] { { -1, 0 }, { 0, -1 }, { -1, -1 }, { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, 1 }, { 1, -1 },}; 
             //                              left        up          left/up   left/down   down     right    right/down right/up   
-            //The code that ensures that the king cannot move to the locations that are going to be added needs to ensure the king can move and take a piece that is next to the king. 
-            //Also, code is needed to ensure the king does/cannot move to a location that is threaten by a piece. 
-            //...
-            //how to do that... One way is to call this function, but with another locatin_ than maplocation and a new toAddToList. If it returns true, the king can move there, else that square is being threaten by a piece.  
-            //best place to do that? 
             toLookFor = new string[][]
             {//"2", "3", "5" 
                 new string[]{"2","5"},
@@ -765,9 +783,7 @@ namespace Chess
             else
                 return false;
 
-            void KingNear() //bug: sometimes it is possible for the two kings to be on toaching squares. Sometimes, even though the square is given as being under threat, it is still added. But the endlocation function does not seem to add it, 
-                //but it does not seem to even add all the end locations.  
-                //it seems only to happen when there is another piece nearby, e.g. D5 = black king, D6 = White Pawn, D7 = White King, the two kings can end up touching squares 
+            void KingNear()
             {
                 if (!(location_[0] == mapLocation[0] && location_[1] == mapLocation[1]))
                 {
@@ -831,7 +847,7 @@ namespace Chess
                 placement_ = new int[] { 1, 2 }; //right, 2 down
                 Placement(placement_);
 
-                void Placement(int[] direction_) //at some point, just change all of the uint variables, related to the map, to int
+                void Placement(int[] direction_)
                 { //could rewrite this function to take a jaggered array and operate on it instead of calling the function multiple times. 
                     int[] feltLocation = new int[] { (int)(direction_[0] + location_[0]), (int)(direction_[1] + location_[1]) };
                     if (feltLocation[0] >= 0 && feltLocation[0] <= 7 && feltLocation[1] >= 0 && feltLocation[1] <= 7)
