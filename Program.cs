@@ -1248,12 +1248,65 @@ namespace Chess
         {
             if ((!team && mapLocation[1] == 7) || (team && mapLocation[1] == 0))
             {
-                Taken();
-                //how should the selection be designed? Text written below the board? Next to the board? How to select? Arrowkeys? Numberkeys? Written?
+                bool chosen = false;
+                string command = "Choose: ";
+                string answer = "";
+                //How to select? Arrowkeys? Numberkeys? Written?
                 DisplayPromotions();
+                Console.SetCursorPosition(Settings.PromotionWriteLocation[0], Settings.PromotionWriteLocation[1] + 1);
+                Console.Write(command);
+                do
+                {
+                    Console.SetCursorPosition(Settings.PromotionWriteLocation[0] + command.Length, Settings.PromotionWriteLocation[1] + 1);
+                    Console.Write("".PadLeft(answer.Length));
+                    Console.SetCursorPosition(Settings.PromotionWriteLocation[0] + command.Length, Settings.PromotionWriteLocation[1] + 1);
+                    answer = Console.ReadLine();
+                    foreach (string promotionKey in promotions.Keys)
+                    {
+                        if (promotionKey.ToLower() == answer.ToLower())
+                        {
+                            chosen = true;
+                            break;
+                        }
+                    }
+                } while (!chosen);
+                
+                answer = answer.ToLower();
+                Console.SetCursorPosition(0, Settings.PromotionWriteLocation[1]);
+                Console.WriteLine("".PadLeft(Settings.WindowSize[0]));
+                Console.WriteLine("".PadLeft(Settings.WindowSize[0]));
+                Taken();
+                string[] IDParts = ID.Split(':');
+                string newID;
+                switch (answer)
+                {
+                    case "knight":
+                        IDParts[1] = "4";
+                        newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1],IDParts[2]);
+                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID));
+                        break;
 
+                    case "bishop":
+                        IDParts[1] = "4";
+                        newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
+                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID));
+                        break;
+
+                    case "rock":
+                        IDParts[1] = "4";
+                        newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
+                        ChessList.GetList(team).Add(new Rock(colour, team, mapLocation, newID));
+                        break;
+
+                    case "queen":
+                        IDParts[1] = "4";
+                        newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
+                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID));
+                        break;
+
+                }
                 //test code
-                ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, GetID)); //the final version should update the ID to match the new chesspiece. This leaves a question for building up the ID, e.g. if the pawn is pawn number 1, team white,
+                //ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, GetID)); //the final version should update the ID to match the new chesspiece. This leaves a question for building up the ID, e.g. if the pawn is pawn number 1, team white,
                 //and it becomes a queen, it cannot be set as +:2:1 as the start queen is already that. 
                 //Since the last part of the ID is never used by anything else than in combination with the entire ID, maybe add a symbol after. The symbol could be the chesspiece type part of the ID, e.g. 2 for queen
                 //so it will becokme +:2:12
@@ -1266,7 +1319,13 @@ namespace Chess
         /// </summary>
         private void DisplayPromotions()
         { //writes to a location what chesspieces it can be promoted too.
-
+            string promotionsString = "";
+            foreach (string key in promotions.Keys)
+            {
+                promotionsString += key + " ";
+            }
+            Console.SetCursorPosition(Settings.PromotionWriteLocation[0], Settings.PromotionWriteLocation[1]);
+            Console.Write(promotionsString);
         }
 
     }
