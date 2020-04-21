@@ -1416,19 +1416,19 @@ namespace Chess
                         break;
 
                     case "bishop":
-                        IDParts[1] = "4";
+                        IDParts[1] = "3";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
                         ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID));
                         break;
 
                     case "rock":
-                        IDParts[1] = "4";
+                        IDParts[1] = "5";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
                         ChessList.GetList(team).Add(new Rock(colour, team, mapLocation, newID));
                         break;
 
                     case "queen":
-                        IDParts[1] = "4";
+                        IDParts[1] = "2";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
                         ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID));
                         break;
