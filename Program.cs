@@ -89,6 +89,8 @@ namespace Chess
         private static char lineY = '|'; //works as it should
         private static byte extraSpacing = 1; //if changes, numbers and letters do not move down, edges moves the correct amount and the squares moves to very much wrong locations
         private static byte edgeSize = (byte)(extraSpacing + 1); //does not affect top and left side numbers and letters in the correct way
+        private static byte[] windowSizeModifer = new byte[] {20,8 }; //not a setting that should be access too.
+        private static int[] windowSize = new int[] {squareSize*8+9+2*edgeSize+offset[0] + windowSizeModifer[0], squareSize * 8 + 9 + 2 * edgeSize + offset[1] + windowSizeModifer[1] };
         /// <summary>
         /// Gets the size of the squares. 
         /// </summary>
@@ -141,6 +143,8 @@ namespace Chess
         /// Get the edge size...
         /// </summary>
         public static byte EdgeSpacing { get => edgeSize; }
+
+        public static int[] WindowSize { get => windowSize; }
     }
 
     class Program
