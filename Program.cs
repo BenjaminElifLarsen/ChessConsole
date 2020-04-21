@@ -687,7 +687,7 @@ namespace Chess
                     List<int[]> locationUnderThreat = new List<int[]>();
                     string feltID = MapMatrix.Map[loc[0] + mapLocation[0], mapLocation[1] + loc[1]];
                     if (feltID == "")
-                    {
+                    { //somehow a location is added even though the location is under threat, yet the isInChecked seem to do its job. 
                         
                         if(!IsInChecked(loc_,locationUnderThreat))
                             Add(loc_);
@@ -778,7 +778,7 @@ namespace Chess
                 Placement(placement_);
                 placement_ = new int[] { 1, -1 }; //right, up
                 Placement(placement_);
-                placement_ = new int[] { 1, -1 }; //right, down
+                placement_ = new int[] { 1, 1 }; //right, down
                 Placement(placement_);
                 placement_ = new int[] { 0, -1 }; //up
                 Placement(placement_);
