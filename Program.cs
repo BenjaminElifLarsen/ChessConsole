@@ -765,7 +765,9 @@ namespace Chess
             else
                 return false;
 
-            void KingNear() //have it here or have a dedicated function for that? Easier to have it here
+            void KingNear() //bug: sometimes it is possible for the two kings to be on toaching squares. Sometimes, even though the square is given as being under threat, it is still added. But the endlocation function does not seem to add it, 
+                //but it does not seem to even add all the end locations.  
+                //it seems only to happen when there is another piece nearby, e.g. D5 = black king, D6 = White Pawn, D7 = White King, the two kings can end up touching squares 
             {
                 if (!(location_[0] == mapLocation[0] && location_[1] == mapLocation[1]))
                 {
@@ -1401,7 +1403,7 @@ namespace Chess
                 } while (!chosen);
                 
                 answer = answer.ToLower();
-                Console.SetCursorPosition(0, Settings.PromotionWriteLocation[1]);
+                Console.SetCursorPosition(0, Settings.PromotionWriteLocation[1]); //removes the written promotion text
                 Console.WriteLine("".PadLeft(Settings.WindowSize[0]));
                 Console.WriteLine("".PadLeft(Settings.WindowSize[0]));
                 Taken();
@@ -1411,7 +1413,7 @@ namespace Chess
                 {
                     case "knight":
                         IDParts[1] = "4";
-                        newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1],IDParts[2]);
+                        newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1],IDParts[2]); //The P is to indicate that the piece used to be a pawn.
                         ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID));
                         break;
 
