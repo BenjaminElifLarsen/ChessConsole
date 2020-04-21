@@ -732,7 +732,7 @@ namespace Chess
             //When should this code be called? Ideally, at the start of the player turn. But should it be called at other moments? E.g. before or after a king movement or should the move code check by itself 
             //should the move code double check the checkLocations list to see if a location in possibleEndLocations should be removed?
             sbyte[,] moveDirection;
-            string[] toLookFor;
+            string[][] toLookFor;
             moveDirection = new sbyte[,] { { -1, 0 }, { 0, -1 }, { -1, -1 }, { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, 1 }, { 1, -1 },}; 
             //                              left        up          left/up   left/down   down     right    right/down right/up   
             //The code that ensures that the king cannot move to the locations that are going to be added needs to ensure the king can move and take a piece that is next to the king. 
@@ -740,9 +740,20 @@ namespace Chess
             //...
             //how to do that... One way is to call this function, but with another locatin_ than maplocation and a new toAddToList. If it returns true, the king can move there, else that square is being threaten by a piece.  
             //best place to do that? 
-            toLookFor = new string[] {"2", "3", "5" }; //knights and pawns need different way of being checked. 
+            toLookFor = new string[][]
+            {//"2", "3", "5" 
+                new string[]{"2","5"},
+                new string[]{"2","5"},
+                new string[]{"2","3"},
+                new string[]{"2","3"},
+                new string[]{"2","5"},
+                new string[]{"2","5"},
+                new string[]{"2","3"},
+                new string[]{"2","3"}
+            }; //knights and pawns need different way of being checked. 
             QRBCheck(moveDirection, toLookFor);
-
+            //problem: if a square is checked that is not the king's and the code find the king, it will think that direction is fine even though there might be a hostile piece that can take the king on its current posistion and 
+            //the posistion that is being checked. Seems to have been fixed, require more testing.
             PawnCheck();
 
             KnightCheck();
@@ -754,7 +765,7 @@ namespace Chess
             else
                 return false;
 
-            void KingNear() //have it here or have a dedicated function for that? EAsier to have it here
+            void KingNear() //have it here or have a dedicated function for that? Easier to have it here
             {
                 if (!(location_[0] == mapLocation[0] && location_[1] == mapLocation[1]))
                 {
@@ -873,7 +884,7 @@ namespace Chess
             }
 
 
-            void QRBCheck(sbyte[,] directions, string[] checkpiecesToCheckFor) 
+            void QRBCheck(sbyte[,] directions, string[][] checkpiecesToCheckFor) 
             { //can be used to check for queens, rocks and bishops. Need other functions for knights and pawns.
                 //consider coding it such that it can work with a sbyte[,] and go through multiple directions in a single call.
                 //should the checkPiecesToCheckFor also be altered or is it fine 
@@ -882,6 +893,7 @@ namespace Chess
                     //need to alter this one. Rock and Bishop are considered to have the same movement as the queen. Maybe, let it take a jaggered checkpiecesToCheckFor
                     int[] checkLocation = new int[2] { location_[0], location_[1] };
                     sbyte[] directions_ = new sbyte[2] { directions[i,0], directions[i,1] };
+                    string[] piecesToCheckFor = checkpiecesToCheckFor[i];
                     if ((checkLocation[0] + directions_[0] >= 0 && checkLocation[0] + directions_[0] <= 7 && checkLocation[1] + directions_[1] >= 0 && checkLocation[1] + directions_[1] <= 7)) 
                     {
 
@@ -894,7 +906,7 @@ namespace Chess
                                 string[] IDstrings = feltID.Split(':');
                                 if (IDstrings[0] != teamString) //checks if it is hostile or not 
                                 {
-                                    foreach (string pieceNumber in checkpiecesToCheckFor) //loops to it find the hostile one
+                                    foreach (string pieceNumber in piecesToCheckFor) //loops to it find the hostile one
                                     {
                                         if (IDstrings[1] == pieceNumber) //checks if the hostile piece is one of the chess pieces that can threaten the current location. 
                                         {
@@ -906,7 +918,8 @@ namespace Chess
                                 }
                                 else
                                 {
-                                    break;
+                                    if(feltID != ID)
+                                        break;
                                 }
                             }
                             directions_[0] += directions[i,0];
