@@ -714,7 +714,7 @@ namespace Chess
             //If there are no endlocations left and the current location is under threat... the player should not be allowed to move the king and they should move another piece. if the turn ends with the king still threaten, checkmate. 
             //so if the player's king is under threat at the start of the turn, check again at the end of the turn
 
-            FindCastlingOptions();
+            FindCastlingOptions(possibleEndLocations);
 
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
@@ -772,7 +772,7 @@ namespace Chess
 
             void Add(int[] posistions)
             {
-                possibleEndLocations.Add(new int[,] { { (posistions[0]) }, { (posistions[1]) } });
+                possibleEndLocations.Add(new int[,] { { (posistions[0]), (posistions[1]) } });
             }
         }
 
@@ -1030,7 +1030,7 @@ namespace Chess
         /// Find any legal candidate for the castling move. Requirements are that the king is not treaten. Neither king nor rock has moved. The king does not move to a treaten location or pass trough a treaten location.
         /// Any found candidate is addded to a list. 
         /// </summary>
-        private void FindCastlingOptions()
+        private void FindCastlingOptions(List<int[,]> toAddToo)
         {
             if (!HasMoved)
             { //by the officel rules, castling is considered a king move. 
@@ -1077,7 +1077,12 @@ namespace Chess
                                 //from the rules, castling cannot happen if the king is checked. Also, it does not matter if the rock's end location is under threat
                                 //but all sqaures the king moves through also needs not be under threat. 
                                 if(location_.Count == 0)
+                                {
                                     castLingCandidates.Add(chepie.GetID);
+                                    int[,] arr = new int[,] { { chepie.GetMapLocation[0], chepie.GetMapLocation[1] } };
+                                    toAddToo.Add(arr);
+                                }
+                                    
                             }
                         }
                     }
@@ -1086,46 +1091,64 @@ namespace Chess
             }
         }
 
-        ///// <summary>
-        ///// Allows the chesspiece to move. Any square under treat cannot be selected 
-        ///// </summary>
-        //protected override void Move()
-        //{
-        //    oldMapLocation = null;
-        //    bool hasSelected = false;
-        //    EndLocations();
-        //    if (possibleEndLocations.Count != 0)
-        //    {
-        //        DisplayPossibleMove();
-        //        int[] cursorLocation = GetMapLocation;
-        //        do
-        //        {
-        //            bool selected = FeltMove(cursorLocation);
-        //            if (selected)
-        //            {
-        //                foreach (int[,] loc in possibleEndLocations)
-        //                {
-        //                    int[] endloc_ = new int[2] { loc[0, 0], loc[1, 0] };
-        //                    if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-        //                    {
-        //                        couldMove = true;
-        //                        oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-        //                        TakeEnemyPiece(cursorLocation);
-        //                        mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-        //                        hasSelected = true;
-        //                        break;
-        //                    }
-        //                }
-        //            }
-        //        } while (!hasSelected);
-        //        NoneDisplayPossibleMove();
-        //        possibleEndLocations.Clear();
-        //    }
-        //    else
-        //    {
-        //        couldMove = false;
-        //    }
-        //}
+        /// <summary>
+        /// Allows the chesspiece to move. Any square under treat cannot be selected 
+        /// </summary>
+        protected override void Move()
+        {
+            oldMapLocation = null;
+            bool hasSelected = false;
+            EndLocations();
+            if (possibleEndLocations.Count != 0)
+            {
+                DisplayPossibleMove();
+                int[] cursorLocation = GetMapLocation;
+                do
+                {
+                    bool selected = FeltMove(cursorLocation);
+                    if (selected)
+                    {
+                        foreach (int[,] loc in possibleEndLocations)
+                        {
+                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
+                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+                            {
+                                couldMove = true;
+                                bool castling = true;
+                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                castling = FeltIDCheck(cursorLocation);
+                                if (castling)
+                                {
+                                    Castling(cursorLocation);
+                                }
+                                else if(!castling)
+                                    TakeEnemyPiece(cursorLocation);
+                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+                                hasSelected = true;
+                                break;
+                            }
+                        }
+                    }
+                } while (!hasSelected);
+                NoneDisplayPossibleMove();
+                possibleEndLocations.Clear();
+            }
+            else
+            {
+                couldMove = false;
+            }
+
+            bool FeltIDCheck(int[] loc_)
+            {
+                string[] feltIDParts = MapMatrix.Map[loc_[0], loc_[1]].Split(':');
+                if(feltIDParts[0] == teamString)
+                    if(feltIDParts[1] == "5")
+                    {
+                        return true;
+                    }
+                return false;
+            }
+        }
 
         /// <summary>
         /// Selects a rock using 
@@ -1234,7 +1257,7 @@ namespace Chess
 
             void Add(sbyte[] posistions)
             {
-                possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + posistions[0]) }, { (int)(mapLocation[1] + posistions[1]) } });
+                possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + posistions[0]), (int)(mapLocation[1] + posistions[1]) } });
             }
         }
 
@@ -1299,7 +1322,7 @@ namespace Chess
                     {
                         foreach (int[,] loc in possibleEndLocations)
                         {
-                            int[] endloc_ = new int[2] { loc[0, 0], loc[1, 0] };
+                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
                             if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
                             {
 
@@ -1353,13 +1376,13 @@ namespace Chess
             if ((!team && mapLocation[1] != 0) || (team && mapLocation[1] != 7))
                 if (MapMatrix.Map[mapLocation[0], mapLocation[1] + moveDirection] == "")
                 {
-                    possibleEndLocations.Add(new int[,] { { mapLocation[0] }, { (int)(mapLocation[1] + moveDirection) } });
+                    possibleEndLocations.Add(new int[,] { { mapLocation[0], (int)(mapLocation[1] + moveDirection) } });
                 }
             if (firstTurn)
             {
                 if (MapMatrix.Map[mapLocation[0], (mapLocation[1] + moveDirection * 2)] == "" && MapMatrix.Map[mapLocation[0], (mapLocation[1] + moveDirection)] == "")
                 {
-                    possibleEndLocations.Add(new int[,] { { mapLocation[0] }, { (int)(mapLocation[1] + moveDirection * 2) } });
+                    possibleEndLocations.Add(new int[,] { { mapLocation[0], (int)(mapLocation[1] + moveDirection * 2) } });
                 }
 
             }
@@ -1391,7 +1414,7 @@ namespace Chess
                 {
                     string teamID = locationID.Split(':')[0];
                     if (teamID != teamString)
-                        possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + direction) }, { (int)(mapLocation[1] + moveDirection) } });
+                        possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + direction), (int)(mapLocation[1] + moveDirection) } });
                 }
             }
 
@@ -1408,7 +1431,7 @@ namespace Chess
                             int[] hostileLocation = ChessList.GetList(!team)[i].GetMapLocation;
                             if (hostileLocation[0] == mapLocation[0] + 1 || hostileLocation[0] == mapLocation[0] - 1) //Checks if the pawn is a location that allows it to be en passant.  
                             {
-                                possibleEndLocations.Add(new int[,] { { hostileLocation[0] }, { hostileLocation[1] } });
+                                possibleEndLocations.Add(new int[,] { { hostileLocation[0], hostileLocation[1] } });
                             }
                         }
                     }
@@ -1582,7 +1605,7 @@ namespace Chess
 
             void Add(sbyte[] posistions)
             {
-                possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + posistions[0]) }, { (int)(mapLocation[1] + posistions[1]) } });
+                possibleEndLocations.Add(new int[,] { { (mapLocation[0] + posistions[0]), (mapLocation[1] + posistions[1]) } });
             }
         }
 
@@ -1727,7 +1750,7 @@ namespace Chess
 
             void Add(sbyte[] posistions)
             {
-                possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + posistions[0]) }, { (int)(mapLocation[1] + posistions[1]) } });
+                possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + posistions[0]), (mapLocation[1] + posistions[1]) } });
             }
         }
     }
@@ -1832,7 +1855,7 @@ namespace Chess
 
             void Add(sbyte[] posistions)
             {
-                possibleEndLocations.Add(new int[,] { { (int)(mapLocation[0] + posistions[0]) }, { (int)(mapLocation[1] + posistions[1]) } });
+                possibleEndLocations.Add(new int[,] { { (mapLocation[0] + posistions[0]), (mapLocation[1] + posistions[1]) }, });
             }
         }
 
@@ -2001,7 +2024,7 @@ namespace Chess
                     {
                         foreach (int[,] loc in possibleEndLocations)
                         {
-                            int[] endloc_ = new int[2] { loc[0, 0], loc[1, 0] };
+                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
                             if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
                             {
                                 couldMove = true;
@@ -2054,7 +2077,7 @@ namespace Chess
             SquareHighLight(false, currentLocation);
             foreach (int[,] loc in possibleEndLocations)
             {
-                int[] endloc_ = new int[2] { loc[0, 0], loc[1, 0] };
+                int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
                 if (endloc_[0] == currentLocation[0] && endloc_[1] == currentLocation[1])
                 {
                     PaintBackground(Settings.SelectMoveSquareColour, loc);
@@ -2258,7 +2281,7 @@ namespace Chess
         {
             foreach (int[,] end in possibleEndLocations)
             {
-                byte colourLoc = (byte)((end[0, 0] + end[1, 0]) % 2);
+                byte colourLoc = (byte)((end[0, 0] + end[0, 1]) % 2);
                 byte[] backColour = colourLoc == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
                 PaintBackground(backColour, end);
             }
@@ -2285,7 +2308,7 @@ namespace Chess
         {
             byte squareSize = Settings.SquareSize;
             int startLocationX = locationEnd[0, 0] * squareSize + (locationEnd[0, 0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0];
-            int startLocationY = locationEnd[1, 0] * squareSize + (locationEnd[1, 0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1];
+            int startLocationY = locationEnd[0, 1] * squareSize + (locationEnd[0, 1] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1];
             for (int n = startLocationX; n < startLocationX + squareSize; n++)
             {
                 Console.SetCursorPosition((int)n, (int)startLocationY);
