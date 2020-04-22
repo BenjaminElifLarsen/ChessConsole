@@ -98,6 +98,7 @@ namespace Chess
         //----     ----
         //D5       A6
         //         D4
+        //need to deal with nulls in the places that calls the different settings. 
         private static int[] writeLocationPromotion = new int[] {offset[0]+edgeSize+2, windowSize[1] - windowSizeModifer[1] };
         /// <summary>
         /// Gets the size of the squares. 
@@ -287,7 +288,7 @@ namespace Chess
             }
 
             BoardColouring();
-
+            KingWriteLocationSetup();
         }
 
         /// <summary>
@@ -316,8 +317,25 @@ namespace Chess
                 }
                 location++;
             }
+        }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        private void KingWriteLocationSetup()
+        {
+            int[] white = new int[] { Settings.CheckHeaderLocation[0, 0], Settings.CheckHeaderLocation[0, 1] };
+            int[] black = new int[] { Settings.CheckHeaderLocation[1, 0], Settings.CheckHeaderLocation[1, 1] };
+            Write("White", white);
+            Write("Black", black);
 
+            void Write(string colour, int[] location)
+            {
+                Console.SetCursorPosition(location[0], location[1]);
+                Console.Write(colour);
+                Console.SetCursorPosition(location[0], location[1]+1);
+                Console.Write("King");
+            }
         }
 
         /// <summary>
@@ -333,9 +351,9 @@ namespace Chess
                     //if (ChessList.GetList(false)[i].SpecialBool)
                     //    ChessList.GetList(false)[i].SpecialBool = false;
                     bool run = ChessList.GetList(false)[i].SpecialBool; //check if there is a piece that can take the hostile piece that is treating the king, if not, checkmate. 
-                    if (ChessList.GetList(false)[i].BeenTaken)
+                    if (ChessList.GetList(false)[i].BeenTaken) //it should do that as a minimum. So it needs to get the checkList from the kings. This should be done before the player.Control();
                         ChessList.GetList(false).RemoveAt(i);
-                }
+                }//should check after moving if the king is still treaten.
                 black.Control();
                 for (int i = ChessList.GetList(true).Count - 1; i >= 0; i--)
                 {
@@ -346,6 +364,222 @@ namespace Chess
                         ChessList.GetList(true).RemoveAt(i);
                 }
             } while (true);
+        }
+
+        private void CheckMateChecker(bool team)
+        {//what should this function return. Bool whether the king is checkmate? If not checkmate, a list of the pieces that prevent the check?
+            //needs to check if the king can move to a non threaten location, perhaps first? 
+            List<int[]> locations = new List<int[]>();
+            int[] kingLocation = new int[2];
+            bool isThreaten = false;
+            foreach (ChessPiece chePie in ChessList.GetList(team))
+            {
+                if (chePie is King king)
+                {
+                    isThreaten = chePie.SpecialBool;
+                    if (isThreaten)
+                    {
+                        //get the checkList
+                        locations = king.GetCheckList;
+                        kingLocation = king.GetMapLocation;
+                        //maybe have code here that checks if the king can move to a safe location.
+                        break;
+                    }
+                }
+            }
+
+            //how to check if a piece can take the hostile piece that is treating without a lot of code. Could recycle the king's check function but that is a lot of code to just recycle. 
+            //could find every piece in the list, check their type and knowing their movement see if their could reach the hostice piece. 
+            //An idea: get the location of a piece and the hostice piece, subtract them from eachother to see movement needed. If the movement needed is not allowed by that piece, skip it
+            //if it is allowed, check if there is nothing between those two.
+            //also need to check if the piece can get between the hostile piece and the king.
+            if (isThreaten)
+                foreach (ChessPiece chePie in ChessList.GetList(team))
+                {
+                    string[] idParts = chePie.GetID.Split(':');
+                    //if (idParts[1] != "1") //since the king can take a piece, if it is not moving into a threating square, maybe allow it anyway
+                    //{
+                    int[] chePieLocation = chePie.GetMapLocation;
+                    //int[] locationDifference = new int[] { };
+                    //foreach (var item in collection)
+                    //{//is it possible, using legal moves, for more than one piece can threaten a king?
+
+                    //}
+
+                    if (chePie is King)
+                    {
+
+                    } else if (chePie is Queen)
+                    {
+
+                    }
+                    else if (chePie is Rock)
+                    {
+
+                    }
+                    else if (chePie is Bishop)
+                    {
+
+                    }
+                    else if (chePie is Knight)
+                    {
+
+                    }
+                    else if (chePie is Pawn)
+                    {
+
+                    }
+
+                    //}
+
+                }
+
+            bool KnightCheck(int[] ownLocation)
+            {
+
+                return false;
+            }
+
+            bool PawnCheck(int[] ownLocation)
+            { //use team to figure out direction the pawn can capture in.
+
+                return false;
+            }
+
+
+            //only call Check with directions that can "moves" the chesspiece toward the hostile piece. With the new code, this is not needed.
+            bool QRBCheck(int[][] directions, int[] ownLocation)
+            {
+                //need to check if it can reach the hostile piece or any square between it and the king.
+                //what should happen if a can piece can do any of those things? Added to a special list? Nothing? 
+                //at least if none can save the king, checkmate 
+
+                //also the knight might need to be done in a differnet way.
+                //king most likely the same as the king does not want to move in the direction of the piece if it cannot take the piece. Needs to be checked to see if it can even move
+                //pawns too, since they got short range and only in one direction
+                foreach (int[] dir in directions)
+                {
+                    /* To take:
+                     * If locationDifference == e.g. [2,3] no piece can reach it expect maybe for special moves like the knight.
+                     * if locationDIfference == e.g. [2,2] it can only be reached by a piece that moves diagonal, i.e. bishop and queen. 
+                     * If and only if locationDifference == [1,1] can a pawn reach it.
+                     * if locationDifference == e.g. [0,2] or e.g. [2,0] it can only be reached by rock and queen.
+                     * In all cases it also need to check the inbetween squares to see if there is a free path.  
+                     * If locationDifference == any combination of either 0s and 1s, the king can reach it.
+                     * Knights need to check if they can land on the locationDifference square or not. 
+                     * 
+                     * To intercept: 
+                     * Find every square between the king and the hostile piece. Check if any square can be "taken" as above. 
+                     * 
+                     */
+
+                    if (CanReach(dir, ownLocation)) //CanReach does not work with pawns, knights and king.
+                    {
+                        return true;
+                    }
+                    else
+                    {
+                        int[] kingHostileDifference = new int[] { kingLocation[0] - locations[0][0], kingLocation[1] - locations[0][1] }; //negative right/down, positve left/up
+                        int biggestDifference = Math.Abs(kingHostileDifference[0]) < Math.Abs(kingHostileDifference[1]) ? Math.Abs(kingHostileDifference[1]): Math.Abs(kingHostileDifference[0]);
+                        int distance = 2;  //king and hostile piece cannot stand on the same location, so no reason to start at 0. 
+                        //if the king and hostile piece is right next to each other, biggestDifference will be 1. Thus the reason for starting with 2  
+                        int[] newLocation = { kingLocation[0], kingLocation[1] };
+                        int[] movement = new int[2];
+                        if (newLocation[0] > 0)//left
+                            movement[0] = -1;
+                        else if(newLocation[0] < 0)//right
+                            movement[0] = 1;
+                        else
+                            movement[0] = 0;
+
+                        if (newLocation[1] > 0)//left
+                            movement[1] = -1;
+                        else if (newLocation[1] < 0)//right
+                            movement[1] = 1;
+                        else
+                            movement[1] = 0;
+
+                        while (distance < biggestDifference) 
+                        {
+                            newLocation[0] += movement[0]; 
+                            newLocation[1] += movement[1];
+                            string feltID = MapMatrix.Map[newLocation[0], newLocation[1]];
+                            if (CanReach(dir, newLocation))
+                                return true;
+                            distance++;
+                        }
+                    }
+                }
+                return false;
+
+            }
+
+            bool CanReach(int[] dir, int[] ownLocation)
+            {
+                bool index1Sign; bool index2Sign;
+                
+                int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };  //negative right/down, positve left/up
+                if(locationDifference[0] != 0 && dir[0] != 0) //find a way to make this look better
+                {
+                    int sign = locationDifference[0] / dir[0];
+                    index1Sign = sign > 0 ? false: true;
+                }
+                else if (locationDifference[0] == 0 && dir[0] == 0)
+                    index1Sign = true;
+                else
+                    index1Sign = false;
+
+                if (locationDifference[1] != 0 && dir[1] != 0)
+                {
+                    int sign = locationDifference[1] / dir[2];
+                    index2Sign = sign > 0 ? false : true;
+                }
+                else if (locationDifference[1] == 0 && dir[1] == 0)
+                    index2Sign = true;
+                else
+                    index2Sign = false;
+
+                //bool canReach = false;
+                if (Math.Abs(locationDifference[0]) == Math.Abs(locationDifference[1]) || (locationDifference[0] == 0 || locationDifference[1] == 0)) //true only if it can reach with diagnoal moves or in a straight line. 
+                    if (Math.Abs(locationDifference[0]) % Math.Abs(dir[0]) == 0 && Math.Abs(locationDifference[1]) % Math.Abs(dir[1]) == 0) //ensures that the specific movement can reach the end location
+                    {//those above night not work that great, e.g. 0%2 = 0. Also, since you are using Abs, it might not ever hit the piece, e.g. piece is at 5,5. This chess piece is at 3,3 and dir is -1,-1. It will never reach,
+                         //but it can enter this if-statement. So find another way of checking... 
+                         /*Idea: 
+                          * if both parts of locationDifference is the same, it need to have the same signs in the dir
+                          * E.g. locationDifference == [2,2], dir needs to be [-1,-1]
+                          * If LocationDifference == [-2,2], dir needs to be [1,-1]. 
+                          * If locationDifference == [0,2], dir needs to be [0,-1] 
+                          * etc.
+                          * So if any index in locationDifference is zero, the same index in dir needs to be zero,
+                          * else any index in dir needs to be of oppesit sign of the same index in locationDifference. 
+                          * How to be check this. Could devide, if they got the same sign the devide will be positive. Different signs will give a negative result. Of course no devide for zero.
+                          * So have two bools, one for each index. If true, index in locationDifference and dir is either zero or wiht oppesite signs. If false, got the same signs or not zero in both index.
+                          * Any other way? 
+                          */
+                        /* check squares between. 
+                         * 
+                         * 
+                         */
+                        int[] currentLocation = new int[2];
+                        int[] locationsRemaining = new int[] { locationDifference[0], locationDifference[1] };
+                        string feltID = "";
+                        while (locationDifference[0] != 0 && locationDifference[1] != 0 && feltID == "")
+                        {
+                            currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
+                            locationsRemaining[0] += dir[0];
+                            locationsRemaining[1] += dir[1];
+                            feltID = MapMatrix.Map[currentLocation[0], currentLocation[1]];
+
+                            if (locationsRemaining[0] == 0 && locationsRemaining[1] == 0)
+                            {
+                                //do what here? 
+                                return true;
+                            }
+                        }
+                    }
+                return false;
+            }
+
         }
 
         /// <summary>
@@ -625,14 +859,19 @@ namespace Chess
         }
 
         /// <summary>
+        /// King only function. Returns the list of squares it is treaten from. 
+        /// </summary>
+        public List<int[]> GetCheckList { get => checkLocations; }
+
+        /// <summary>
         /// Returns true if the king is checked, false otherwise. 
         /// </summary>
         public override bool SpecialBool {
             get
             {
+                checkLocations.Clear();
                 isChecked = IsInChecked(mapLocation, checkLocations);
                 CheckWriteOut();
-                checkLocations.Clear();
                 return isChecked;
             }
             set => specialBool = value; 
@@ -646,7 +885,7 @@ namespace Chess
             Draw();
             UpdateMapMatrix(oldMapLocation);
             //CheckWriteOut();
-            checkLocations.Clear();
+            //checkLocations.Clear();
             castLingCandidates.Clear();
         }
 
