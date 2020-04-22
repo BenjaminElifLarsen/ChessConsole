@@ -320,21 +320,23 @@ namespace Chess
         /// </summary>
         public void Play()
         {
-            do
+            do //should the game show what pieces that can save the king from a threat or should the player figure that out themselves? How much to hold their hand
             {
                 white.Control();
-                for (int i = ChessList.GetList(false).Count - 1; i >= 0; i--)
+                for (int i = ChessList.GetList(false).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
                 {
-                    if (ChessList.GetList(false)[i].SpecialBool)
-                        ChessList.GetList(false)[i].SpecialBool = false;
+                    //if (ChessList.GetList(false)[i].SpecialBool)
+                    //    ChessList.GetList(false)[i].SpecialBool = false;
+                    bool run = ChessList.GetList(false)[i].SpecialBool;
                     if (ChessList.GetList(false)[i].BeenTaken)
                         ChessList.GetList(false).RemoveAt(i);
                 }
                 black.Control();
                 for (int i = ChessList.GetList(true).Count - 1; i >= 0; i--)
                 {
-                    if (ChessList.GetList(true)[i].SpecialBool)
-                        ChessList.GetList(true)[i].SpecialBool = false;
+                    //if (ChessList.GetList(true)[i].SpecialBool)
+                    //    ChessList.GetList(true)[i].SpecialBool = false;
+                    bool run = ChessList.GetList(true)[i].SpecialBool;
                     if (ChessList.GetList(true)[i].BeenTaken)
                         ChessList.GetList(true).RemoveAt(i);
                 }
@@ -584,49 +586,6 @@ namespace Chess
             //chessPieces[selectedChessPiece].Control();
             ChessList.GetList(white)[selectedChessPiece].Control();
         }
-
-        ///// <summary>
-        ///// Creates the chess pieces. 
-        ///// </summary>
-        //private void CreatePieces()
-        //{
-        //    string ID;
-        //    int[] spawn;
-
-        //    for (int i = 0; i < 8; i++)
-        //    {
-        //        ID = String.Format("{0}:6:{1}", team, i);
-        //        spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
-        //        chessPieces.Add(new Pawn(colour, white, spawn, ID));
-        //    }
-        //    ID = String.Format("{0}:5:{1}", team, 1);
-        //    spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
-        //    chessPieces.Add(new Rock(colour, white, spawn, ID));
-        //    ID = String.Format("{0}:5:{1}", team, 2);
-        //    spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
-        //    chessPieces.Add(new Rock(colour, white, spawn, ID));
-        //    ID = String.Format("{0}:4:{1}", team, 1);
-        //    spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
-        //    chessPieces.Add(new Knight(colour, white, spawn, ID));
-        //    ID = String.Format("{0}:4:{1}", team, 2);
-        //    spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
-        //    chessPieces.Add(new Knight(colour, white, spawn, ID));
-        //    ID = String.Format("{0}:3:{1}", team, 1);
-        //    spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
-        //    chessPieces.Add(new Bishop(colour, white, spawn, ID));
-        //    ID = String.Format("{0}:3:{1}", team, 2);
-        //    spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
-        //    chessPieces.Add(new Bishop(colour, white, spawn, ID));
-        //    ID = String.Format("{0}:2:{1}", team, 1);
-        //    spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
-        //    chessPieces.Add(new Queen(colour, white, spawn, ID));
-        //    ID = String.Format("{0}:1:{1}", team, 1);
-        //    spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
-        //    chessPieces.Add(new King(colour, white, spawn, ID));
-
-
-        //    ChessList.SetChessList(chessPieces, white);
-        //}
 
     }
 
