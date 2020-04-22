@@ -405,12 +405,12 @@ namespace Chess
 
     class Player //got to ensure that no spawnlocation is overlapping and deal with it in case there is an overlap. 
     { //this class is set to be an abstract in the UML, but is that really needed? 
-        private byte[] colour;
+        //private byte[] colour;
         private bool white;
-        private List<ChessPiece> chessPieces = new List<ChessPiece>();
-        private int[,] spawnLocations; //start with the pawns, left to right and then the rest, left to right
+        //private List<ChessPiece> chessPieces = new List<ChessPiece>();
+        //private int[,] spawnLocations; //start with the pawns, left to right and then the rest, left to right
         private string team;
-        private string selectedID;
+        //private string selectedID;
         private int selectedChessPiece;
         private int[] location; //x,y
         private bool didMove = false;
@@ -641,7 +641,7 @@ namespace Chess
         private List<string> castLingCandidates;
         private bool isChecked;
         private bool hasMoved = false;
-
+        private byte lastAmountOfThreats = 0;
         /// <summary>
         /// The constructor for the king chess piece. 
         /// </summary>
@@ -668,6 +668,7 @@ namespace Chess
             {
                 isChecked = IsInChecked(mapLocation, checkLocations);
                 CheckWriteOut();
+                checkLocations.Clear();
                 return isChecked;
             }
             set => specialBool = value; 
@@ -687,15 +688,31 @@ namespace Chess
 
         private void CheckWriteOut()
         {
-            if (isChecked) //have a class variable used to know how many lines need to be cleared from last time. 
+            if (isChecked || lastAmountOfThreats > 0)  
             {
                 //string writeLout = "";
                 int[,] writeLocation = Settings.CheckWriteLocation; //should be modified so it return a new array rather than the existing array. 
+                byte teamLoc;
+                teamLoc = team ? (byte)0: (byte)1; 
+                
+                int[] writeAt = new int[] { writeLocation[teamLoc, 0], writeLocation[teamLoc, 1] };
+                //Console.SetCursorPosition(writeAt[0],writeAt[1]); //maybe have the board write the King White and King Black with another setting, then CheckWrtieLocation setting is that setting plus like 2 
+                //Console.WriteLine();
+                byte pos = 0;
+                for (byte i = 0; i < lastAmountOfThreats; i++)
+                {
+                    Console.SetCursorPosition(writeAt[0], writeAt[1] + i);
+                    Console.Write("".PadLeft(2));
+                }
                 foreach (int[] loc in checkLocations)
                 {
                     char letter = (char)(97 + loc[0]);
-                    string writeLout = String.Format("{0}{1}",letter,loc[1]);
+                    string writeLout = String.Format("{0}{1}",letter,loc[1]+1);
+                    Console.SetCursorPosition(writeAt[0],writeAt[1]+pos);
+                    Console.WriteLine(writeLout);
+                    pos++;
                 }
+                lastAmountOfThreats = pos;
             }
         }
 
@@ -793,7 +810,7 @@ namespace Chess
         /// <param name="location_">Location to check for being threaten.</param>
         /// <param name="toAddToList">List that contains the locations of hostile pieces that are threating the <paramref name="location_"/>.</param>
         /// <returns>Returns true if <paramref name="location_"/>is under threat, false otherwise. </returns>
-        public bool IsInChecked(int[] location_, List<int[]> toAddToList)
+        private bool IsInChecked(int[] location_, List<int[]> toAddToList)
         { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
             //should also check if it even can move, if it cannot the game should end. 
             //the king does not need to move in a check as long time there is a friendly chesspiece that can take the hostile piece. 
@@ -1153,15 +1170,13 @@ namespace Chess
         }
 
         /// <summary>
-        /// Selects a rock using 
+        /// Selects a rock using the map location.
         /// </summary>
         /// <param name="locationOfRock"></param>
         private void Castling(int[] locationOfRock) 
         {
-            //should call that specific rook's SpecialChessPieceFunction
             string rockID = MapMatrix.Map[locationOfRock[0], locationOfRock[1]];
-            byte posistion = 0;
-            foreach (ChessPiece chePie in ChessList.GetList(team)) //does chePie point at the same memory as the one if the GetList or not?
+            foreach (ChessPiece chePie in ChessList.GetList(team)) 
             {
                 if(chePie.GetID == rockID)
                 {
