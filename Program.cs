@@ -1120,6 +1120,8 @@ namespace Chess
                                 if (castling)
                                 {
                                     Castling(cursorLocation);
+                                    hasSelected = true;
+                                    break;
                                 }
                                 else if(!castling)
                                     TakeEnemyPiece(cursorLocation);
@@ -1163,6 +1165,15 @@ namespace Chess
             {
                 if(chePie.GetID == rockID)
                 {
+                    int x = chePie.GetMapLocation[0];
+                    if (x < mapLocation[0])
+                    {
+                        mapLocation[0] -= 2;
+                    }
+                    else
+                    {
+                        mapLocation[0] += 2;
+                    }
                     chePie.SpecialChessPieceFunction();
                     break;
                 }
@@ -1658,9 +1669,8 @@ namespace Chess
         /// </summary>
         private void Castling()
         {
-            //need to figure out the direction to move in. Can do it by using the king's map location, but go trough the list or just hardwrite it? 
-            //or just look if the rock's maplocation[0] is lower or higher than a specific value, e.g. 4
             RemoveDraw(mapLocation);
+
             if(mapLocation[0] == 0)
             {
                 mapLocation[0] = 3;
@@ -1669,6 +1679,7 @@ namespace Chess
             {
                 mapLocation[0] = 5;
             }
+            LocationUpdate();
             Draw();
             hasMoved = true;
         }
