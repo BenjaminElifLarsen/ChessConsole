@@ -224,6 +224,17 @@ namespace Chess
                 { 0, 7 }, { 1, 7 }, { 2, 7 }, { 3, 7 }, { 4, 7 }, { 5, 7 }, { 6, 7 }, { 7, 7 }
             }; 
             BoardSetup();
+            byte[] colourWhite =
+            {
+                255,255,255
+            };
+            byte[] colourBlack =
+            {
+                0,0,0
+            };
+            CreatePieces(true, whiteSpawnLocation, colourWhite);
+            CreatePieces(false, blackSpawnLocation, colourBlack);
+
             PlayerSetup();
         }
 
@@ -339,12 +350,55 @@ namespace Chess
             {
                 255,255,255
             };
-            white = new Player(colourWhite, true, whiteSpawnLocation);
+            white = new Player(/*colourWhite,*/ true/*, whiteSpawnLocation*/);
             byte[] colourBlack =
             {
                 0,0,0
             };
-            black = new Player(colourBlack, false, blackSpawnLocation);
+            black = new Player(/*colourBlack,*/ false/*, blackSpawnLocation*/);
+        }
+
+        /// <summary>
+        /// Creates the chess pieces. 
+        /// </summary>
+        private void CreatePieces(bool white, int[,] spawnLocations, byte[] colour)
+        {
+            string team = white == true ? "+" : "-";
+            string ID;
+            int[] spawn;
+            List<ChessPiece> chessPieces = new List<ChessPiece>();
+            for (int i = 0; i < 8; i++)
+            {
+                ID = String.Format("{0}:6:{1}", team, i);
+                spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
+                chessPieces.Add(new Pawn(colour, white, spawn, ID));
+            }
+            ID = String.Format("{0}:5:{1}", team, 1);
+            spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
+            chessPieces.Add(new Rock(colour, white, spawn, ID));
+            ID = String.Format("{0}:5:{1}", team, 2);
+            spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
+            chessPieces.Add(new Rock(colour, white, spawn, ID));
+            ID = String.Format("{0}:4:{1}", team, 1);
+            spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
+            chessPieces.Add(new Knight(colour, white, spawn, ID));
+            ID = String.Format("{0}:4:{1}", team, 2);
+            spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
+            chessPieces.Add(new Knight(colour, white, spawn, ID));
+            ID = String.Format("{0}:3:{1}", team, 1);
+            spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
+            chessPieces.Add(new Bishop(colour, white, spawn, ID));
+            ID = String.Format("{0}:3:{1}", team, 2);
+            spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
+            chessPieces.Add(new Bishop(colour, white, spawn, ID));
+            ID = String.Format("{0}:2:{1}", team, 1);
+            spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
+            chessPieces.Add(new Queen(colour, white, spawn, ID));
+            ID = String.Format("{0}:1:{1}", team, 1);
+            spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
+            chessPieces.Add(new King(colour, white, spawn, ID));
+
+            ChessList.SetChessList(chessPieces, white);
         }
 
     }
@@ -361,13 +415,13 @@ namespace Chess
         private int[] location; //x,y
         private bool didMove = false;
 
-        public Player(byte[] colour, bool startTurn, int[,] spawnLocations)
+        public Player(/*byte[] colour,*/ bool startTurn/*, int[,] spawnLocations*/)
         {
-            this.colour = colour;
+            //this.colour = colour;
             this.white = startTurn;
-            this.spawnLocations = spawnLocations;
+            //this.spawnLocations = spawnLocations;
             team = white == true ? "+" : "-";
-            CreatePieces();
+            //CreatePieces();
         }
 
         /// <summary>
@@ -427,7 +481,7 @@ namespace Chess
 
             } while (!hasSelected);
             SquareHighLight(false);
-            SelectPiece();
+            //SelectPiece();
 
         }
 
@@ -509,11 +563,11 @@ namespace Chess
             }
         }
 
-        private void SelectPiece()
-        { //how this function will work will depent on the chosen method for hovering over, i.e. using the list or not.
-            selectedID = null; //will be needed to find the chosen chess piece in the list if the list is not the selected hover over method
+        //private void SelectPiece()
+        //{ //how this function will work will depent on the chosen method for hovering over, i.e. using the list or not.
+        //    selectedID = null; //will be needed to find the chosen chess piece in the list if the list is not the selected hover over method
 
-        }
+        //}
 
         /// <summary>
         /// Function that calls the selected chess piece control function. 
@@ -527,58 +581,52 @@ namespace Chess
             //    //do stuff, replace the old one with the updated one
             //    //works, but are there better ways...
             //}
-            chessPieces[selectedChessPiece].Control();
+            //chessPieces[selectedChessPiece].Control();
+            ChessList.GetList(white)[selectedChessPiece].Control();
         }
 
-        /// <summary>
-        /// Creates the chess pieces. 
-        /// </summary>
-        private void CreatePieces()
-        {
-            string ID;
-            int[] spawn;
+        ///// <summary>
+        ///// Creates the chess pieces. 
+        ///// </summary>
+        //private void CreatePieces()
+        //{
+        //    string ID;
+        //    int[] spawn;
 
-            for (int i = 0; i < 8; i++)
-            {
-                ID = String.Format("{0}:6:{1}", team, i);
-                spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
-                chessPieces.Add(new Pawn(colour, white, spawn, ID));
-            }
-            ID = String.Format("{0}:5:{1}", team, 1);
-            spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
-            chessPieces.Add(new Rock(colour, white, spawn, ID));
-            ID = String.Format("{0}:5:{1}", team, 2);
-            spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
-            chessPieces.Add(new Rock(colour, white, spawn, ID));
-            ID = String.Format("{0}:4:{1}", team, 1);
-            spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID));
-            ID = String.Format("{0}:4:{1}", team, 2);
-            spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID));
-            ID = String.Format("{0}:3:{1}", team, 1);
-            spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID));
-            ID = String.Format("{0}:3:{1}", team, 2);
-            spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID));
-            ID = String.Format("{0}:2:{1}", team, 1);
-            spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
-            chessPieces.Add(new Queen(colour, white, spawn, ID));
-            ID = String.Format("{0}:1:{1}", team, 1);
-            spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
-            chessPieces.Add(new King(colour, white, spawn, ID));
-
-
-            ChessList.SetChessList(chessPieces, white);
-        }
-
-        public bool Turn(bool turn)
-        {
+        //    for (int i = 0; i < 8; i++)
+        //    {
+        //        ID = String.Format("{0}:6:{1}", team, i);
+        //        spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
+        //        chessPieces.Add(new Pawn(colour, white, spawn, ID));
+        //    }
+        //    ID = String.Format("{0}:5:{1}", team, 1);
+        //    spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
+        //    chessPieces.Add(new Rock(colour, white, spawn, ID));
+        //    ID = String.Format("{0}:5:{1}", team, 2);
+        //    spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
+        //    chessPieces.Add(new Rock(colour, white, spawn, ID));
+        //    ID = String.Format("{0}:4:{1}", team, 1);
+        //    spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
+        //    chessPieces.Add(new Knight(colour, white, spawn, ID));
+        //    ID = String.Format("{0}:4:{1}", team, 2);
+        //    spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
+        //    chessPieces.Add(new Knight(colour, white, spawn, ID));
+        //    ID = String.Format("{0}:3:{1}", team, 1);
+        //    spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
+        //    chessPieces.Add(new Bishop(colour, white, spawn, ID));
+        //    ID = String.Format("{0}:3:{1}", team, 2);
+        //    spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
+        //    chessPieces.Add(new Bishop(colour, white, spawn, ID));
+        //    ID = String.Format("{0}:2:{1}", team, 1);
+        //    spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
+        //    chessPieces.Add(new Queen(colour, white, spawn, ID));
+        //    ID = String.Format("{0}:1:{1}", team, 1);
+        //    spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
+        //    chessPieces.Add(new King(colour, white, spawn, ID));
 
 
-            return white;
-        }
+        //    ChessList.SetChessList(chessPieces, white);
+        //}
 
     }
 
@@ -1046,20 +1094,6 @@ namespace Chess
         //    oldMapLocation = null;
         //    bool hasSelected = false;
         //    EndLocations();
-        //    //List<int[,]> newLocations = new List<int[,]>();
-        //    //foreach (int[] loc_ in checkLocations) //the current checkLocations is the square of the king. 
-        //    //{
-        //    //    int[,] checker = new int[,] { { loc_[0], loc_[1] } };
-        //    //    foreach (int[,] endLoc_ in possibleEndLocations)
-        //    //    {
-        //    //        if(!(endLoc_[0, 0] == checker[0, 0] && endLoc_[0, 1] == checker[0, 1]))
-        //    //        { 
-        //    //            newLocations.Add(endLoc_);
-        //    //        }
-        //    //    }
-        //    //}
-        //    //possibleEndLocations = newLocations;
-
         //    if (possibleEndLocations.Count != 0)
         //    {
         //        DisplayPossibleMove();
@@ -1110,10 +1144,6 @@ namespace Chess
                     break;
                 }
             }
-            //RemoveDraw(mapLocation); //these are not needed since the Move function does not care about the movement of the chesspiece and thus can be used for moving the king. 
-            //move itself
-            //Draw();
-            //hasMoved = true; //call from the move function
         }
 
     }
