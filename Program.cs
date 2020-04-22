@@ -327,7 +327,7 @@ namespace Chess
                 {
                     //if (ChessList.GetList(false)[i].SpecialBool)
                     //    ChessList.GetList(false)[i].SpecialBool = false;
-                    bool run = ChessList.GetList(false)[i].SpecialBool;
+                    bool run = ChessList.GetList(false)[i].SpecialBool; //check if there is a piece that can take the hostile piece that is treating the king, if not, checkmate. 
                     if (ChessList.GetList(false)[i].BeenTaken)
                         ChessList.GetList(false).RemoveAt(i);
                 }
