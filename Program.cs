@@ -91,7 +91,8 @@ namespace Chess
         private static byte edgeSize = (byte)(extraSpacing + 1); //does not affect top and left side numbers and letters in the correct way
         private static byte[] windowSizeModifer = new byte[] {20,4 }; //not a setting that should be access too.
         private static int[] windowSize = new int[] { squareSize * 8 + 9 + 2 * edgeSize + offset[0] * 2 + windowSizeModifer[0], squareSize * 8 + 9 + 2 * edgeSize + offset[1] * 2 + windowSizeModifer[1] };
-        private static int[,] writeLocationCheck = new int[,] { {windowSize[0]-windowSizeModifer[0],10 },{ windowSize[0] - windowSizeModifer[0] + 8,10 } }; //x,y //each line should contain two symbols, e.g. D5, A2 etc..
+        private static int[,] writeLocationCheckHeader = new int[,] { { windowSize[0] - windowSizeModifer[0], 10 }, { windowSize[0] - windowSizeModifer[0] + 8, 10 } };
+        private static int[,] writeLocationCheck = new int[,] { {writeLocationCheckHeader[0,0], writeLocationCheckHeader[0, 1]+2 },{ writeLocationCheckHeader[1, 0], writeLocationCheckHeader[1, 1]+2 } }; //x,y //each line should contain two symbols, e.g. D5, A2 etc..
         //Black    White
         //king     king
         //----     ----
@@ -155,7 +156,11 @@ namespace Chess
         /// </summary>
         public static int[] WindowSize { get => windowSize; } //consider having two settings for player write locations
         /// <summary>
-        /// Gets the locations to write check out to. 
+        /// Gets the locations to write the check header too.
+        /// </summary>
+        public static int[,] CheckHeaderLocation { get => writeLocationCheckHeader; }
+        /// <summary>
+        /// Gets the locations to write check out too. 
         /// </summary>
         public static int[,] CheckWriteLocation { get => writeLocationCheck; }
         /// <summary>
