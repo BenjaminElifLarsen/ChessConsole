@@ -354,6 +354,11 @@ namespace Chess
                     if (ChessList.GetList(false)[i].BeenTaken) //it should do that as a minimum. So it needs to get the checkList from the kings. This should be done before the player.Control();
                         ChessList.GetList(false).RemoveAt(i);
                 }//should check after moving if the king is still treaten.
+                bool blackCheck = CheckMateChecker(false);
+                if (blackCheck)
+                {
+
+                }
                 black.Control();
                 for (int i = ChessList.GetList(true).Count - 1; i >= 0; i--)
                 {
@@ -363,10 +368,15 @@ namespace Chess
                     if (ChessList.GetList(true)[i].BeenTaken)
                         ChessList.GetList(true).RemoveAt(i);
                 }
+                bool whiteCheck = CheckMateChecker(true);
+                if (whiteCheck)
+                {
+
+                }
             } while (true);
         }
 
-        private void CheckMateChecker(bool team)
+        private bool CheckMateChecker(bool team)
         {//what should this function return. Bool whether the king is checkmate? If not checkmate, a list of the pieces that prevent the check?
             //needs to check if the king can move to a non threaten location, perhaps first? 
             List<int[]> locations = new List<int[]>();
@@ -398,7 +408,7 @@ namespace Chess
                     int[] chePieLocation = chePie.GetMapLocation;
                     string[] feltIDParts = MapMatrix.Map[locations[0][0], locations[0][1]].Split(':');
                     isKnight = feltIDParts[1] == "4" ? true: false; 
-
+                    
                     if (chePie is King)
                     {
                         //figure out what to do with the king
@@ -416,7 +426,8 @@ namespace Chess
                             new int[]{1,-1},
                             new int[]{1,1}
                         };
-                        QRBCheck(movement, chePie.GetMapLocation);
+                        if (QRBCheck(movement, chePie.GetMapLocation))
+                            return true;
                     }
                     else if (chePie is Rock)
                     {
@@ -427,7 +438,8 @@ namespace Chess
                             new int[]{0,1},
                             new int[]{0,1}
                         };
-                        QRBCheck(movement, chePie.GetMapLocation);
+                        if (QRBCheck(movement, chePie.GetMapLocation))
+                            return true;
                     }
                     else if (chePie is Bishop)
                     {
@@ -438,19 +450,22 @@ namespace Chess
                             new int[]{1,-1},
                             new int[]{1,1}
                         };
-                        QRBCheck(movement, chePie.GetMapLocation);
+                        if (QRBCheck(movement, chePie.GetMapLocation))
+                            return true;
                     }
                     else if (chePie is Knight)
                     {
-                        KnightCheck(chePie.GetMapLocation);
+                        if (KnightCheck(chePie.GetMapLocation))
+                            return true;
                     }
                     else if (chePie is Pawn)
                     {
-                        PawnCheck(chePie.GetMapLocation);
+                        if (PawnCheck(chePie.GetMapLocation))
+                            return true;
                     }
 
                 }
-
+            return false;
             //bool Check(int[][] directions, int[] ownLocation)
             //{
             //    if (KnightCheck(ownLocation))
@@ -670,7 +685,7 @@ namespace Chess
 
             bool CanReach(int[] dir, int[] ownLocation)
             {//will not work if the hostile piece is a knight
-                bool index1Sign; bool index2Sign;
+                bool index1Sign; bool index2Sign; bool diagonalOrStraigth;
 
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };  //negative right/down, positve left/up
                 if (locationDifference[0] != 0 && dir[0] != 0) //find a way to make this look better
@@ -685,7 +700,7 @@ namespace Chess
 
                 if (locationDifference[1] != 0 && dir[1] != 0)
                 {
-                    int sign = locationDifference[1] / dir[2];
+                    int sign = locationDifference[1] / dir[1];
                     index2Sign = sign > 0 ? false : true;
                 }
                 else if (locationDifference[1] == 0 && dir[1] == 0)
@@ -693,7 +708,20 @@ namespace Chess
                 else
                     index2Sign = false;
 
-                if (index1Sign && index2Sign)
+                if (locationDifference[0] != 0 && locationDifference[1] != 0) //cannot be reach by a straight movement. 
+                {
+                    if (locationDifference[0] == locationDifference[1]) //can be reached by a diagonal movement
+                    {
+                        diagonalOrStraigth = true;
+                    }
+                    else //cannot be reached by a diagonal movement;
+                        diagonalOrStraigth = false;
+                }
+                else
+                    diagonalOrStraigth = true;
+
+
+                if (index1Sign && index2Sign && diagonalOrStraigth)
                 {
                     /*Idea: 
                      * if both parts of locationDifference is the same, it need to not have the same signs in the dir
@@ -711,12 +739,12 @@ namespace Chess
                     int[] currentLocation;
                     int[] locationsRemaining = new int[] { locationDifference[0], locationDifference[1] };
                     string feltID = ""; //maybe have a setting for the default value on the map
-                    while (locationDifference[0] != 0 && locationDifference[1] != 0 && feltID == "")
+                    while (locationsRemaining[0] != 0 && locationsRemaining[1] != 0 && feltID == "") //rewrite all of this, also write better comments for the future
                     {
                         currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
                         locationsRemaining[0] += dir[0];
                         locationsRemaining[1] += dir[1];
-                        feltID = MapMatrix.Map[currentLocation[0], currentLocation[1]];
+                        feltID = MapMatrix.Map[locationsRemaining[0], locationsRemaining[1]];
 
                         if (locationsRemaining[0] == 0 && locationsRemaining[1] == 0)
                         {
