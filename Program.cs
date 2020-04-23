@@ -698,8 +698,8 @@ namespace Chess
                 int[] locationDifference = new int[] { ownLocation[0] - toEndOnLocation[0], ownLocation[1] - toEndOnLocation[1] };  //negative right/down, positve left/up
                 if (locationDifference[0] != 0 && dir[0] != 0) //find a way to make this look better
                 {
-                    int sign = locationDifference[0] / dir[0];
-                    index1Sign = sign > 0 ? false : true; //if above zero, the signs are the same. Different signs will give a negative result
+                    int sign = locationDifference[0] / dir[0]; 
+                    index1Sign = sign > 0 ? false : true; //if above zero, the signs are the same. Different signs will give a negative result. The piece can only reach the toEndOnLocation if the signs are different. 
                 }
                 else if (locationDifference[0] == 0 && dir[0] == 0)
                     index1Sign = true;
@@ -751,12 +751,12 @@ namespace Chess
                      */
 
                     int[] currentLocation;
-                    int[] locationsRemaining = new int[] { locationDifference[0], locationDifference[1] };
+                    int[] locationsRemaining = new int[] { ownLocation[0], ownLocation[1] };
                     string feltID = ""; //maybe have a setting for the default value on the map
                     while (locationDifference[0] != 0 && locationDifference[1] != 0) //rewrite all of this, also write better comments for the future
                     {
                         currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
-                        locationsRemaining[0] += dir[0];
+                        locationsRemaining[0] += dir[0]; //does not contain the location it should have, it does not check the location between the piece and the end location. 
                         locationsRemaining[1] += dir[1];
                         feltID = MapMatrix.Map[locationsRemaining[0], locationsRemaining[1]];
                         if (feltID != "")
