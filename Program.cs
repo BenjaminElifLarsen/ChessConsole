@@ -750,19 +750,21 @@ namespace Chess
                      * Any other way? 
                      */
 
-                    int[] currentLocation;
-                    int[] locationsRemaining = new int[] { ownLocation[0], ownLocation[1] };
+                    int[] currentLocation = new int[] { ownLocation[0], ownLocation[1] };
+                    int locationsRemaining = Math.Abs(locationDifference[0]) > Math.Abs(locationDifference[1]) ? Math.Abs(locationDifference[0]) : Math.Abs(locationDifference[1]); //should be the amount of sqaures from start to and with the end square. 
                     string feltID = ""; //maybe have a setting for the default value on the map
-                    while (locationDifference[0] != 0 && locationDifference[1] != 0) //rewrite all of this, also write better comments for the future
+                    while (locationsRemaining!= 0 ) //rewrite all of this, also write better comments for the future
                     {
-                        currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
-                        locationsRemaining[0] += dir[0]; //does not contain the location it should have, it does not check the location between the piece and the end location. 
-                        locationsRemaining[1] += dir[1];
-                        feltID = MapMatrix.Map[locationsRemaining[0], locationsRemaining[1]];
+                        //currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
+                        //locationsRemaining[0] += dir[0]; //does not contain the location it should have, it does not check the location between the piece and the end location. 
+                        //locationsRemaining[1] += dir[1]; //should be fixed now
+                        currentLocation[0] += dir[0];
+                        currentLocation[1] += dir[1];
+                        feltID = MapMatrix.Map[currentLocation[0], currentLocation[1]];
                         if (feltID != "")
                             return false;
-
-                        if (locationsRemaining[0] == 0 && locationsRemaining[1] == 0)
+                        locationsRemaining--;
+                        if (locationsRemaining == 1)
                         {
                             return true;
                         }
