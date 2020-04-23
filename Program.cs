@@ -484,7 +484,7 @@ namespace Chess
 
                 if (KnightCanReach(ownLocation))
                     return true;
-                else
+                else if(!isKnight)
                 {
                     int biggestDifference = Math.Abs(kingHostileDifference[0]) < Math.Abs(kingHostileDifference[1]) ? Math.Abs(kingHostileDifference[1]) : Math.Abs(kingHostileDifference[0]);
                     int distance = 2;
@@ -519,7 +519,7 @@ namespace Chess
                 return false;
 
                 bool KnightCanReach(int[] standLocation)
-                {//will not work if the hostile piece is a knight
+                {
                     int[] locationDifference = new int[] { standLocation[0] - locations[0][0], standLocation[1] - locations[0][1] };
                     int[][] movement = new int[][] { new int[] { 1, 2 }, new int[] { 2, 1 }, new int[] { -1, -2 }, new int[] { -2, -1 }, new int[] { 1, -2 }, new int[] { 2, -1 }, new int[] { -1, 2 }, new int[] { -2, 1 } };
                     foreach (int[] mov in movement)
