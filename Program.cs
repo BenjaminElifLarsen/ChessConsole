@@ -371,7 +371,7 @@ namespace Chess
                 bool whiteCheck = CheckMateChecker(true);
                 if (whiteCheck)
                 {
-
+                    
                 }
             } while (true);
         }
