@@ -407,8 +407,8 @@ namespace Chess
                     string[] idParts = chePie.GetID.Split(':');
                     int[] chePieLocation = chePie.GetMapLocation;
                     string[] feltIDParts = MapMatrix.Map[locations[0][0], locations[0][1]].Split(':');
-                    isKnight = feltIDParts[1] == "4" ? true: false; 
-                    
+                    isKnight = feltIDParts[1] == "4" ? true : false;
+
                     if (chePie is King)
                     {
                         //figure out what to do with the king
@@ -521,17 +521,15 @@ namespace Chess
                 bool KnightCanReach(int[] standLocation)
                 {//will not work if the hostile piece is a knight
                     int[] locationDifference = new int[] { standLocation[0] - locations[0][0], standLocation[1] - locations[0][1] };
-                    int[][] movement = new int[][] { new int[] { 1, 2 }, new int[] { 2, 1 } };
-                    locationDifference[0] = Math.Abs(locationDifference[0]); //since the knight only got "two" movements, but with different signs, 
-                    locationDifference[1] = Math.Abs(locationDifference[1]); //it is only needed to check if either of those two movements align on the hostile location, changed to have the same sign.
+                    int[][] movement = new int[][] { new int[] { 1, 2 }, new int[] { 2, 1 }, new int[] { -1, -2 }, new int[] { -2, -1 }, new int[] { 1, -2 }, new int[] { 2, -1 }, new int[] { -1, 2 }, new int[] { -2, 1 } };
                     foreach (int[] mov in movement)
                     {
                         int[] movLocation = new int[] { standLocation[0] + mov[0], standLocation[1] + mov[1] };
-                        if (movLocation[0] == locationDifference[0] && movLocation[1] == locationDifference[1])
+                        if (movLocation[0] == locations[0][0] && movLocation[1] == locations[0][1])
                         {
                             return true;
                         }
-                    } //still need to check if it can get in the way
+                    } 
                     return false;
                 }
             }
@@ -591,19 +589,19 @@ namespace Chess
 
                 bool PawnCanReach(int[] standLocation)
                 {
-                    if (kingHostileDifference[1] == 0 && kingLocation[1] == ownLocation[1] + direction) 
+                    if (kingHostileDifference[1] == 0 && kingLocation[1] == ownLocation[1] + direction)
                     { //king and hostile is on same x line. King is only one above/below the pawn, depending on team. 
-                        if(standLocation[0] == ownLocation[0])
+                        if (standLocation[0] == ownLocation[0])
                         { //the pawn shares a x location with any of the squares between the king and hostile piece.
                             return true;
                         }
-                        
+
                     }
                     else if (Math.Abs(kingHostileDifference[1]) >= 2 && Math.Abs(kingHostileDifference[0]) >= 2)
                     {  //there is at least one square between the king and the hostile piece. King and hostile piece is diagonal to each other. 
-                        if(ownLocation[0] != kingLocation[0] && ownLocation[0] != kingLocation[0])
+                        if (ownLocation[0] != kingLocation[0] && ownLocation[0] != kingLocation[0])
                         {//if the pawn is not above or below 
-                            if(standLocation[1] == ownLocation[1] + direction && standLocation[0] == ownLocation[0])
+                            if (standLocation[1] == ownLocation[1] + direction && standLocation[0] == ownLocation[0])
                             { //if the pawn is right below or above a square between the king and hostile piece and share the same x location.
                                 return true;
                             }
@@ -652,16 +650,16 @@ namespace Chess
                         //if the king and hostile piece is right next to each other, biggestDifference will be 1. Thus the reason for starting with 2  
                         int[] newLocation = { kingLocation[0], kingLocation[1] };
                         int[] movement = new int[2];
-                        if (newLocation[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
-                            movement[0] = -1; 
-                        else if (newLocation[0] < 0)//right
+                        if (kingHostileDifference[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
+                            movement[0] = -1;
+                        else if (kingHostileDifference[0] < 0)//right
                             movement[0] = 1;
                         else
                             movement[0] = 0;
 
-                        if (newLocation[1] > 0)//left
+                        if (kingHostileDifference[1] > 0)//left
                             movement[1] = -1;
-                        else if (newLocation[1] < 0)//right
+                        else if (kingHostileDifference[1] < 0)//right
                             movement[1] = 1;
                         else
                             movement[1] = 0;
@@ -685,7 +683,7 @@ namespace Chess
 
             bool CanReach(int[] dir, int[] ownLocation)
             {//will not work if the hostile piece is a knight
-                bool index1Sign; bool index2Sign; bool diagonalOrStraigth;
+                bool index1Sign; bool index2Sign; bool diagonal; bool straight;
 
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };  //negative right/down, positve left/up
                 if (locationDifference[0] != 0 && dir[0] != 0) //find a way to make this look better
@@ -712,16 +710,22 @@ namespace Chess
                 {
                     if (locationDifference[0] == locationDifference[1]) //can be reached by a diagonal movement
                     {
-                        diagonalOrStraigth = true;
+                        diagonal = true;
                     }
                     else //cannot be reached by a diagonal movement;
-                        diagonalOrStraigth = false;
+                        diagonal = false;
                 }
                 else
-                    diagonalOrStraigth = true;
+                    diagonal = true;
 
+                if(locationDifference[0] == 0 || locationDifference[1] == 0)
+                {
+                    straight = true;
+                }
+                else
+                    straight = false;
 
-                if (index1Sign && index2Sign && diagonalOrStraigth)
+                if (index1Sign && index2Sign && (diagonal || straight))
                 {
                     /*Idea: 
                      * if both parts of locationDifference is the same, it need to not have the same signs in the dir
@@ -739,7 +743,7 @@ namespace Chess
                     int[] currentLocation;
                     int[] locationsRemaining = new int[] { locationDifference[0], locationDifference[1] };
                     string feltID = ""; //maybe have a setting for the default value on the map
-                    while (locationsRemaining[0] != 0 && locationsRemaining[1] != 0 && feltID == "") //rewrite all of this, also write better comments for the future
+                    while (locationDifference[0] != 0 && locationDifference[1] != 0 && feltID == "") //rewrite all of this, also write better comments for the future
                     {
                         currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
                         locationsRemaining[0] += dir[0];
