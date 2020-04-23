@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Runtime.InteropServices;
 
 namespace Chess
@@ -470,6 +471,7 @@ namespace Chess
                     {
                         if (PawnCheck(chePie.GetMapLocation))
                         {
+                            Debug.WriteLine("{0}",chePie.GetID);
                             return true;
                         }
                     }
@@ -624,14 +626,11 @@ namespace Chess
 
             //only call Check with directions that can "moves" the chesspiece toward the hostile piece. With the new code, this is not needed.
             bool QRBCheck(int[][] directions, int[] ownLocation)
-            {
-                //need to check if it can reach the hostile piece or any square between it and the king.
+            {//is not working if the hostile piece is right next to the piece that calls this code. Should be fixed now. 
                 //what should happen if a can piece can do any of those things? Added to a special list? Nothing? 
                 //at least if none can save the king, checkmate 
 
-                //also the knight might need to be done in a differnet way.
-                //king most likely the same as the king does not want to move in the direction of the piece if it cannot take the piece. Needs to be checked to see if it can even move
-                //pawns too, since they got short range and only in one direction
+                //king does not want to move in the direction of the piece if it cannot take the piece. Needs to be checked to see if it can even move.
                 foreach (int[] dir in directions)
                 {
                     /* To take:
@@ -665,8 +664,8 @@ namespace Chess
                         else if (kingHostileDifference[0] < 0)//right
                             movement[0] = 1;
                         else
-                            movement[0] = 0;
-
+                            movement[0] = 0; //this if-else statement and the one below, does not seem to work that well when the hostile piece is between the piece running this code and the king. 
+                                                //then again, this code should not be reached in that case and most likely only the bug that is causing it
                         if (kingHostileDifference[1] > 0)//left
                             movement[1] = -1;
                         else if (kingHostileDifference[1] < 0)//right
@@ -753,7 +752,7 @@ namespace Chess
                     int[] currentLocation = new int[] { ownLocation[0], ownLocation[1] };
                     int locationsRemaining = Math.Abs(locationDifference[0]) > Math.Abs(locationDifference[1]) ? Math.Abs(locationDifference[0]) : Math.Abs(locationDifference[1]); //should be the amount of sqaures from start to and with the end square. 
                     string feltID = ""; //maybe have a setting for the default value on the map
-                    while (locationsRemaining!= 0 ) //rewrite all of this, also write better comments for the future
+                    while (locationsRemaining != 0 ) //rewrite all of this, also write better comments for the future
                     {
                         //currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
                         //locationsRemaining[0] += dir[0]; //does not contain the location it should have, it does not check the location between the piece and the end location. 
@@ -761,13 +760,14 @@ namespace Chess
                         currentLocation[0] += dir[0];
                         currentLocation[1] += dir[1];
                         feltID = MapMatrix.Map[currentLocation[0], currentLocation[1]];
-                        if (feltID != "")
+                        if (feltID != "" && feltID != MapMatrix.Map[locations[0][0],locations[0][1]]) //currently it does not care if the last square is the one the enemy piece is standing on. Fixed. 
                             return false;
-                        locationsRemaining--;
+
                         if (locationsRemaining == 1)
                         {
                             return true;
                         }
+                        locationsRemaining--;
                     }
                 }
                 return false;
