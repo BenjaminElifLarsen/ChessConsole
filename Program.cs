@@ -427,7 +427,9 @@ namespace Chess
                             new int[]{1,1}
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation))
+                        {
                             return true;
+                        }
                     }
                     else if (chePie is Rock)
                     {
@@ -439,7 +441,9 @@ namespace Chess
                             new int[]{0,1}
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation))
+                        {
                             return true;
+                        }
                     }
                     else if (chePie is Bishop)
                     {
@@ -451,17 +455,23 @@ namespace Chess
                             new int[]{1,1}
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation))
+                        {
                             return true;
+                        }
                     }
                     else if (chePie is Knight)
                     {
                         if (KnightCheck(chePie.GetMapLocation))
+                        {
                             return true;
+                        }
                     }
                     else if (chePie is Pawn)
                     {
                         if (PawnCheck(chePie.GetMapLocation))
+                        {
                             return true;
+                        }
                     }
 
                 }
@@ -534,7 +544,7 @@ namespace Chess
                 }
             }
 
-            bool PawnCheck(int[] ownLocation)
+            bool PawnCheck(int[] ownLocation) //need to remember double movement.
             {
                 int direction = team ? -1 : 1;
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };
@@ -590,7 +600,7 @@ namespace Chess
                 bool PawnCanReach(int[] standLocation)
                 {
                     if (kingHostileDifference[1] == 0 && kingLocation[1] == ownLocation[1] + direction)
-                    { //king and hostile is on same x line. King is only one above/below the pawn, depending on team. 
+                    { //king and hostile is on same y line. King is only one above/below the pawn, depending on team. 
                         if (standLocation[0] == ownLocation[0])
                         { //the pawn shares a x location with any of the squares between the king and hostile piece.
                             return true;
@@ -638,7 +648,7 @@ namespace Chess
                      * 
                      */
 
-                    if (CanReach(dir, ownLocation)) //CanReach does not work with pawns, knights and king.
+                    if (CanReach(dir, ownLocation, locations[0])) //CanReach does not work with pawns, knights and king.
                     {
                         return true;
                     }
@@ -671,7 +681,7 @@ namespace Chess
                             string feltID = MapMatrix.Map[newLocation[0], newLocation[1]];
                             if (feltID != "")
                                 break;
-                            if (CanReach(dir, newLocation))
+                            if (CanReach(dir, ownLocation, newLocation))
                                 return true;
                             distance++;
                         }
@@ -681,11 +691,11 @@ namespace Chess
 
             }
 
-            bool CanReach(int[] dir, int[] ownLocation)
+            bool CanReach(int[] dir, int[] ownLocation, int[] toEndOnLocation)
             {//will not work if the hostile piece is a knight
                 bool index1Sign; bool index2Sign; bool diagonal; bool straight;
 
-                int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };  //negative right/down, positve left/up
+                int[] locationDifference = new int[] { ownLocation[0] - toEndOnLocation[0], ownLocation[1] - toEndOnLocation[1] };  //negative right/down, positve left/up
                 if (locationDifference[0] != 0 && dir[0] != 0) //find a way to make this look better
                 {
                     int sign = locationDifference[0] / dir[0];
