@@ -469,7 +469,7 @@ namespace Chess
                     }
                     else if (chePie is Pawn)
                     {
-                        if (PawnCheck(chePie.GetMapLocation))
+                        if (PawnCheck(chePie.GetMapLocation, chePie.SpecialBool))
                         {
                             Debug.WriteLine("{0}",chePie.GetID);
                             return true;
@@ -546,12 +546,12 @@ namespace Chess
                 }
             }
 
-            bool PawnCheck(int[] ownLocation) //need to remember double movement.
+            bool PawnCheck(int[] ownLocation, bool firstTurn)
             {
-                int direction = team ? -1 : 1;
+                int direction = team ? -1 : 1; //how to implement double move in an easy way without to much new code.
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };
-                if (locationDifference[0] == 1)
-                {
+                if (locationDifference[0] == 1) //this if-else statment does not get affected by the double movement as it is the capture of the pawn.
+                { //no reason for this this 
                     if (locationDifference[1] == -direction)
                     {
                         return true;
@@ -564,29 +564,20 @@ namespace Chess
                     } //still need to check if it can get in the way
                 }
                 int[] kingHostileDifference = new int[] { kingLocation[0] - locations[0][0], kingLocation[1] - locations[0][1] };
-                if (!isKnight)
+                if (!isKnight) //any location that is 3 or more away on y can be skipped. 
                 {
-                    int biggestDifference = Math.Abs(kingHostileDifference[0]) < Math.Abs(kingHostileDifference[1]) ? Math.Abs(kingHostileDifference[1]) : Math.Abs(kingHostileDifference[0]);
-                    int distance = 2;
+                    int biggestDifference = Math.Abs(kingHostileDifference[0]) < Math.Abs(kingHostileDifference[1]) ? Math.Abs(kingHostileDifference[1]) : Math.Abs(kingHostileDifference[0]); 
+                    int distance = 2; //the code should just check the first square in the direction and if firstTurn is true, the one after too.
                     int[] newLocation = { kingLocation[0], kingLocation[1] };
                     int[] movement = new int[2];
-                    if (newLocation[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
-                        movement[0] = -1;
-                    else if (newLocation[0] < 0)//right
-                        movement[0] = 1;
-                    else
-                        movement[0] = 0;
 
-                    if (newLocation[1] > 0)//left
+                    if (newLocation[1] > 0)//up
                         movement[1] = -1;
-                    else if (newLocation[1] < 0)//right
+                    else if (newLocation[1] < 0)//down  //calculates the location that is needed to go to get from the king to the hostile piece.
                         movement[1] = 1;
-                    else
-                        movement[1] = 0;
 
-                    while (distance < biggestDifference)
+                    while (distance < biggestDifference)//rewrite most, if not all, of the code in the if(!isKnight) statement. It can be improved. It should check if it can get in the way first.  
                     {
-                        newLocation[0] += movement[0];
                         newLocation[1] += movement[1];
                         string feltID = MapMatrix.Map[newLocation[0], newLocation[1]];
                         if (feltID != "")
@@ -596,7 +587,6 @@ namespace Chess
                         distance++;
                     }
                 }
-
                 return false;
 
                 bool PawnCanReach(int[] standLocation)
@@ -1725,6 +1715,8 @@ namespace Chess
             promotions.Add("Bishop", 3);
             promotions.Add("Queen", 2);
         }
+
+        public override bool SpecialBool { get => firstTurn; set => base.SpecialBool = value; }
 
         /// <summary>
         /// A modified version of the base Move function. Designed to check if the player uses a double move. 
