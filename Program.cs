@@ -420,7 +420,7 @@ namespace Chess
                             new int[]{-1,0},
                             new int[]{1,0},
                             new int[]{0,1},
-                            new int[]{0,1},
+                            new int[]{0,-1},
                             new int[]{-1,-1},
                             new int[]{-1,1},
                             new int[]{1,-1},
@@ -438,7 +438,7 @@ namespace Chess
                             new int[]{-1,0},
                             new int[]{1,0},
                             new int[]{0,1},
-                            new int[]{0,1}
+                            new int[]{0,-1}
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation))
                         {
@@ -753,12 +753,14 @@ namespace Chess
                     int[] currentLocation;
                     int[] locationsRemaining = new int[] { locationDifference[0], locationDifference[1] };
                     string feltID = ""; //maybe have a setting for the default value on the map
-                    while (locationDifference[0] != 0 && locationDifference[1] != 0 && feltID == "") //rewrite all of this, also write better comments for the future
+                    while (locationDifference[0] != 0 && locationDifference[1] != 0) //rewrite all of this, also write better comments for the future
                     {
                         currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
                         locationsRemaining[0] += dir[0];
                         locationsRemaining[1] += dir[1];
                         feltID = MapMatrix.Map[locationsRemaining[0], locationsRemaining[1]];
+                        if (feltID != "")
+                            return false;
 
                         if (locationsRemaining[0] == 0 && locationsRemaining[1] == 0)
                         {
