@@ -343,7 +343,7 @@ namespace Chess
         /// Runs the loop and code that plays the game.
         /// </summary>
         public void Play()
-        { //all of this code is going to be find debugging if something goes wrong...
+        {
             do //should the game show what pieces that can save the king from a threat or should the player figure that out themselves? How much to hold their hand
             {
                 white.Control();
@@ -384,6 +384,7 @@ namespace Chess
             int[] kingLocation = new int[2];
             bool isCheked = false;
             bool isKnight = false;
+            bool kingCanMove = false;
             foreach (ChessPiece chePie in ChessList.GetList(team))
             {
                 if (chePie is King king)
@@ -394,16 +395,15 @@ namespace Chess
                         //get the checkList
                         locations = king.GetCheckList;
                         kingLocation = king.GetMapLocation;
-                        //maybe have code  that checks if the king can move to a safe location or take the piece without standing ending in a treaten square.
-                        //have a king function that calss the endlocation function and return true or false on whether it can move or not.  
+                        //maybe have code that checks if the king can move to a safe location or take the piece without standing ending in a treaten square.
+                        //have a king function that calls the endlocation function and return true or false on whether it can move or not.  
+                        kingCanMove = king.CanMove;
                         break;
                     }
                 }
             }
-            //An idea: get the location of a piece and the hostice piece, subtract them from eachother to see movement needed. If the movement needed is not allowed by that piece, skip it
-            //if it is allowed, check if there is nothing between those two.
             //also need to check if the piece can get between the hostile piece and the king.
-            if (isCheked)
+            if (!kingCanMove)
                 foreach (ChessPiece chePie in ChessList.GetList(team))
                 {
                     string[] idParts = chePie.GetID.Split(':');
@@ -479,17 +479,6 @@ namespace Chess
 
                 }
             return false;
-            //bool Check(int[][] directions, int[] ownLocation)
-            //{
-            //    if (KnightCheck(ownLocation))
-            //        return true;
-            //    else if (PawnCheck(ownLocation))
-            //        return true;
-            //    else if (QRBCheck(directions, ownLocation))
-            //        return true;
-            //    else
-            //        return false;
-            //}
 
             bool KnightCheck(int[] ownLocation)
             {
@@ -510,14 +499,14 @@ namespace Chess
                     else
                         movement[0] = 0;
 
-                    if (newLocation[1] > 0)//left
+                    if (newLocation[1] > 0)//up
                         movement[1] = -1;
-                    else if (newLocation[1] < 0)//right
+                    else if (newLocation[1] < 0)//down
                         movement[1] = 1;
                     else
                         movement[1] = 0;
 
-                    while (distance < biggestDifference)
+                    while (distance < biggestDifference) //finds all locations between the king and hostile piece.
                     {
                         newLocation[0] += movement[0];
                         newLocation[1] += movement[1];
@@ -547,7 +536,7 @@ namespace Chess
                 }
             }
 
-            bool PawnCheck(int[] ownLocation, bool firstTurn)
+            bool PawnCheck(int[] ownLocation, bool hasMoved)
             {
                 int direction = team ? -1 : 1; //how to implement double move in an easy way without to much new code.
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };
@@ -571,96 +560,53 @@ namespace Chess
 
                     int xBig = kingLocation[0] > locations[0][0] ? kingLocation[0] : locations[0][0];
                     int xSmall = kingLocation[0] > locations[0][0] ? locations[0][0] : kingLocation[0];
-                    if (ownLocation[0] > xSmall + 1 && ownLocation[0] < xBig - 1) //+- 1 because else it might stand above or below one of the pieces rather than between them.
+                    if (ownLocation[0] > xSmall && ownLocation[0] < xBig) 
                     {
-                        //find the square on x that is between the king and the hostile piece
-                        int directions = kingLocation[1] - locations[0][1] - 1; //negative is down, positive is up. Removed 1 so it is zero if they stand next to each other, 1 if there is a single square between them and so on.
-                        //bool correctDirection = directions / direction < 0 ? true : false; //if the king is higher than hostile directions is negative and the 
-                        //if direction is negative, pawn need as minimum to be higher on the y the king, if the pawn is white.
-                        //if the pawn is black negative is as minimum fine. 
-                        //if direction is positive and the pawn is black it needs to be 
-                        int[] standLocation = new int[] { };
-                        
+                        int[] directions = new int[]{ kingLocation[0] - locations[0][0] - 1, kingLocation[1] - locations[0][1] - 1}; //negative is down, positive is up. Removed 1 so it is zero if they stand next to each other, 1 if there is a single square between them and so on.
+                        //if the king got a lower y value than the hostile piece, the direction is negative. If the hostile piece got a lower y value than the king, directions is positive. If same, zero.
+                        //negative x, hostile piece on the right. Positive, it is on the left. 
+                        int[] movement = new int[2];
+                        if (directions[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
+                            movement[0] = -1;
+                        else if (directions[0] < 0)//right
+                            movement[0] = 1;
+
+                        if (directions[1] > 0)//up
+                            movement[1] = -1;
+                        else if (directions[1] < 0)//down
+                            movement[1] = 1;
+                        else
+                            movement[1] = 0;
+
+                        int[] standLocation = new int[2] { kingLocation[0], kingLocation[1]};
+                        do
+                        { //finds the square that is between king and hostile piece that got the same x as the pawn.
+                            standLocation[0] += movement[0];
+                            standLocation[1] += movement[1];
+                        } while (standLocation[0] != ownLocation[0]); 
+
                         int yDistance = standLocation[1] - ownLocation[1];
-                        int maxRange = firstTurn ? 2 : 1;
+                        int maxRange = !hasMoved ? 2 : 1;
                         int pos = 0;
-                        //need to make sure it can move in that direction
                         if (maxRange >= Math.Abs(yDistance))
                         {
                             do
                             {
                                 pos++;
-                                string feltID = MapMatrix.Map[ownLocation[0], ownLocation[1] + pos];
+                                string feltID = MapMatrix.Map[ownLocation[0], ownLocation[1] + direction*pos];
+
                                 if (feltID != "")
                                     return false;
-                            } while (pos <= maxRange);
+                            } while (pos < maxRange);
                             return true;
                         }
 
 
                     }
-                    //int biggestDifference = Math.Abs(kingHostileDifference[0]) < Math.Abs(kingHostileDifference[1]) ? Math.Abs(kingHostileDifference[1]) : Math.Abs(kingHostileDifference[0]); 
-                    //int distance = 2; //the code should just check the first square in the direction and if firstTurn is true, the one after too.
-                    //int[] newLocation = { kingLocation[0], kingLocation[1] };
-                    //int[] movement = new int[2];
 
-                    //if (newLocation[1] > 0)//up
-                    //    movement[1] = -1;
-                    //else if (newLocation[1] < 0)//down  //calculates the location that is needed to go to get from the king to the hostile piece.
-                    //    movement[1] = 1;
-
-                    //while (distance < biggestDifference)//rewrite most, if not all, of the code in the if(!isKnight) statement. It can be improved. It should check if it can get in the way first.  
-                    //{
-                    //    newLocation[1] += movement[1];
-                    //    string feltID = MapMatrix.Map[newLocation[0], newLocation[1]];
-                    //    if (feltID != "")
-                    //        break;
-                    //    if (PawnCanReach(newLocation))
-                    //        return true;
-                    //    distance++;
-                    //}
                 }
                 return false;
 
-                bool PawnCanReach(int[] standLocation)
-                {
-                    //need to ensure it works with the locations between the king and the hostile piece, even diagonal
-
-                    int yDistance = standLocation[1] - ownLocation[1];
-                    int maxRange = firstTurn ? 2 : 1;
-                    int pos = 0;
-                    if (maxRange >= Math.Abs(yDistance))
-                    {
-                        do
-                        {
-                            pos++;
-                            string feltID = MapMatrix.Map[ownLocation[0], ownLocation[1] + pos];
-                            if (feltID != "")
-                                return false;
-                        } while (pos <= maxRange);
-                        return true;
-                    }
-
-                    //if (kingHostileDifference[1] == 0 && kingLocation[1] == ownLocation[1] + direction)
-                    //{ //king and hostile is on same y line. King is only one above/below the pawn, depending on team. 
-                    //    if (standLocation[0] == ownLocation[0])
-                    //    { //the pawn shares a x location with any of the squares between the king and hostile piece.
-                    //        return true;
-                    //    }
-
-                    //}
-                    //else if (Math.Abs(kingHostileDifference[1]) >= 2 && Math.Abs(kingHostileDifference[0]) >= 2)
-                    //{  //there is at least one square between the king and the hostile piece. King and hostile piece is diagonal to each other. 
-                    //    if (ownLocation[0] != kingLocation[0] && ownLocation[0] != kingLocation[0])
-                    //    {//if the pawn is not above or below 
-                    //        if (standLocation[1] == ownLocation[1] + direction && standLocation[0] == ownLocation[0])
-                    //        { //if the pawn is right below or above a square between the king and hostile piece and share the same x location.
-                    //            return true;
-                    //        }
-                    //    }
-                    //}
-                    return false;
-                }
             }
 
 
@@ -706,9 +652,9 @@ namespace Chess
                         else
                             movement[0] = 0; //this if-else statement and the one below, does not seem to work that well when the hostile piece is between the piece running this code and the king. 
                                              //then again, this code should not be reached in that case and most likely only the bug that is causing it
-                        if (kingHostileDifference[1] > 0)//left
+                        if (kingHostileDifference[1] > 0)//up
                             movement[1] = -1;
-                        else if (kingHostileDifference[1] < 0)//right
+                        else if (kingHostileDifference[1] < 0)//down
                             movement[1] = 1;
                         else
                             movement[1] = 0;
@@ -924,21 +870,21 @@ namespace Chess
             do
             {
                 bool selected = FeltMove(location);
-                if (lastPiece != null)
+                if (lastPiece != null) //if a previous chess piece has been hovered over, remove the highlight. 
                 {
                     ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
                     lastPiece = null;
                     lastMapLocationID = null;
                 }
                 string squareID = MapMatrix.Map[location[0], location[1]];
-                if (squareID != "")
-                    if (squareID.Split(':')[0] == team)
+                if (squareID != "") //is there a chess piece on the location
+                    if (squareID.Split(':')[0] == team) //is it on the team
                     {
                         int posistion = 0;
                         foreach (ChessPiece piece in ChessList.GetList(white))
-                        {
+                        { 
                             if (piece.GetID == squareID)
-                            {
+                            { //correct chess piece and highlight it
                                 piece.IsHoveredOn(true);
                                 lastMapLocationID = piece.GetID;
                                 lastPiece = posistion;
@@ -1095,6 +1041,16 @@ namespace Chess
         /// King only function. Returns the list of squares it is treaten from. 
         /// </summary>
         public List<int[]> GetCheckList { get => checkLocations; }
+
+        public bool CanMove { 
+            get
+            {
+                EndLocations();
+                bool canMove = possibleEndLocations.Count != 0;
+                possibleEndLocations.Clear();
+                return canMove;
+            } 
+        }
 
         /// <summary>
         /// Returns true if the king is checked, false otherwise. 
