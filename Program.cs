@@ -468,9 +468,9 @@ namespace Chess
                             return true;
                         }
                     }
-                    else if (chePie is Pawn)
+                    else if (chePie is Pawn pawn)
                     {
-                        if (PawnCheck(chePie.GetMapLocation, chePie.SpecialBool))
+                        if (PawnCheck(chePie.GetMapLocation, pawn.HasMoved))
                         {
                             Debug.WriteLine("{0}", chePie.GetID);
                             return true;
@@ -1734,6 +1734,7 @@ namespace Chess
         //bug: If the chess piece cannot move and have not moved and it is selected, its RemoveDraw code will be run and give an error with the oldMapLocation is null.
         //oldMapLocation is only set in the Move function and is called by RemoveDraw right after. RemoveDraw needs to be able to handle and solve null arrays. 
         private bool firstTurn = true;
+        private bool hasMoved = false;
         private sbyte moveDirection;
         private Dictionary<string, byte> promotions = new Dictionary<string, byte>(4);
         // https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance
@@ -1766,7 +1767,11 @@ namespace Chess
             promotions.Add("Queen", 2);
         }
 
-        public override bool SpecialBool { get => firstTurn; set => base.SpecialBool = value; }
+        //public override bool SpecialBool { get => firstTurn; set => base.SpecialBool = value; } //this function is causing problems with the firstTurn
+        /// <summary>
+        /// Returns true if the pawn has moved at some point. False otherwise. 
+        /// </summary>
+        public bool HasMoved { get => hasMoved;}
 
         /// <summary>
         /// A modified version of the base Move function. Designed to check if the player uses a double move. 
@@ -1811,6 +1816,7 @@ namespace Chess
                 } while (!hasSelected);
                 NoneDisplayPossibleMove();
                 possibleEndLocations.Clear();
+                hasMoved = true;
             }
             else
             {
