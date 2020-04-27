@@ -44,6 +44,7 @@ namespace Chess
         private ChessList() { }
         private static List<ChessPiece> chessListBlack = new List<ChessPiece>();
         private static List<ChessPiece> chessListWhite = new List<ChessPiece>();
+        private static List<ChessPiece> chessListProtect = new List<ChessPiece>();
         //public static void SetChessListBlack(List<ChessPiece> list)
         //{
         //    chessListBlack = list;
@@ -69,6 +70,8 @@ namespace Chess
         {
             return team == false ? chessListBlack : chessListWhite;
         }
+        public static List<ChessPiece> ProtectList { get => chessListProtect; set => chessListProtect = value; }
+        
     }
 
     /// <summary>
@@ -350,7 +353,7 @@ namespace Chess
             {
                 return true;
             }
-            //how to check where a chesspiece is just moving back and forward. 
+            //how to check for a chesspiece is just moving back and forward. 
             return false;
         }
 
@@ -379,15 +382,16 @@ namespace Chess
             bool gameEnded = false;
             do //should the game show what pieces that can save the king from a threat or should the player figure that out themselves? How much to hold their hand
             {
-                gameEnded = Control(true);
+                gameEnded = PlayerControl(true);
                 if (gameEnded)
                     break;
-                gameEnded = Control(false);
+                gameEnded = PlayerControl(false);
 
             } while (!gameEnded);
 
-            unsafe bool Control(bool team)
+            unsafe bool PlayerControl(bool team)
             {
+
                 bool checkmate = false; bool draw = false;
                 Player player;
                 if (team)
@@ -396,15 +400,16 @@ namespace Chess
                     player = black;
                 //Checkmate(team, false);
                 player.Control();
-                checkmate = CheckmateChecker(!team);
-                draw = Draw();
+                checkmate = CheckmateChecker(!team,out List<ChessPiece> saveKingList); //how to use the list. Maybe have a function in the ChessList class that holds it. When player.Control is called the function should check if that list is null or not
+                //if not empty, use it. Else use the normal list. At the end of the player.Control set the list to null.
+                ChessList.ProtectList = saveKingList;
+                draw = Draw(); //maybe move this one out to the outer loop
                 if (checkmate || draw)
                     return true;
                 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
                 {
-
-                    bool run = ChessList.GetList(team)[i].SpecialBool; //check if there is a piece that can take the hostile piece that is treating the king, if not, checkmate. 
+                    //bool run = ChessList.GetList(team)[i].SpecialBool; //check if there is a piece that can take the hostile piece that is treating the king, if not, checkmate. 
                     if (ChessList.GetList(team)[i].BeenTaken) //it should do that as a minimum. So it needs to get the checkList from the kings. This should be done before the player.Control();
                         ChessList.GetList(team).RemoveAt(i);
                 }
@@ -418,29 +423,6 @@ namespace Chess
         public void Play()
         {
             GameLoop();
-            //do //should the game show what pieces that can save the king from a threat or should the player figure that out themselves? How much to hold their hand
-            //{
-            //    white.Control();
-            //    for (int i = ChessList.GetList(false).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
-            //    {
-            //        //if (ChessList.GetList(false)[i].SpecialBool)
-            //        //    ChessList.GetList(false)[i].SpecialBool = false;
-            //        bool run = ChessList.GetList(false)[i].SpecialBool; //check if there is a piece that can take the hostile piece that is treating the king, if not, checkmate. 
-            //        if (ChessList.GetList(false)[i].BeenTaken) //it should do that as a minimum. So it needs to get the checkList from the kings. This should be done before the player.Control();
-            //            ChessList.GetList(false).RemoveAt(i);
-            //    }//should check after moving if the king is still treaten.
-
-            //    black.Control();
-            //    for (int i = ChessList.GetList(true).Count - 1; i >= 0; i--)
-            //    {
-            //        //if (ChessList.GetList(true)[i].SpecialBool)
-            //        //    ChessList.GetList(true)[i].SpecialBool = false;
-            //        bool run = ChessList.GetList(true)[i].SpecialBool;
-            //        if (ChessList.GetList(true)[i].BeenTaken)
-            //            ChessList.GetList(true).RemoveAt(i);
-            //    }
-
-            //} while (true);
         }
 
         /// <summary>
@@ -448,15 +430,20 @@ namespace Chess
         /// </summary>
         /// <param name="team"></param>
         /// <returns></returns>
-        private bool CheckmateChecker(bool team)
+        private bool CheckmateChecker(bool team, out List<ChessPiece> canProtectKing)
         {//what should this function return. Bool whether the king is checkmate? If not checkmate, a list of the pieces that prevent the check?
-            //needs to check if the king can move to a non threaten location, perhaps first? 
-            //right now, it returns true if the king is checked and someone can protect it. If the king is checked and nobody can save it, it return false. If the king is treaten and it can move, it return false. 
+            //Needs to check if the king can move to a non threaten location, perhaps first? 
+            //Right now, it returns true if the king is checked and someone can protect it. If the king is checked and nobody can save it, it return false. If the king is treaten and it can move, it return false. Fixed.
+            //Change it, so it does not stop running the moment it has found a single piece that can save the king. Instead of add it to a List. If the list is empty, return true. Else return the list and the player got to use it instead of.
+            //the list is causing problems with the hover on and such. Maybe have a function in chess piece that is set to true if the piece can save the king, otherwise it is false. Need to ensure that the player control will only care about that 
+            //function if the king is treaten. Maybe make it true if it is allowed to move, e.g. can save the king if it is treaten, else false.
+            //Also the pawn might be have some problems again, might be related to double move if not moved. 
             List<int[]> locations = new List<int[]>();
             int[] kingLocation = new int[2];
             bool isCheked = false;
             bool isKnight = false;
             bool kingCanMove = false;
+            canProtectKing = new List<ChessPiece>();
             foreach (ChessPiece chePie in ChessList.GetList(team))
             {
                 if (chePie is King king)
@@ -503,7 +490,8 @@ namespace Chess
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation))
                         {
-                            return false;
+                            //return false;
+                            canProtectKing.Add(chePie);
                         }
                     }
                     else if (chePie is Rock)
@@ -517,7 +505,8 @@ namespace Chess
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation))
                         {
-                            return false;
+                            //return false;
+                            canProtectKing.Add(chePie);
                         }
                     }
                     else if (chePie is Bishop)
@@ -531,14 +520,16 @@ namespace Chess
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation))
                         {
-                            return false;
+                            //return false;
+                            canProtectKing.Add(chePie);
                         }
                     }
                     else if (chePie is Knight)
                     {
                         if (KnightCheck(chePie.GetMapLocation))
                         {
-                            return false;
+                            //return false;
+                            canProtectKing.Add(chePie);
                         }
                     }
                     else if (chePie is Pawn pawn)
@@ -546,12 +537,21 @@ namespace Chess
                         if (PawnCheck(chePie.GetMapLocation, pawn.HasMoved))
                         {
                             //Debug.WriteLine("{0}", chePie.GetID);
-                            return false;
+                            //return false;
+                            canProtectKing.Add(chePie);
                         }
                     }
                     //return true; //if nothing can save the king. 
                 }
-                return true;
+                if (canProtectKing.Count != 0)
+                {
+                    return false;
+                }
+                else
+                {
+                    //canProtectKing = null;
+                    return false;
+                }
             }
             return false;
 
@@ -909,7 +909,7 @@ namespace Chess
         private int selectedChessPiece;
         private int[] location; //x,y
         private bool didMove = false;
-
+        private List<ChessPiece> chessList = null;
         public Player(/*byte[] colour,*/ bool startTurn/*, int[,] spawnLocations*/)
         {
             //this.colour = colour;
@@ -924,12 +924,23 @@ namespace Chess
         /// </summary>
         public void Control()
         {
+            if(ChessList.ProtectList.Count != 0)
+            {
+                chessList = ChessList.ProtectList;
+            }
+            else
+            {
+                chessList = ChessList.GetList(white);
+            }
             do
             {
                 HoverOver();
                 MovePiece();
-                didMove = ChessList.GetList(white)[selectedChessPiece].CouldMove;
+                //didMove = ChessList.GetList(white)[selectedChessPiece].CouldMove;
+                didMove = chessList[selectedChessPiece].CouldMove;
             } while (!didMove);
+            if (ChessList.ProtectList.Count != 0)
+                ChessList.ProtectList.Clear();
         }
 
         /// <summary>
@@ -940,7 +951,7 @@ namespace Chess
             string lastMapLocationID;
             int? lastPiece = null;
             bool hasSelected = false;
-            location = ChessList.GetList(white)[0].GetMapLocation;
+            location = chessList[0].GetMapLocation;
             SquareHighLight(true);
             do
             {
@@ -967,7 +978,7 @@ namespace Chess
                                 {
                                     hasSelected = true;
                                     selectedChessPiece = posistion;
-                                    ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                                    chessList[(int)lastPiece].IsHoveredOn(false);
                                 }
                             }
                             posistion++;
