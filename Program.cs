@@ -44,7 +44,7 @@ namespace Chess
         private ChessList() { }
         private static List<ChessPiece> chessListBlack = new List<ChessPiece>();
         private static List<ChessPiece> chessListWhite = new List<ChessPiece>();
-        private static List<ChessPiece> chessListProtect = new List<ChessPiece>();
+        private static List<string> chessListProtectKing = new List<string>();
         //public static void SetChessListBlack(List<ChessPiece> list)
         //{
         //    chessListBlack = list;
@@ -70,8 +70,9 @@ namespace Chess
         {
             return team == false ? chessListBlack : chessListWhite;
         }
-        public static List<ChessPiece> ProtectList { get => chessListProtect; set => chessListProtect = value; }
-        
+
+        public static List<string> ProtectKing { get => chessListProtectKing; set => chessListProtectKing = value; }
+
     }
 
     /// <summary>
@@ -400,9 +401,11 @@ namespace Chess
                     player = black;
                 //Checkmate(team, false);
                 player.Control();
-                checkmate = CheckmateChecker(!team,out List<ChessPiece> saveKingList); //how to use the list. Maybe have a function in the ChessList class that holds it. When player.Control is called the function should check if that list is null or not
-                //if not empty, use it. Else use the normal list. At the end of the player.Control set the list to null.
-                ChessList.ProtectList = saveKingList;
+                checkmate = CheckmateChecker(!team,out List<string> saveKingList);
+                //Currently, a piece can be moved to a wrong location, thus keeping the king threaten. Also, a piece, that is keeping the king safe, can be moved such that the king is under treat, which is not allowed after the rules. 
+                //how to solve those two problems. 
+                //if proven problematic to solve, focus on the menu and the net play to keep learning. So if not solved by the 27/4, keep a break from it and move to the other parts. 
+                ChessList.ProtectKing = saveKingList;
                 draw = Draw(); //maybe move this one out to the outer loop
                 if (checkmate || draw)
                     return true;
@@ -430,7 +433,7 @@ namespace Chess
         /// </summary>
         /// <param name="team"></param>
         /// <returns></returns>
-        private bool CheckmateChecker(bool team, out List<ChessPiece> canProtectKing)
+        private bool CheckmateChecker(bool team, out List<string> canProtectKing)
         {//what should this function return. Bool whether the king is checkmate? If not checkmate, a list of the pieces that prevent the check?
             //Needs to check if the king can move to a non threaten location, perhaps first? 
             //Right now, it returns true if the king is checked and someone can protect it. If the king is checked and nobody can save it, it return false. If the king is treaten and it can move, it return false. Fixed.
@@ -438,12 +441,13 @@ namespace Chess
             //the list is causing problems with the hover on and such. Maybe have a function in chess piece that is set to true if the piece can save the king, otherwise it is false. Need to ensure that the player control will only care about that 
             //function if the king is treaten. Maybe make it true if it is allowed to move, e.g. can save the king if it is treaten, else false.
             //Also the pawn might be have some problems again, might be related to double move if not moved. 
+            //Maybe have a list of IDs and when the player hover over a piece, check against the list of IDs. If the ID fit, it can be selected otherwise not. 
             List<int[]> locations = new List<int[]>();
             int[] kingLocation = new int[2];
             bool isCheked = false;
             bool isKnight = false;
             bool kingCanMove = false;
-            canProtectKing = new List<ChessPiece>();
+            canProtectKing = new List<string>();
             foreach (ChessPiece chePie in ChessList.GetList(team))
             {
                 if (chePie is King king)
@@ -465,7 +469,7 @@ namespace Chess
             if (!kingCanMove && isCheked)
             {
                 foreach (ChessPiece chePie in ChessList.GetList(team))
-                {
+                { //not all pieces that can defend the king is added to the list. 
                     string[] idParts = chePie.GetID.Split(':');
                     int[] chePieLocation = chePie.GetMapLocation;
                     string[] feltIDParts = MapMatrix.Map[locations[0][0], locations[0][1]].Split(':');
@@ -491,7 +495,7 @@ namespace Chess
                         if (QRBCheck(movement, chePie.GetMapLocation))
                         {
                             //return false;
-                            canProtectKing.Add(chePie);
+                            canProtectKing.Add(chePie.GetID);
                         }
                     }
                     else if (chePie is Rock)
@@ -506,7 +510,7 @@ namespace Chess
                         if (QRBCheck(movement, chePie.GetMapLocation))
                         {
                             //return false;
-                            canProtectKing.Add(chePie);
+                            canProtectKing.Add(chePie.GetID);
                         }
                     }
                     else if (chePie is Bishop)
@@ -521,7 +525,7 @@ namespace Chess
                         if (QRBCheck(movement, chePie.GetMapLocation))
                         {
                             //return false;
-                            canProtectKing.Add(chePie);
+                            canProtectKing.Add(chePie.GetID);
                         }
                     }
                     else if (chePie is Knight)
@@ -529,7 +533,7 @@ namespace Chess
                         if (KnightCheck(chePie.GetMapLocation))
                         {
                             //return false;
-                            canProtectKing.Add(chePie);
+                            canProtectKing.Add(chePie.GetID);
                         }
                     }
                     else if (chePie is Pawn pawn)
@@ -538,7 +542,7 @@ namespace Chess
                         {
                             //Debug.WriteLine("{0}", chePie.GetID);
                             //return false;
-                            canProtectKing.Add(chePie);
+                            canProtectKing.Add(chePie.GetID);
                         }
                     }
                     //return true; //if nothing can save the king. 
@@ -550,7 +554,7 @@ namespace Chess
                 else
                 {
                     //canProtectKing = null;
-                    return false;
+                    return true;
                 }
             }
             return false;
@@ -909,7 +913,7 @@ namespace Chess
         private int selectedChessPiece;
         private int[] location; //x,y
         private bool didMove = false;
-        private List<ChessPiece> chessList = null;
+
         public Player(/*byte[] colour,*/ bool startTurn/*, int[,] spawnLocations*/)
         {
             //this.colour = colour;
@@ -924,23 +928,12 @@ namespace Chess
         /// </summary>
         public void Control()
         {
-            if(ChessList.ProtectList.Count != 0)
-            {
-                chessList = ChessList.ProtectList;
-            }
-            else
-            {
-                chessList = ChessList.GetList(white);
-            }
             do
             {
                 HoverOver();
                 MovePiece();
-                //didMove = ChessList.GetList(white)[selectedChessPiece].CouldMove;
-                didMove = chessList[selectedChessPiece].CouldMove;
+                didMove = ChessList.GetList(white)[selectedChessPiece].CouldMove;
             } while (!didMove);
-            if (ChessList.ProtectList.Count != 0)
-                ChessList.ProtectList.Clear();
         }
 
         /// <summary>
@@ -949,9 +942,10 @@ namespace Chess
         private void HoverOver()
         {
             string lastMapLocationID;
-            int? lastPiece = null;
+            int? lastPiece = 0;
+            ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(true);
             bool hasSelected = false;
-            location = chessList[0].GetMapLocation;
+            location = ChessList.GetList(white)[0].GetMapLocation;
             SquareHighLight(true);
             do
             {
@@ -974,11 +968,30 @@ namespace Chess
                                 piece.IsHoveredOn(true);
                                 lastMapLocationID = piece.GetID;
                                 lastPiece = posistion;
+
+
                                 if (selected == true)
                                 {
-                                    hasSelected = true;
-                                    selectedChessPiece = posistion;
-                                    chessList[(int)lastPiece].IsHoveredOn(false);
+                                    if (ChessList.ProtectKing.Count != 0)
+                                    {
+                                        foreach (string id in ChessList.ProtectKing)
+                                        {
+                                            if (piece.GetID == id)
+                                            {
+                                                hasSelected = true;
+                                                selectedChessPiece = posistion;
+                                                ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                                                break;
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        hasSelected = true;
+                                        selectedChessPiece = posistion;
+                                        ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                                    }
+
                                 }
                             }
                             posistion++;
