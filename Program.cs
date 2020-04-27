@@ -480,7 +480,7 @@ namespace Chess
                         //figure out what to do with the king
                     }
                     else if (chePie is Queen)
-                    {
+                    { //is not added to the list even though it can reach the same location as the bishop. 
                         int[][] movement = new int[][]
                         {
                             new int[]{-1,0},
@@ -536,7 +536,7 @@ namespace Chess
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
-                    else if (chePie is Pawn pawn)
+                    else if (chePie is Pawn pawn) //had a bug at a time that added it to the list of pieces that could prevent a check, even though it could not reach. Only happened for a non-moved piece. Y difference was 3.
                     {
                         if (PawnCheck(chePie.GetMapLocation, pawn.HasMoved))
                         {
@@ -695,7 +695,6 @@ namespace Chess
                 //what should happen if a can piece can do any of those things? Added to a special list? Nothing? 
                 //at least if none can save the king, checkmate 
 
-                //king does not want to move in the direction of the piece if it cannot take the piece. Needs to be checked to see if it can even move.
                 foreach (int[] dir in directions)
                 {
                     /* To take:
@@ -712,7 +711,7 @@ namespace Chess
                      * 
                      */
 
-                    if (CanReach(dir, ownLocation, locations[0])) //CanReach does not work with pawns, knights and king.
+                    if (CanReach(dir, ownLocation, locations[0]))
                     {
                         return true;
                     }
@@ -756,7 +755,7 @@ namespace Chess
             }
 
             bool CanReach(int[] dir, int[] ownLocation, int[] toEndOnLocation)
-            {//will not work if the hostile piece is a knight
+            {
                 bool index1Sign; bool index2Sign; bool diagonal; bool straight;
 
                 int[] locationDifference = new int[] { ownLocation[0] - toEndOnLocation[0], ownLocation[1] - toEndOnLocation[1] };  //negative right/down, positve left/up
@@ -782,7 +781,7 @@ namespace Chess
 
                 if (locationDifference[0] != 0 && locationDifference[1] != 0) //cannot be reach by a straight movement. 
                 {
-                    if (locationDifference[0] == locationDifference[1]) //can be reached by a diagonal movement
+                    if (Math.Abs(locationDifference[0]) == Math.Abs(locationDifference[1])) //can be reached by a diagonal movement
                     {
                         diagonal = true;
                     }
@@ -819,9 +818,6 @@ namespace Chess
                     string feltID = ""; //maybe have a setting for the default value on the map
                     while (locationsRemaining != 0) //rewrite all of this, also write better comments for the future
                     {
-                        //currentLocation = new int[] { ownLocation[0] + dir[0], ownLocation[1] + dir[1] };
-                        //locationsRemaining[0] += dir[0]; //does not contain the location it should have, it does not check the location between the piece and the end location. 
-                        //locationsRemaining[1] += dir[1]; //should be fixed now
                         currentLocation[0] += dir[0];
                         currentLocation[1] += dir[1];
                         feltID = MapMatrix.Map[currentLocation[0], currentLocation[1]];
