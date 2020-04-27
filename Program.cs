@@ -422,16 +422,11 @@ namespace Chess
                 player.Control();
                 ProtectKing.ProtectEndLocations.Clear();
                 checkmate = CheckmateChecker(!team,out List<string> saveKingList);
-                //Currently, a piece can be moved to a wrong location, thus keeping the king threaten. Also, a piece, that is keeping the king safe, can be moved such that the king is under treat, which is not allowed after the rules. 
-                //how to solve those two problems. 
-                //if proven problematic to solve, focus on the menu and the net play to keep learning. So if not solved by the 27/4, keep a break from it and move to the other parts. 
-                //first problem could be solved by having a dictionary in the a class. Keys being the IDs and the values being a List of endlocations. This would require modifying the chess pieces end location calculation function to check if they are in 
-                //the dictionary and if they are, use it.
-                //How to best implement it in the CheckMateChecker code?
-                //each check code creates a list for end locations. Each time a square can take/prevent it is added. In the end of the check code, if the list is not empty, add it to the dictionary with the ID as the key. Will require modifying all of the 
-                //return lines. Are there better ways to do it?
-                //CheckmateChecker should return the dictionary with an out.
+                //A piece, that is keeping the king safe, can be moved such that the king is under treat, which is not allowed after the rules. 
+                //how to solve that one problem. 
+                //if proven problematic to solve, focus on the menu and the net play to keep learning. So if not solved by the 28/4, keep a break from it and move to the other parts. 
                 ProtectKing.Protect = saveKingList;
+                //if the list is empty and the king is checked. Checkmate 
                 draw = Draw(); //maybe move this one out to the outer loop
                 if (checkmate || draw)
                     return true;
@@ -504,7 +499,11 @@ namespace Chess
                     if (chePie is King)
                     {
                         if (kingCanMove)
+                        {
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, null);
+                            canProtectKing.Add(chePie.GetID);
+                        }
+                            
                     }
                     else if (chePie is Queen)
                     { //is not added to the list even though it can reach the same location as the bishop. 
@@ -683,11 +682,12 @@ namespace Chess
                         int[] directions = new int[]{ kingLocation[0] - locations[0][0] - 1, kingLocation[1] - locations[0][1] - 1}; //negative is down, positive is up. Removed 1 so it is zero if they stand next to each other, 1 if there is a single square between them and so on.
                         //if the king got a lower y value than the hostile piece, the direction is negative. If the hostile piece got a lower y value than the king, directions is positive. If same, zero.
                         //negative x, hostile piece on the right. Positive, it is on the left. 
+                        //the removing 1 is causing a problem. E.g. if their y's are the same it will become -1
                         int[] movement = new int[2];
                         if (directions[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
                             movement[0] = -1;
                         else if (directions[0] < 0)//right
-                            movement[0] = 1;
+                            movement[0] = 1; 
 
                         if (directions[1] > 0)//up
                             movement[1] = -1;
@@ -700,7 +700,7 @@ namespace Chess
                         do
                         { //finds the y of the square that is between king and hostile piece that got the same x as the pawn.
                             standLocation[0] += movement[0];
-                            standLocation[1] += movement[1];
+                            standLocation[1] += movement[1]; //end location on y can reach 8
                         } while (standLocation[0] != ownLocation[0]); 
 
                         int yDistance = standLocation[1] - ownLocation[1];
