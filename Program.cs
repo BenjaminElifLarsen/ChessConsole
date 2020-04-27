@@ -44,7 +44,6 @@ namespace Chess
         private ChessList() { }
         private static List<ChessPiece> chessListBlack = new List<ChessPiece>();
         private static List<ChessPiece> chessListWhite = new List<ChessPiece>();
-        private static List<string> chessListProtectKing = new List<string>();
         //public static void SetChessListBlack(List<ChessPiece> list)
         //{
         //    chessListBlack = list;
@@ -71,8 +70,15 @@ namespace Chess
             return team == false ? chessListBlack : chessListWhite;
         }
 
-        public static List<string> ProtectKing { get => chessListProtectKing; set => chessListProtectKing = value; }
 
+    }
+
+    public class ProtectKing
+    {
+        private ProtectKing() { }
+        private static List<string> chessListProtectKing = new List<string>();
+        private static Dictionary<string, List<int[,]>> chessPiecesAndEndLocations = new Dictionary<string, List<int[,]>>();
+        public static List<string> Protect { get => chessListProtectKing; set => chessListProtectKing = value; }
     }
 
     /// <summary>
@@ -405,7 +411,13 @@ namespace Chess
                 //Currently, a piece can be moved to a wrong location, thus keeping the king threaten. Also, a piece, that is keeping the king safe, can be moved such that the king is under treat, which is not allowed after the rules. 
                 //how to solve those two problems. 
                 //if proven problematic to solve, focus on the menu and the net play to keep learning. So if not solved by the 27/4, keep a break from it and move to the other parts. 
-                ChessList.ProtectKing = saveKingList;
+                //first problem could be solved by having a dictionary in the a class. Keys being the IDs and the values being a List of endlocations. This would require modifying the chess pieces end location calculation function to check if they are in 
+                //the dictionary and if they are, use it.
+                //How to best implement it in the CheckMateChecker code?
+                //each check code creates a list for end locations. Each time a square can take/prevent it is added. In the end of the check code, if the list is not empty, add it to the dictionary with the ID as the key. Will require modifying all of the 
+                //return lines. Are there better ways to do it?
+                //CheckmateChecker should return the dictionary with an out.
+                ProtectKing.Protect = saveKingList;
                 draw = Draw(); //maybe move this one out to the outer loop
                 if (checkmate || draw)
                     return true;
@@ -659,7 +671,7 @@ namespace Chess
 
                         int[] standLocation = new int[2] { kingLocation[0], kingLocation[1]};
                         do
-                        { //finds the square that is between king and hostile piece that got the same x as the pawn.
+                        { //finds the y of the square that is between king and hostile piece that got the same x as the pawn.
                             standLocation[0] += movement[0];
                             standLocation[1] += movement[1];
                         } while (standLocation[0] != ownLocation[0]); 
@@ -673,7 +685,6 @@ namespace Chess
                             {
                                 pos++;
                                 string feltID = MapMatrix.Map[ownLocation[0], ownLocation[1] + direction*pos];
-
                                 if (feltID != "")
                                     return false;
                             } while (pos < maxRange);
@@ -968,9 +979,9 @@ namespace Chess
 
                                 if (selected == true)
                                 {
-                                    if (ChessList.ProtectKing.Count != 0)
+                                    if (ProtectKing.Protect.Count != 0)
                                     {
-                                        foreach (string id in ChessList.ProtectKing)
+                                        foreach (string id in ProtectKing.Protect)
                                         {
                                             if (piece.GetID == id)
                                             {
