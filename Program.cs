@@ -691,7 +691,7 @@ namespace Chess
 
                         int yDistance = standLocation[1] - ownLocation[1];
                         int maxRange = !hasMoved ? 2 : 1;
-                        int pos = 0;
+                        int pos = 1;
                         if (maxRange >= Math.Abs(yDistance))
                         {
                             do
@@ -700,7 +700,7 @@ namespace Chess
                                 string feltID = MapMatrix.Map[ownLocation[0], ownLocation[1] + direction*pos];
                                 if (feltID != "")
                                     return false;
-                            } while (pos < maxRange);
+                            } while (pos <= maxRange);
                             endLocations.Add(new int[,] { {ownLocation[0],ownLocation[1]+maxRange } });
                             return true;
                         }
