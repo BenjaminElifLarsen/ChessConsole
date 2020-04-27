@@ -79,6 +79,7 @@ namespace Chess
         private static List<string> chessListProtectKing = new List<string>();
         private static Dictionary<string, List<int[,]>> chessPiecesAndEndLocations = new Dictionary<string, List<int[,]>>();
         public static List<string> Protect { get => chessListProtectKing; set => chessListProtectKing = value; }
+        public static Dictionary<string,List<int[,]>> ProtectEndLocations { get => chessPiecesAndEndLocations; set => chessPiecesAndEndLocations = value; }
     }
 
     /// <summary>
@@ -504,9 +505,10 @@ namespace Chess
                             new int[]{1,-1},
                             new int[]{1,1}
                         };
-                        if (QRBCheck(movement, chePie.GetMapLocation))
+                        if (QRBCheck(movement, chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
                             //return false;
+                            ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
@@ -519,9 +521,10 @@ namespace Chess
                             new int[]{0,1},
                             new int[]{0,-1}
                         };
-                        if (QRBCheck(movement, chePie.GetMapLocation))
+                        if (QRBCheck(movement, chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
                             //return false;
+                            ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
@@ -534,26 +537,29 @@ namespace Chess
                             new int[]{1,-1},
                             new int[]{1,1}
                         };
-                        if (QRBCheck(movement, chePie.GetMapLocation))
+                        if (QRBCheck(movement, chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
                             //return false;
+                            ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
                     else if (chePie is Knight)
                     {
-                        if (KnightCheck(chePie.GetMapLocation))
+                        if (KnightCheck(chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
                             //return false;
+                            ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
                     else if (chePie is Pawn pawn) //had a bug at a time that added it to the list of pieces that could prevent a check, even though it could not reach. Only happened for a non-moved piece. Y difference was 3.
                     {
-                        if (PawnCheck(chePie.GetMapLocation, pawn.HasMoved))
+                        if (PawnCheck(chePie.GetMapLocation, pawn.HasMoved, out List<int[,]> endLocation))
                         {
                             //Debug.WriteLine("{0}", chePie.GetID);
                             //return false;
+                            ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
@@ -571,11 +577,11 @@ namespace Chess
             }
             return false;
 
-            bool KnightCheck(int[] ownLocation)
+            bool KnightCheck(int[] ownLocation, out List<int[,]> endLocations)
             {
                 int[] kingHostileDifference = new int[] { kingLocation[0] - locations[0][0], kingLocation[1] - locations[0][1] };
-
-                if (KnightCanReach(ownLocation))
+                endLocations = new List<int[,]>();
+                if (KnightCanReach(ownLocation, ref endLocations))
                     return true;
                 else if (!isKnight)
                 {
@@ -604,14 +610,14 @@ namespace Chess
                         string feltID = MapMatrix.Map[newLocation[0], newLocation[1]];
                         if (feltID != "")
                             break;
-                        if (KnightCanReach(newLocation))
+                        if (KnightCanReach(newLocation, ref endLocations))
                             return true;
                         distance++;
                     }
                 }
                 return false;
 
-                bool KnightCanReach(int[] standLocation)
+                bool KnightCanReach(int[] standLocation, ref List<int[,]> endLoc)
                 {
                     int[] locationDifference = new int[] { standLocation[0] - locations[0][0], standLocation[1] - locations[0][1] };
                     int[][] movement = new int[][] { new int[] { 1, 2 }, new int[] { 2, 1 }, new int[] { -1, -2 }, new int[] { -2, -1 }, new int[] { 1, -2 }, new int[] { 2, -1 }, new int[] { -1, 2 }, new int[] { -2, 1 } };
@@ -620,21 +626,27 @@ namespace Chess
                         int[] movLocation = new int[] { standLocation[0] + mov[0], standLocation[1] + mov[1] };
                         if (movLocation[0] == locations[0][0] && movLocation[1] == locations[0][1])
                         {
-                            return true;
+                            endLoc.Add(new int[,] { {movLocation[0],movLocation[1] } });
+                            //return true;
                         }
                     }
-                    return false;
+                    if (endLoc.Count != 0)
+                        return true;
+                    else
+                        return false;
                 }
             }
 
-            bool PawnCheck(int[] ownLocation, bool hasMoved)
+            bool PawnCheck(int[] ownLocation, bool hasMoved, out List<int[,]> endLocations)
             {
                 int direction = team ? -1 : 1; //how to implement double move in an easy way without to much new code.
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };
+                endLocations = new List<int[,]>();
                 if (locationDifference[0] == 1) //this if-else statment does not get affected by the double movement as it is the capture of the pawn.
                 { //no reason for this this 
                     if (locationDifference[1] == -direction)
                     {
+                        endLocations.Add(new int[,] { {ownLocation[0] +1 , ownLocation[1] + direction } });
                         return true;
                     }
                 }
@@ -642,6 +654,7 @@ namespace Chess
                 {
                     if (locationDifference[1] == -direction)
                     {
+                        endLocations.Add(new int[,] { { ownLocation[0] - 1, ownLocation[1] + direction } });
                         return true;
                     } //still need to check if it can get in the way
                 }
@@ -688,6 +701,7 @@ namespace Chess
                                 if (feltID != "")
                                     return false;
                             } while (pos < maxRange);
+                            endLocations.Add(new int[,] { {ownLocation[0],ownLocation[1]+maxRange } });
                             return true;
                         }
 
@@ -701,11 +715,11 @@ namespace Chess
 
 
             //only call Check with directions that can "moves" the chesspiece toward the hostile piece. With the new code, this is not needed.
-            bool QRBCheck(int[][] directions, int[] ownLocation)
+            bool QRBCheck(int[][] directions, int[] ownLocation, out List<int[,]> endLocations)
             {//is not working if the hostile piece is right next to the piece that calls this code. Should be fixed now. 
                 //what should happen if a can piece can do any of those things? Added to a special list? Nothing? 
                 //at least if none can save the king, checkmate 
-
+                endLocations = new List<int[,]>();
                 foreach (int[] dir in directions)
                 {
                     /* To take:
@@ -722,8 +736,9 @@ namespace Chess
                      * 
                      */
 
-                    if (CanReach(dir, ownLocation, locations[0]))
+                    if (CanReach(dir, ownLocation, locations[0], ref endLocations))
                     {
+                        endLocations.Add(new int[,] { { locations[0][0], locations[0][1] } });
                         return true;
                     }
                     else if (!isKnight)
@@ -755,17 +770,20 @@ namespace Chess
                             string feltID = MapMatrix.Map[newLocation[0], newLocation[1]];
                             if (feltID != "")
                                 break;
-                            if (CanReach(dir, ownLocation, newLocation))
-                                return true;
+                            CanReach(dir, ownLocation, newLocation, ref endLocations);
+                                //return true;
                             distance++;
                         }
                     }
                 }
-                return false;
+                if (endLocations.Count != 0)
+                    return true;
+                else
+                    return false;
 
             }
 
-            bool CanReach(int[] dir, int[] ownLocation, int[] toEndOnLocation)
+            bool CanReach(int[] dir, int[] ownLocation, int[] toEndOnLocation, ref List<int[,]> endLocations)
             {
                 bool index1Sign; bool index2Sign; bool diagonal; bool straight;
 
@@ -837,6 +855,7 @@ namespace Chess
 
                         if (locationsRemaining == 1)
                         {
+                            endLocations.Add(new int[,] { { currentLocation[0], currentLocation[1]} });
                             return true;
                         }
                         locationsRemaining--;
