@@ -403,7 +403,7 @@ namespace Chess
                 }
             }
             //also need to check if the piece can get between the hostile piece and the king.
-            if (!kingCanMove)
+            if (!kingCanMove && isCheked)
                 foreach (ChessPiece chePie in ChessList.GetList(team))
                 {
                     string[] idParts = chePie.GetID.Split(':');
