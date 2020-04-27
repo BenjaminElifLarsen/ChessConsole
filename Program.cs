@@ -80,6 +80,18 @@ namespace Chess
         private static Dictionary<string, List<int[,]>> chessPiecesAndEndLocations = new Dictionary<string, List<int[,]>>();
         public static List<string> Protect { get => chessListProtectKing; set => chessListProtectKing = value; }
         public static Dictionary<string,List<int[,]>> ProtectEndLocations { get => chessPiecesAndEndLocations; set => chessPiecesAndEndLocations = value; }
+        public static List<int[,]> GetListFromDic(string chesspiece)
+        {
+            try
+            {
+                return chessPiecesAndEndLocations[chesspiece];
+            }
+            catch
+            {
+                return null;
+            }
+
+        }
     }
 
     /// <summary>
@@ -408,6 +420,7 @@ namespace Chess
                     player = black;
                 //Checkmate(team, false);
                 player.Control();
+                ProtectKing.ProtectEndLocations.Clear();
                 checkmate = CheckmateChecker(!team,out List<string> saveKingList);
                 //Currently, a piece can be moved to a wrong location, thus keeping the king threaten. Also, a piece, that is keeping the king safe, can be moved such that the king is under treat, which is not allowed after the rules. 
                 //how to solve those two problems. 
@@ -425,8 +438,8 @@ namespace Chess
                 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
                 {
-                    //bool run = ChessList.GetList(team)[i].SpecialBool; //check if there is a piece that can take the hostile piece that is treating the king, if not, checkmate. 
-                    if (ChessList.GetList(team)[i].BeenTaken) //it should do that as a minimum. So it needs to get the checkList from the kings. This should be done before the player.Control();
+
+                    if (ChessList.GetList(team)[i].BeenTaken) 
                         ChessList.GetList(team).RemoveAt(i);
                 }
                 return false;
@@ -473,13 +486,13 @@ namespace Chess
                         kingLocation = king.GetMapLocation;
                         //maybe have code that checks if the king can move to a safe location or take the piece without standing ending in a treaten square.
                         //have a king function that calls the endlocation function and return true or false on whether it can move or not.  
-                        kingCanMove = king.CanMove;
+                        kingCanMove = king.CanMove; //consider it making it such that the if-statement below is still run if the king can move. Just add it such that the king will be added as a moveable piece, if it can move. 
                         break;
                     }
                 }
             }
             //also need to check if the piece can get between the hostile piece and the king.
-            if (!kingCanMove && isCheked)
+            if (/*!kingCanMove &&*/ isCheked)
             {
                 foreach (ChessPiece chePie in ChessList.GetList(team))
                 { //not all pieces that can defend the king is added to the list. 
@@ -490,7 +503,8 @@ namespace Chess
 
                     if (chePie is King)
                     {
-                        //figure out what to do with the king
+                        if (kingCanMove)
+                            ProtectKing.ProtectEndLocations.Add(chePie.GetID, null);
                     }
                     else if (chePie is Queen)
                     { //is not added to the list even though it can reach the same location as the bishop. 
@@ -691,7 +705,7 @@ namespace Chess
 
                         int yDistance = standLocation[1] - ownLocation[1];
                         int maxRange = !hasMoved ? 2 : 1;
-                        int pos = 1;
+                        int pos = 0;
                         if (maxRange >= Math.Abs(yDistance))
                         {
                             do
@@ -700,7 +714,7 @@ namespace Chess
                                 string feltID = MapMatrix.Map[ownLocation[0], ownLocation[1] + direction*pos];
                                 if (feltID != "")
                                     return false;
-                            } while (pos <= maxRange);
+                            } while (pos < maxRange);
                             endLocations.Add(new int[,] { {ownLocation[0],ownLocation[1]+maxRange } });
                             return true;
                         }
@@ -1861,48 +1875,59 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-            EndLocations();
-            if (possibleEndLocations.Count != 0)
+            if (ProtectKing.GetListFromDic(ID) != null)
             {
-                DisplayPossibleMove();
-                int[] cursorLocation = GetMapLocation;
-                do
-                {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
-                    {
-                        foreach (int[,] loc in possibleEndLocations)
-                        {
-                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-                            {
-
-                                couldMove = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                TakeEnemyPiece(cursorLocation);
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
-                                if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
-                                {
-                                    SpecialBool = true;
-                                }
-                                else
-                                {
-                                    SpecialBool = false;
-                                }
-                                break;
-                            }
-                        }
-                    }
-                } while (!hasSelected);
-                NoneDisplayPossibleMove();
-                possibleEndLocations.Clear();
+                possibleEndLocations = ProtectKing.GetListFromDic(ID);
+                specialBool = true;
                 hasMoved = true;
+                couldMove = true;
             }
             else
             {
-                couldMove = false;
+                EndLocations();
             }
+                if (possibleEndLocations.Count != 0)
+                {
+                    DisplayPossibleMove();
+                    int[] cursorLocation = GetMapLocation;
+                    do
+                    {
+                        bool selected = FeltMove(cursorLocation);
+                        if (selected)
+                        {
+                            foreach (int[,] loc in possibleEndLocations)
+                            {
+                                int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
+                                if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+                                {
+
+                                    couldMove = true;
+                                    oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                    TakeEnemyPiece(cursorLocation);
+                                    mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+                                    hasSelected = true;
+                                    if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
+                                    {
+                                        SpecialBool = true;
+                                    }
+                                    else
+                                    {
+                                        SpecialBool = false;
+                                    }
+                                    break;
+                                }
+                            }
+                        }
+                    } while (!hasSelected);
+                    NoneDisplayPossibleMove();
+                    possibleEndLocations.Clear();
+                    hasMoved = true;
+                }
+                else
+                {
+                    couldMove = false;
+                }
+            
         }
 
         /// <summary>
@@ -2565,38 +2590,46 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-            EndLocations();
-            if (possibleEndLocations.Count != 0)
+            if (ProtectKing.GetListFromDic(ID) != null)
             {
-                DisplayPossibleMove();
-                int[] cursorLocation = GetMapLocation;
-                do
-                {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
-                    {
-                        foreach (int[,] loc in possibleEndLocations)
-                        {
-                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-                            {
-                                couldMove = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                TakeEnemyPiece(cursorLocation);
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
-                                break;
-                            }
-                        }
-                    }
-                } while (!hasSelected);
-                NoneDisplayPossibleMove();
-                possibleEndLocations.Clear();
+                possibleEndLocations = ProtectKing.GetListFromDic(ID);
             }
             else
             {
-                couldMove = false;
+                EndLocations();
             }
+                if (possibleEndLocations.Count != 0)
+                {
+                    DisplayPossibleMove();
+                    int[] cursorLocation = GetMapLocation;
+                    do
+                    {
+                        bool selected = FeltMove(cursorLocation);
+                        if (selected)
+                        {
+                            foreach (int[,] loc in possibleEndLocations)
+                            {
+                                int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
+                                if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+                                {
+                                    couldMove = true;
+                                    oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                    TakeEnemyPiece(cursorLocation);
+                                    mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+                                    hasSelected = true;
+                                    break;
+                                }
+                            }
+                        }
+                    } while (!hasSelected);
+                    NoneDisplayPossibleMove();
+                    possibleEndLocations.Clear();
+                }
+                else
+                {
+                    couldMove = false;
+                }
+            
         }
 
         /// <summary>
