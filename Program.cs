@@ -108,7 +108,10 @@ namespace Chess
         private static byte[] hoverOverSquareColour = new byte[] { 193, 76, 29 };
         private static byte[] chessPieceHoverOverSquareColour = new byte[] { 34, 124, 66 };
         private static byte[] chessPieceHoverOver = new byte[] { 31, 135, 113 };
+        private static byte[] menuColour = new byte[] { 0, 255, 0 };
+        private static byte[] menuColourHovered = new byte[] { 255, 0, 0 };
         private static byte[] offset = new byte[] { 4, 2 }; //works as it should
+        private static byte[] menuOffset = new byte[] { 2, 2 };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
         private static byte extraSpacing = 1; //if changes, numbers and letters do not move down, edges moves the correct amount and the squares moves to very much wrong locations
@@ -192,17 +195,147 @@ namespace Chess
         /// Gets the location to write out the promotions. 
         /// </summary>
         public static int[] PromotionWriteLocation { get => writeLocationPromotion; }
+
+        public static byte[] MenuColour { get => menuColour; }
+        public static byte[] MenuColourHovered { get => menuColourHovered; }
+        public static byte[] MenuOffset { get => menuOffset; }
+
+
     }
 
     class Program
     {
         static void Main(string[] args)
         {
-            ChessTable chess = new ChessTable();
-            chess.Play();
+            Menu menu = new Menu();
+            menu.Run();
+
             Console.ReadLine();
         }
     }
+
+    class Menu
+    {
+
+        public Menu()
+        {
+            var handle = GetStdHandle(-11);
+            int mode;
+            GetConsoleMode(handle, out mode);
+            SetConsoleMode(handle, mode | 0x4);
+            Console.CursorVisible = false;
+        }
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern bool GetConsoleMode(IntPtr handle, out int mode);
+
+        [DllImport("kernel32.dll", SetLastError = true)]
+        public static extern IntPtr GetStdHandle(int handle);
+
+        public void Run()
+        {
+            MainMenu();
+        }
+
+        private void MainMenu()
+        {
+            string option;
+            string[] options =
+            {
+                "Local Play",
+                "Net Play",
+                "Exit"
+            };
+
+            do
+            {
+                option = Interact(options);
+
+                switch(option)
+                {
+                    case "Local Play":
+                        Console.Clear();
+                        ChessTable chess = new ChessTable();
+                        chess.Play();
+                        break;
+
+                    case "":
+
+                        break;
+
+                    case "Exit":
+                        Environment.Exit(0);
+                        break;
+
+                }
+
+            } while (true);
+        }
+
+        private string Interact(string[] options)
+        { //used to move around in the displayed options. All it should do is being a function that checks if up/down key arrows are pressed and then 
+            //increase or decrease a variable used for the hoveredOverOption in Display().
+            bool selected = false;
+            byte currentLocation = 0;
+            string answer = null;
+
+            do
+            {
+                Display(options, currentLocation, Settings.MenuColour, Settings.MenuColourHovered, Settings.MenuOffset);
+                if (Move())
+                {
+                    answer = options[currentLocation];
+                    selected = true;
+                }
+            } while (!selected);
+
+            return answer;
+
+            bool Move()
+            {
+                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation > 0)
+                {
+                    currentLocation--;
+                }
+                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation < options.Length)
+                {
+                    currentLocation++;
+                }
+                else if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    return true;
+                }
+                return false;
+            }
+        }
+
+        private void Display(string[] options, byte hoveredOverOption, byte[] optionColours, byte[] hoveredColour, byte[] offset)
+        { //write a new one instead of recycling the old code. The hoveredOverOption is simply the index of the option in options. 
+            //start simple, make it more complex when the simple versions, Display and Interact, are working without any problems.  
+            for(int i = 0; i < options.Length; i++)
+            {
+                Console.SetCursorPosition(offset[0], offset[1] + i);
+                if(i == hoveredOverOption)
+                {
+                    Paint(options[i], hoveredColour);
+                }
+                else
+                {
+                    Paint(options[i], optionColours);
+                }
+            }
+
+            void Paint(string option, byte[] colour)
+            {
+                Console.Write("\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}", option);
+            }
+        }
+
+    }
+
 
     class ChessTable
     {
