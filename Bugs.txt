@@ -1,4 +1,4 @@
 ﻿Bugs:
-At some point a pawn stated it could block a hostile piece from checking the king, even though the y difference was 3. The pawn had not moved. - Fixed.
+At some point a pawn stated it could block a hostile piece from checking the king, even though the y difference was 3. The pawn had not moved. 
 At some point the king could not move. The only white piece that was not on its default location was the pawn above the king. It had been taken. The only hostile piece above the king was a pawn on its start location.
 	- So far not been replicated. 

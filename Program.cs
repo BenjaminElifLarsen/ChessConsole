@@ -679,10 +679,7 @@ namespace Chess
                     int xSmall = kingLocation[0] > locations[0][0] ? locations[0][0] : kingLocation[0];
                     if (ownLocation[0] > xSmall && ownLocation[0] < xBig) 
                     {
-                        int[] directions = new int[]{ kingLocation[0] - locations[0][0] - 1, kingLocation[1] - locations[0][1] - 1}; //negative is down, positive is up. Removed 1 so it is zero if they stand next to each other, 1 if there is a single square between them and so on.
-                        //if the king got a lower y value than the hostile piece, the direction is negative. If the hostile piece got a lower y value than the king, directions is positive. If same, zero.
-                        //negative x, hostile piece on the right. Positive, it is on the left. 
-                        //the removing 1 is causing a problem. E.g. if their y's are the same it will become -1
+                        int[] directions = new int[]{ kingLocation[0] - locations[0][0], kingLocation[1] - locations[0][1]}; 
                         int[] movement = new int[2];
                         if (directions[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
                             movement[0] = -1;
@@ -704,7 +701,7 @@ namespace Chess
                         } while (standLocation[0] != ownLocation[0]); 
 
                         int yDistance = standLocation[1] - ownLocation[1];
-                        int maxRange = !hasMoved ? 2 : 1;
+                        int maxRange = hasMoved ? 1 : 2;
                         int pos = 0;
                         if (maxRange >= Math.Abs(yDistance))
                         {
