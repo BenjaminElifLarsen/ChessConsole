@@ -571,9 +571,13 @@ namespace Chess
                 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
                 {
-
                     if (ChessList.GetList(team)[i].BeenTaken) 
                         ChessList.GetList(team).RemoveAt(i);
+                }
+                for(int i = ChessList.GetList(!team).Count - 1; i >= 0; i--)
+                {
+                    if (ChessList.GetList(!team)[i] is Pawn)
+                        ChessList.GetList(!team)[i].SpecialBool = false;
                 }
                 return false;
             }
@@ -2013,7 +2017,7 @@ namespace Chess
             if (ProtectKing.GetListFromDic(ID) != null)
             {
                 possibleEndLocations = ProtectKing.GetListFromDic(ID);
-                specialBool = true;
+                specialBool = false;
                 hasMoved = true;
                 couldMove = true;
             }
