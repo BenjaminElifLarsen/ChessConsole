@@ -256,9 +256,7 @@ namespace Chess
                 switch(option)
                 {
                     case "Local Play":
-                        Console.Clear();
-                        ChessTable chess = new ChessTable();
-                        chess.Play();
+                        LocalPlayMenu();
                         break;
 
                     case "":
@@ -272,6 +270,13 @@ namespace Chess
                 }
 
             } while (true);
+        }
+
+        private void LocalPlayMenu()
+        {
+            Console.Clear();
+            ChessTable chess = new ChessTable();
+            chess.Play();
         }
 
         private string Interact(string[] options)
