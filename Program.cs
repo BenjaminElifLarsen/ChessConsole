@@ -437,6 +437,8 @@ namespace Chess
         private byte[] offset;
         private int[] windowsSize = new int[2];
         private bool[,] isCheckedTwiceInARow = new bool[,] { { false, false }, { false, false } }; //[0][] is white. [1][0] is black. 
+        private string[,] threefoldRepetition = new string[2,3];
+        private string[,] lastUpdateMap; //find a better name
 
         public ChessTable()
         {
@@ -582,6 +584,9 @@ namespace Chess
         { //maybe have an 2d string array with a size 2*3. Each time a piece is moved, the last index is overwritten by the second last index and second last index overwritten by the first.
             /* Then the first index is overwritten by the new value.  
              * The value should be a combination of the ID and the location. E.g. +:2:1-45. If at any moment the entire coloum is the same, the game id draw... or is it just lost for that player? 
+             * 
+             * Also need to check if no pawn or capture has happen in the last 50 turns. Also how to check for a stalemate, that is not enough pices to check the king. 
+             * Maybe also have a draw/stalemate function the in the player plus the surrender function.
              */
             if (ChessList.GetList(true).Count == 1 && ChessList.GetList(false).Count == 1)
             {
@@ -589,6 +594,44 @@ namespace Chess
             }
             //how to check for a chesspiece is just moving back and forward. 
             return false;
+
+            void ThreefoldRepetition(bool team) //should this function be changed from an nested function to a normal function.
+            {//how to best now which move is done. Could look through the mapmatrix and look for any changes. So have an old copy of it. 
+                /* Before player turn, copy current mapmatrix into the "old" mapmatrix. Let player move. Compare old to new maptrix. 
+                 * Find the change and added it to the threefoldRepetition array
+                 * Check if the same player has done the exactly same move 3 tiems in row. If true, draw.
+                 * 
+                 * So have two for loops for x an y movement, nested. Run until you find a difference, save into the array and end both loops. 
+                 *
+                 *This idea will not work that easily
+                 *  "threefold repetition rule (also known as repetition of position) states that a player can claim a draw if the same position occurs three times, or will occur after their next move, with the same player to move. 
+                 *  The repeated positions do not need to occur in succession."
+                 * "In chess, in order for a position to be considered the same, each player must have the same set of legal moves each time, including the possible rights to castle and capture en passant. 
+                 * Positions are considered the same if the same type of piece is on a given square. For example, if a player has two knights and the knights are on the same squares, it does not matter if the positions of the two knights have been exchanged. 
+                 * The game is not automatically drawn if a position occurs for the third time – one of the players, on their turn, must claim the draw with the arbiter. "
+                 * https://en.wikipedia.org/wiki/Threefold_repetition
+                 * 
+                 * ...
+                 * Read up some more to make sure you understand it correctly. Also might be easier to not have a function for this, but let the player(s) use a draw function.
+                 */
+
+                byte teamIndex = team ? (byte)0 : (byte)1;
+                for (int i = 2; i > 0; i--)
+                {
+                    threefoldRepetition[teamIndex, i] = threefoldRepetition[teamIndex, i - 1];
+                }
+                for (int n = 0; n < MapMatrix.Map.GetLength(0); n++)
+                {
+                    for (int m = 0; m < MapMatrix.Map.GetLength(1); m++)
+                    {
+                        if (lastUpdateMap[n,m] != MapMatrix.Map[n,m])
+                        {
+                            threefoldRepetition[teamIndex, 0] = MapMatrix.Map[n, m]; //need to add the last location... 
+                        }
+                    }
+                    //lastUpdateMap
+                }
+            }
         }
 
         /// <summary>
@@ -2070,48 +2113,54 @@ namespace Chess
             {
                 EndLocations();
             }
-                if (possibleEndLocations.Count != 0)
+            if (possibleEndLocations.Count != 0)
+            {
+                DisplayPossibleMove();
+                int[] cursorLocation = GetMapLocation;
+                do
                 {
-                    DisplayPossibleMove();
-                    int[] cursorLocation = GetMapLocation;
-                    do
+                    bool selected = FeltMove(cursorLocation);
+                    if (selected)
                     {
-                        bool selected = FeltMove(cursorLocation);
-                        if (selected)
+                        foreach (int[,] loc in possibleEndLocations)
                         {
-                            foreach (int[,] loc in possibleEndLocations)
+                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
+                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
                             {
-                                int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-                                if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-                                {
 
-                                    couldMove = true;
-                                    oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                    TakeEnemyPiece(cursorLocation);
-                                    mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                    hasSelected = true;
-                                    if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
-                                    {
-                                        SpecialBool = true;
-                                    }
-                                    else
-                                    {
-                                        SpecialBool = false;
-                                    }
-                                    break;
+                                couldMove = true;
+                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+                                hasSelected = true;
+                                if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
+                                {
+                                    SpecialBool = true;
                                 }
+                                else
+                                {
+                                    SpecialBool = false;
+                                    if (oldMapLocation[0] != cursorLocation[0])
+                                    { 
+                                        if(MapMatrix.Map[cursorLocation[0],cursorLocation[1]] == "")
+                                            TakeEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
+                                        else
+                                            TakeEnemyPiece(cursorLocation);
+                                    }
+                                }
+                                break;
                             }
                         }
-                    } while (!hasSelected);
-                    NoneDisplayPossibleMove();
-                    possibleEndLocations.Clear();
-                    hasMoved = true;
-                }
-                else
-                {
-                    couldMove = false;
-                }
-            
+                    }
+                } while (!hasSelected);
+                NoneDisplayPossibleMove();
+                possibleEndLocations.Clear();
+                hasMoved = true;
+            }
+            else
+            {
+                couldMove = false;
+            }
+
         }
 
         /// <summary>
@@ -2132,8 +2181,6 @@ namespace Chess
         /// </summary>
         protected override void EndLocations()
         {
-            //if (possibleEndLocations.Count != 0)
-            //    possibleEndLocations.Clear();
             if ((!team && mapLocation[1] != 0) || (team && mapLocation[1] != 7))
                 if (MapMatrix.Map[mapLocation[0], mapLocation[1] + moveDirection] == "")
                 {
@@ -2162,10 +2209,10 @@ namespace Chess
                     LocationCheck(-1);
                 if (mapLocation[0] != 7) //check square to the right side
                     LocationCheck(1);
-                if (firstTurn)
-                {
+                //if (firstTurn)
+                //{
                     EnPassant();
-                }
+                //}
             }
 
             void LocationCheck(sbyte direction) //find a better name
@@ -2180,7 +2227,7 @@ namespace Chess
             }
 
             void EnPassant()
-            { //needs not have to moved
+            { 
                 byte chessAmount = (byte)ChessList.GetList(!team).Count;
                 for (byte i = 0; i < chessAmount; i++) //goes through all chess pieces
                 {
@@ -2190,10 +2237,11 @@ namespace Chess
                         if (ChessList.GetList(!team)[i].SpecialBool) //checks if the pawn as double moved and en passant is allowed.
                         {
                             int[] hostileLocation = ChessList.GetList(!team)[i].GetMapLocation;
-                            if (hostileLocation[0] == mapLocation[0] + 1 || hostileLocation[0] == mapLocation[0] - 1) //Checks if the pawn is a location that allows it to be en passant.  
-                            {
-                                possibleEndLocations.Add(new int[,] { { hostileLocation[0], hostileLocation[1] } });
-                            }
+                            if(hostileLocation[1] == mapLocation[1]) //does the pawn and en-passant pawn share the same y. 
+                                if (hostileLocation[0] == mapLocation[0] + 1 || hostileLocation[0] == mapLocation[0] - 1) //Checks if the pawn x is a location that allows it to be en passant.  
+                                {
+                                    possibleEndLocations.Add(new int[,] { { hostileLocation[0], hostileLocation[1] + moveDirection } });
+                                }
                         }
                     }
                 }
@@ -2201,6 +2249,8 @@ namespace Chess
             }
 
         }
+
+
 
         /// <summary>
         /// Promotes the pawn. 
