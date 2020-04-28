@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
+using System.IO;
 using System.Runtime.InteropServices;
 
 namespace Chess
@@ -274,11 +275,13 @@ namespace Chess
             {
                 "Local Play",
                 "Net Play",
+                "Rules",
                 "Exit"
             };
 
             do
             {
+                Console.Clear();
                 option = Interact(options);
 
                 switch(option)
@@ -287,7 +290,8 @@ namespace Chess
                         LocalPlayMenu();
                         break;
 
-                    case "":
+                    case "Rules":
+                        RulesMenu();
                         break;
 
                     case "Exit":
@@ -297,6 +301,32 @@ namespace Chess
                 }
 
             } while (true);
+        }
+
+        /// <summary>
+        /// Writes out all text stored in the Rules.txt file.
+        /// </summary>
+        private void RulesMenu()
+        {
+            Console.Clear();
+            //make it read from a text file at some point.
+
+            try
+            {
+                string[] about = File.ReadAllLines("Rules.txt");
+                foreach (string str in about)
+                { //if a line is longer than the console is wide, the program should split the line into minor pieces and display each of them.
+                    Console.WriteLine(str);
+                }
+            }
+            catch
+            {
+                Console.WriteLine("Rules.txt could not be found.");
+            }
+            Console.WriteLine("\nEnter to return.");
+            Console.ReadLine();
+
+
         }
 
         /// <summary>

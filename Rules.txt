@@ -1,0 +1,8 @@
+﻿----Rules----
+
+When a chesspiece has been selected, it must be moved. If it cannot be moved, another chesspiece is allowed. 
+
+King:
+  Castling is a kingmove.
+
+If the king is check, only pieces that can prevent the check can be moved. 
