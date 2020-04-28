@@ -537,15 +537,24 @@ namespace Chess
 
         private void GameLoop()
         {
-            bool gameEnded = false;
+            bool gameEnded = false; bool whiteWon = false;
             do //should the game show what pieces that can save the king from a threat or should the player figure that out themselves? How much to hold their hand
             {
                 gameEnded = PlayerControl(true);
                 if (gameEnded)
+                {
+                    whiteWon = true;
                     break;
+                }
+                    
                 gameEnded = PlayerControl(false);
 
             } while (!gameEnded);
+            
+
+            Console.Clear();
+            Console.Write("White won = {0}", whiteWon); //just to ensure that the correct team is considered the winner. 
+            Console.ReadLine();
 
             unsafe bool PlayerControl(bool team)
             {
@@ -566,7 +575,7 @@ namespace Chess
                 ProtectKing.Protect = saveKingList;
                 //if the list is empty and the king is checked. Checkmate 
                 draw = Draw(); //maybe move this one out to the outer loop
-                if (checkmate || draw)
+                if (checkmate || draw) //checkmate seems to work as it should. 
                     return true;
                 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
@@ -576,7 +585,7 @@ namespace Chess
                 }
                 for(int i = ChessList.GetList(!team).Count - 1; i >= 0; i--)
                 {
-                    if (ChessList.GetList(!team)[i] is Pawn)
+                    if (ChessList.GetList(!team)[i] is Pawn && ChessList.GetList(!team)[i].SpecialBool == true)
                         ChessList.GetList(!team)[i].SpecialBool = false;
                 }
                 return false;
@@ -732,7 +741,7 @@ namespace Chess
             }
             return false;
 
-            bool KnightCheck(int[] ownLocation, out List<int[,]> endLocations)
+            bool KnightCheck(int[] ownLocation, out List<int[,]> endLocations) //cannot not place itself between the hostile piece and king even when it is able to
             {
                 int[] kingHostileDifference = new int[] { kingLocation[0] - locations[0][0], kingLocation[1] - locations[0][1] };
                 endLocations = new List<int[,]>();
@@ -744,16 +753,16 @@ namespace Chess
                     int distance = 2;
                     int[] newLocation = { kingLocation[0], kingLocation[1] };
                     int[] movement = new int[2];
-                    if (newLocation[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
+                    if (kingHostileDifference[0] > 0)//left //calculates the location that is needed to go to get from the king to the hostile piece.
                         movement[0] = -1;
-                    else if (newLocation[0] < 0)//right
+                    else if (kingHostileDifference[0] < 0)//right
                         movement[0] = 1;
                     else
                         movement[0] = 0;
 
-                    if (newLocation[1] > 0)//up
+                    if (kingHostileDifference[1] > 0)//up
                         movement[1] = -1;
-                    else if (newLocation[1] < 0)//down
+                    else if (kingHostileDifference[1] < 0)//down
                         movement[1] = 1;
                     else
                         movement[1] = 0;
@@ -778,10 +787,11 @@ namespace Chess
                     int[][] movement = new int[][] { new int[] { 1, 2 }, new int[] { 2, 1 }, new int[] { -1, -2 }, new int[] { -2, -1 }, new int[] { 1, -2 }, new int[] { 2, -1 }, new int[] { -1, 2 }, new int[] { -2, 1 } };
                     foreach (int[] mov in movement)
                     {
-                        int[] movLocation = new int[] { standLocation[0] + mov[0], standLocation[1] + mov[1] };
-                        if (movLocation[0] == locations[0][0] && movLocation[1] == locations[0][1])
+                        int[] movLocation = new int[] { ownLocation[0] + mov[0], ownLocation[1] + mov[1] };
+                        if (movLocation[0] == standLocation[0] && movLocation[1] == standLocation[1])
                         {
-                            endLoc.Add(new int[,] { {movLocation[0],movLocation[1] } });
+                            if(MapMatrix.Map[movLocation[0], movLocation[1]] =="")
+                                endLoc.Add(new int[,] { { movLocation[0], movLocation[1] } });
                             //return true;
                         }
                     }
@@ -854,7 +864,7 @@ namespace Chess
                                 if (feltID != "")
                                     return false;
                             } while (pos < maxRange);
-                            endLocations.Add(new int[,] { {ownLocation[0],ownLocation[1]+maxRange } });
+                            endLocations.Add(new int[,] { {ownLocation[0],ownLocation[1]+maxRange*direction } });
                             return true;
                         }
 
