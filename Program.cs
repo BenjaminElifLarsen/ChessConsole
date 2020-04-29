@@ -232,7 +232,7 @@ namespace Chess
             Menu menu = new Menu();
             menu.Run();
         }
-    }
+    } //for the network testing, transmit and receive on two different ports. Consider if it is better to do this in the final version or better to transmit and receive on the same port
 
     /// <summary>
     /// The menu class. 
