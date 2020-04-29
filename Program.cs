@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Net;
+using System.Net.Sockets;
 using System.Runtime.InteropServices;
 
 namespace Chess
@@ -234,6 +236,145 @@ namespace Chess
         }
     } //for the network testing, transmit and receive on two different ports. Consider if it is better to do this in the final version or better to transmit and receive on the same port
 
+    class Network
+    {
+        //for the transmission and reception of the map array. You could write it into to a string, encode it and trasmit it. Then decode it and, knowing the size of the array, write it back into the map.
+        //given you always know when the program should trasmit and recieve data, transmit after ones play and recieve until it receives data, is it not needed to multitread this part of the program?
+        //in the menu class, the network menu will call another play function that is designed for network.
+        /* https://docs.microsoft.com/en-us/dotnet/framework/network-programming/?redirectedfrom=MSDN
+         * https://docs.microsoft.com/en-us/dotnet/framework/network-programming/network-programming-samples
+         * https://www.codeproject.com/Articles/1415/Introduction-to-TCP-client-server-in-C
+         * https://docs.microsoft.com/en-us/dotnet/framework/network-programming/how-to-create-a-socket
+         * https://docs.microsoft.com/en-us/dotnet/framework/network-programming/using-client-sockets
+         * https://docs.microsoft.com/en-us/dotnet/framework/network-programming/listening-with-sockets
+         * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.bind?view=netcore-3.1
+         * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.listen?view=netcore-3.1
+         * https://docs.microsoft.com/en-us/dotnet/framework/network-programming/introducing-pluggable-protocols
+         * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.tcpclient?redirectedfrom=MSDN&view=netcore-3.1
+         * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.tcpclient.connect?view=netcore-3.1#System_Net_Sockets_TcpClient_Connect_System_String_System_Int32_
+         * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.tcplistener?view=netcore-3.1
+         * http://csharp.net-informations.com/communications/csharp-chat-client.htm
+         * https://stackoverflow.com/questions/7508942/loopback-localhost-question
+         * https://stackoverflow.com/questions/12952679/socket-programming-in-c-sharp-the-client-never-connects-to-the-server
+         * https://stackoverflow.com/questions/15162312/tcpclient-not-connecting-to-local-computer
+         * https://stackoverflow.com/questions/37308169/c-sharp-tcp-socket-client-refuses-connection
+         * http://csharp.net-informations.com/communications/csharp-socket-programming.htm
+         * https://www.geeksforgeeks.org/socket-programming-in-c-sharp/
+         * https://www.codeproject.com/Articles/10649/An-Introduction-to-Socket-Programming-in-NET-using
+         * https://www.c-sharpcorner.com/article/socket-programming-in-C-Sharp/
+         */
+        static TcpClient transmitter = null;
+        static TcpListener receiver = null;
+        //is it a good idea to have them as two classes? 
+        /* you will need to be able to call functions to transmit and receive at times from the ChessTable class. 
+         * Wether it should transmit after whites or blacks control and recevice before that colour depends on the team.  
+         */
+        public Network() 
+        {
+            //Receive reTest = new Receive();
+            //Transmit trTest = new Transmit();
+            Receive.ReceiveSetup();
+            Transmit.TransmitSetup();
+        }
+
+        public class Transmit
+        {
+            public Transmit()
+            {
+                //TcpClient transmitter = null; //for now just use the 127.0.0.1 
+                Int32 port = 23001;
+                IPAddress transmitterAddress = IPAddress.Parse("127.0.0.1");
+                //transmitter = new TcpClient(transmitterAddress.ToString(), port);
+                transmitter = new TcpClient("localhost", port);
+                //hmmm... cannot connect, the computer denies connection... Can't ping this computer either... If a way around is not found, just write as much code as possible and boot up the laptop, at least it can be pinged. 
+                //got a lot to read and study anyway.
+                //need a try catch 
+            }
+
+            public static void TransmitSetup()
+            { //might need a try catch
+                Int32 port = 23001;
+                IPAddress transmitterAddress = IPAddress.Parse("127.0.0.1");
+                transmitter = new TcpClient("localhost", port);
+            }
+
+            public static void TransmitData()
+            { //might need a try catch
+                string mapData = NetworkSupport.MapToStringConvertion();
+                //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
+                //transmit map data.
+                //data should be sent back to indicate that the data has been received. 
+                byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData);
+            }
+
+        }
+
+        public class Receive
+        {
+            public Receive()
+            { //try catch
+                //
+                //TcpListener receiver = null; //for now just use the 127.0.0.1 
+                Int32 port = 23000;
+                IPAddress receiverAddress = IPAddress.Parse("127.0.0.1");
+                receiver = new TcpListener(receiverAddress, port);
+            }
+
+            public static void ReceiveSetup()
+            { //try catch
+                Int32 port = 23000;
+                IPAddress receiverAddress = IPAddress.Parse("127.0.0.1");
+                receiver = new TcpListener(receiverAddress, port);
+            }
+
+            public static void ReceiveData()
+            { //try catch
+
+            }
+
+
+        }
+
+        static class NetworkSupport
+        {
+            public static string MapToStringConvertion()
+            {
+                string mapString = "";
+                for (int n = 0; n < MapMatrix.Map.GetLength(0); n++)
+                {
+                    for (int m = 0; m < MapMatrix.Map.GetLength(1); m++)
+                    {
+                        mapString += MapMatrix.Map[n, m] + "!"; //the ! is to help seperate the string into a 1d array.
+                    }
+                }
+                return mapString;
+            }
+
+            public static string[,] StringToMapConvertion(string data)
+            { //Should not overwrite the map. It should just return an array and then somewhere in the code that calls it or another function recreate the board after this array. 
+                //need a way to figure out if chess piece specific code has been activated/change, e.g. hasMoved, specialbools etc.
+                //maybe have that chesspiece reaction code in this class. Maybe have a network function in all chesspieces that allows to set a new maplocation and call the (remove)draw. 
+                //so instead of recreating all chesspieces, find that one spot on the maps that differ. If the change is from ID to "" or otherway find that piece and move it. If a ID is replace with an ID from the other team...
+                //call the taken pieces been taken fucntion and then move the other piece.
+                //remember for castling, two pieces will have moved, and en passant. 
+                //for pawns, just check if if the piece has moved one or two squares.
+                string[] mapStringSeperated = data.Split('!'); //how well does it work regarding to the ""s. E.g. "+..."!""!""!"-..:"!. Will this give "+..." "-..." or "+..." " " " " "-..." or "+..." "" "" "-..."? Add the non-ID filled square setting to Settings
+                string[,] newMap = new string[8, 8];
+                byte colmn = 0;
+                for (int n = 0; n < mapStringSeperated.Length; n++)
+                {
+                    byte row = (byte)Math.Floor(n / 8d);
+                    colmn = colmn < 8 ? (byte)0 : colmn++;
+                    newMap[colmn, row] = mapStringSeperated[n]; 
+                }
+
+                return null;
+            }
+        }
+
+    }
+
+
     /// <summary>
     /// The menu class. 
     /// </summary>
@@ -296,6 +437,10 @@ namespace Chess
 
                     case "Exit":
                         Environment.Exit(0);
+                        break;
+
+                    case "Net Play":
+                        Network Nettest = new Network();
                         break;
 
                 }
