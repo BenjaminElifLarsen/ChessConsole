@@ -1,0 +1,383 @@
+<?xml version="1.0"?>
+<doc>
+    <assembly>
+        <name>ConverterLibrary</name>
+    </assembly>
+    <members>
+        <member name="T:Converter.Conversion">
+            <summary>
+            Class <c>BitConversion</c>.
+            Converts between byte arrays, strings and intergers. 
+            Allows for both big and little endians on all public functions and can swap an array to the other version. 
+            <list type = "bullet">
+            <item>
+            <term>+ValueToBitArray</term>
+            <description>Converts an interger to a byte array.
+            Overloaded with ushort, short, ulong, long, uint and int.
+            Return: void, out byte[].</description>
+            </item>
+            <item>
+            <term>+ValueToBitArrayQuick</term>
+            <description>Converts an interger to a byte array. Quicker than ValueToBitArrayQuick.
+            Overloaded with ushort, short, ulong, long, uint and int.
+            Return: void, out byte[].</description>
+            </item>
+            <item>
+            <term>-charListToByte</term>
+            <description>Converts a char IList to a byte array.
+            Return: void, ref byte[].</description>
+            </item>
+            <item>
+            <term>-ValueToChar</term>
+            <description>Converts a value to a char IList.
+            Overloaded with ushort, short, ulong, long, uint and int.</description>
+            Return: IList of char.
+            </item>
+            <item>
+            <term>+ValueToBitString</term>
+            <description>Creates a string with the binary digits making on the value passed to it. 
+            Return: string. </description>
+            </item>
+            <item>
+            <term>-CharListToString</term>
+            <description>Converts a IList of char to a string.
+            Return: void, out string.</description>
+            </item>
+            <item>
+            <term>+ByteConverterToInterger</term>
+            <description>Converts a byte array to an interger. 
+            Overloaded with ulong, long, uint, int, ushort and short. 
+            Return: void, ref of the variable type.</description>
+            </item>
+            <item>
+            <term>+EndianSwap</term>
+            <description>Changes little endian to big endian and the other way around.
+            Return: void, ref byte[].</description>
+            </item>
+            <item>
+            <term>-ArraySwap</term>
+            <description>Called by EndianSwap. Calculates how many swaps are need to be done.
+            Return: void, ref byte[].</description>
+            </item>
+            <item>
+            <term>-Swap</term>
+            <description>Swaps two values around.
+            Return: void, ref byte and ref byte.</description>
+            </item>
+            <item>
+            <term>+ByteArrayToASCII</term>
+            <description>Converts a byte array to a string. Each byte is converted into an ASCII value. 
+            Return: string.</description>
+            </item>
+            <item>
+            <term>+ASCIIToByteArray</term>
+            <description>Converts a string to a byte array. Each sign is converted into an byte.
+            Return: byte[].</description>
+            </item>
+            </list>
+            </summary>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArrayQuick(System.Int16,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ushort <paramref name="value"/> into an array, <paramref name="bitArray"/>, of two bytes.
+            Is a quicker version of ValueToBitArray.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArrayQuick(System.UInt16,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ushort <paramref name="value"/> into an array, <paramref name="bitArray"/>, of two bytes.
+            Is a quicker version of ValueToBitArray.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArrayQuick(System.Int32,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ushort <paramref name="value"/> into an array, <paramref name="bitArray"/>, of four bytes.
+            Is a quicker version of ValueToBitArray.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArrayQuick(System.UInt32,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ushort <paramref name="value"/> into an array, <paramref name="bitArray"/>, of four bytes.
+            Is a quicker version of ValueToBitArray.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArrayQuick(System.Int64,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ushort <paramref name="value"/> into an array, <paramref name="bitArray"/>, of eight bytes.
+            Is a quicker version of ValueToBitArray.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArrayQuick(System.UInt64,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ushort <paramref name="value"/> into an array, <paramref name="bitArray"/>, of eight bytes.
+            Is a quicker version of ValueToBitArray.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArray(System.UInt16,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ushort <paramref name="value"/> into an array, <paramref name="bitArray"/>, of two bytes.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArray(System.Int16,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts a short <paramref name="value"/> into an array, <paramref name="bitArray"/>, of two bytes.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArray(System.UInt64,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an ulong v<paramref name="value"/> into an array, <paramref name="bitArray"/>, of eight bytes.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArray(System.Int64,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts a long <paramref name="value"/> into an array, <paramref name="bitArray"/>, of eight bytes.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArray(System.UInt32,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an uint <paramref name="value"/> into an array, <paramref name="bitArray"/>, of four bytes. 
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitArray(System.Int32,System.Byte[]@,System.Boolean)">
+            <summary>
+            Converts an int <paramref name="value"/> into an array, <paramref name="bitArray"/>, of four bytes.
+            </summary>
+            <param name="value">Value to convert.</param>
+            <param name="bitArray">The byte array that contains "value" in bytes.</param> 
+            <param name="littleEndian">If false, the function will return the array as big endian, else little endian.</param>
+        </member>
+        <member name="M:Converter.Conversion.charListToByte(System.Collections.Generic.IList{System.Char},System.Byte[]@)">
+            <summary>
+            Converts a char list into a byte array
+            </summary>
+            <param name="arrayOfChars">The char to convert, each element is either '0' or '1'</param>
+            <param name="bitArray">The byte array, length is the arrayOfChars's length / 8, with the value of the bits. Returned as little endian</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToCharArray(System.UInt16)">
+            <summary>
+            Takes an ushort variable and returns it's bits in a char
+            </summary>
+            <param name="value">Value to convert</param>
+            <returns>Returns an IList<char> which each entry either being '0' or '1' </char></returns>
+        </member>
+        <member name="M:Converter.Conversion.ValueToCharArray(System.Int16)">
+            <summary>
+            Takes a short variable and returns it's bits in a char
+            </summary>
+            <param name="value">Value to convert</param>
+            <returns>Returns an IList<char> which each entry either being '0' or '1' </char></returns>
+        </member>
+        <member name="M:Converter.Conversion.ValueToCharArray(System.Int64)">
+            <summary>
+            Takes a long variable and returns it's bits in a char
+            </summary>
+            <param name="value">Value to convert</param>
+            <returns>Returns an IList<char> which each entry either being '0' or '1' </char></returns>
+        </member>
+        <member name="M:Converter.Conversion.ValueToCharArray(System.UInt64)">
+            <summary>
+            Takes an ulong variable and returns it's bits in a char
+            </summary>
+            <param name="value">Value to convert</param>
+            <returns>Returns an IList<char> which each entry either being '0' or '1' </char></returns>
+        </member>
+        <member name="M:Converter.Conversion.ValueToCharArray(System.UInt32)">
+            <summary>
+            Takes an uint variable and returns it's bits in a char
+            </summary>
+            <param name="value">Value to convert</param>
+            <returns>Returns an IList<char> which each entry either being '0' or '1' </char></returns>
+        </member>
+        <member name="M:Converter.Conversion.ValueToCharArray(System.Int32)">
+            <summary>
+            Takes an int variable and returns it's bits in a char
+            </summary>
+            <param name="value">Value to convert</param>
+            <returns>Returns an IList<char> which each entry either being '0' or '1' </char></returns>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.Byte,System.String@)">
+            <summary>
+            Takes a byte variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.SByte,System.String@)">
+            <summary>
+            Takes a sbyte variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.Int16,System.String@)">
+            <summary>
+            Takes a short variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.UInt16,System.String@)">
+            <summary>
+            Takes an ushort variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.Int32,System.String@)">
+            <summary>
+            Takes an int variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.UInt32,System.String@)">
+            <summary>
+            Takes an unit variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.Int64,System.String@)">
+            <summary>
+            Takes long variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.ValueToBitString(System.UInt64,System.String@)">
+            <summary>
+            Takes an ulong variable and returns it's bits in a string
+            </summary>
+            <param name="value">Value to convert</param>
+            <param name="bitString">String representing the bit of the value variable</param>
+        </member>
+        <member name="M:Converter.Conversion.CharListToString(System.Collections.Generic.IList{System.Char},System.String@)">
+            <summary>
+            Converts a list of chars, consisting of '1's and '0's, to a string
+            </summary>
+            <param name="list">Char list to convert</param>
+            <param name="convertedToString">The string representing the bits</param>
+        </member>
+        <member name="M:Converter.Conversion.ByteConverterToInterger(System.Byte[],System.UInt64@,System.Boolean)">
+            <summary>
+            Converts an endian byte array into the value it represent.
+            </summary>
+            <param name="byteArray">The byte array with the values to convert</param>
+            <param name="value">The actual value of the byte array</param>
+            <param name="littleEndian">Whether the array is big or little endian</param>
+        </member>
+        <member name="M:Converter.Conversion.ByteConverterToInterger(System.Byte[],System.UInt32@,System.Boolean)">
+            <summary>
+            Converts an endian byte array into the value it represent.
+            </summary>
+            <param name="byteArray">The byte array with the values to convert</param>
+            <param name="value">The actual value of the byte array</param>
+            <param name="littleEndian">Whether the array is big or little endian</param>
+        </member>
+        <member name="M:Converter.Conversion.ByteConverterToInterger(System.Byte[],System.UInt16@,System.Boolean)">
+            <summary>
+            Converts an endian byte array into the value it represent.
+            </summary>
+            <param name="byteArray">The byte array with the values to convert</param>
+            <param name="value">The actual value of the byte array</param>
+            <param name="littleEndian">Whether the array is big or little endian</param>
+        </member>
+        <member name="M:Converter.Conversion.ByteConverterToInterger(System.Byte[],System.Int64@,System.Boolean)">
+            <summary>
+            Converts an endian byte array into the value it represent.
+            </summary>
+            <param name="byteArray">The byte array with the values to convert</param>
+            <param name="value">The actual value of the byte array</param>
+            <param name="littleEndian">Whether the array is big or little endian</param>
+        </member>
+        <member name="M:Converter.Conversion.ByteConverterToInterger(System.Byte[],System.Int32@,System.Boolean)">
+            <summary>
+            Converts an endian byte array into the value it represent.
+            </summary>
+            <param name="byteArray">The byte array with the values to convert</param>
+            <param name="value">The actual value of the byte array</param>
+            <param name="littleEndian">Whether the array is big or little endian</param>
+        </member>
+        <member name="M:Converter.Conversion.ByteConverterToInterger(System.Byte[],System.Int16@,System.Boolean)">
+            <summary>
+            Converts an endian byte array into the value it represent.
+            </summary>
+            <param name="byteArray">The byte array with the values to convert</param>
+            <param name="value">The actual value of the byte array</param>
+            <param name="littleEndian">Whether the array is big or little endian</param>
+        </member>
+        <member name="M:Converter.Conversion.EndianSwap(System.Byte[]@)">
+            <summary>
+            Swaps array of one endian type to the other type
+            </summary>
+            <param name="byteArray">The byte array to swap</param>
+        </member>
+        <member name="M:Converter.Conversion.ArraySwap(System.Byte[]@)">
+            <summary>
+            Swaps values in an array around. Start at the edges and work toward the middle.
+            If uneven amount of elements in the array, middle element is not swapped. 
+            The elements swapped are byteArray[i] and byteArray[byteArray.length ( - 1 + 1 * i), i being 0, 1... floor(byteArray.length/2).
+            </summary>
+            <param name="byteArray">Array which values are to be swapped</param>
+        </member>
+        <member name="M:Converter.Conversion.Swap(System.Byte@,System.Byte@)">
+            <summary>
+            Swaps two values around
+            </summary>
+            <param name="first">First value to swap</param>
+            <param name="second">Second value to swap</param>
+        </member>
+        <member name="M:Converter.Conversion.ByteArrayToASCII(System.Byte[],System.Boolean)">
+            <summary>
+            Converts the values of a byte array into chars and return them in a standard ASCII string. 
+            Assumes big endian by default. If array is little endian, set littleEndian to true 
+            </summary>
+            <param name="bitArray">Byte array consisting of char's given in their byte values</param>
+            <param name="littleEndian">If false the elements in the array will be swapped around.</param>
+            <returns>A string consisting of the chars from the bitArray</returns>
+        </member>
+        <member name="M:Converter.Conversion.ASCIIToByteArray(System.String,System.Boolean)">
+            <summary>
+            Converts a standard ASCII string into the bytes that makes it up.
+            Assumes big endian by default. If array is little endian, set littleEndian to true 
+            The return array is big endian.
+            </summary>
+            <param name="toConvert">String to convert to bytes</param>
+            <param name="littleEndian">If false the elements in the array will be swapped around.</param>
+            <returns>Returns a byte array, each entry is a char from <paramref name="toConvert"/></returns>
+        </member>
+    </members>
+</doc>

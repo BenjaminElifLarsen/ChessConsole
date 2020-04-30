@@ -28,6 +28,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Reference Include="ConverterLibrary">
+      <HintPath>Converter\bin\Release\netstandard2.0\ConverterLibrary.dll</HintPath>
+    </Reference>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="board.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>

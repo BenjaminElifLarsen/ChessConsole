@@ -282,7 +282,7 @@ namespace Chess
             public Transmit()
             {
                 //TcpClient transmitter = null; //for now just use the 127.0.0.1 
-                Int32 port = 23001;
+                Int32 port = 23000;
                 IPAddress transmitterAddress = IPAddress.Parse("127.0.0.1");
                 //transmitter = new TcpClient(transmitterAddress.ToString(), port);
                 transmitter = new TcpClient("localhost", port);
@@ -293,18 +293,61 @@ namespace Chess
 
             public static void TransmitSetup()
             { //might need a try catch
-                Int32 port = 23001;
+                Int32 port = 23000;
                 IPAddress transmitterAddress = IPAddress.Parse("127.0.0.1");
                 transmitter = new TcpClient("localhost", port);
             }
 
             public static void TransmitData()
             { //might need a try catch
-                string mapData = NetworkSupport.MapToStringConvertion();
-                //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
-                //transmit map data.
-                //data should be sent back to indicate that the data has been received. 
-                byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData);
+                //should it only allow IPv4 or also IPv6?
+                try //is it better to use Socket or TcpListiner/TcpClient?
+                { // https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream?view=netcore-3.1
+                    //https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=netcore-3.1
+                    //https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.sockettype?view=netcore-3.1#System_Net_Sockets_SocketType_Stream
+                    //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/using-an-asynchronous-client-socket?view=netcore-3.1
+                    //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/sockets?view=netcore-3.1
+                    byte[] receptionAnswerByte = new byte[1];
+                    byte receptionAnswer; 
+                    TransmitSetup();
+                    string mapData = NetworkSupport.MapToStringConvertion();
+                    //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
+                    //transmit map data.
+                    //data should be sent back to indicate that the data has been received. 
+                    byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData);
+                    byte[] mapdataByteSize = null;
+                    Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length, out mapdataByteSize); //use your own converter. For some reason the xml it not showing... fixed
+                    //open transmission
+                    NetworkStream networkStream = transmitter.GetStream();
+
+                    //transmit the size of the array first, so the receiver knows how much data is coming.
+                    networkStream.Write(mapdataByteSize, 0, mapdataByteSize.Length);
+
+                    //wait on answer from the receiver
+                    //what should the response be? That is type. String? Interger, e.g. 0 for no error? What to do in case of an error
+                    networkStream.Read(receptionAnswerByte, 0, 1); //depending on the answer, different things should be done, e.g. retransmission of data, nothing etc.
+                    receptionAnswer = receptionAnswerByte[0];
+
+                    //transmit the mapdataByte
+                    networkStream.Write(mapdataByte, 0, mapdataByte.Length);
+
+                    //wait on answer from the receiver. These might need a loop. Not fully sure if NetworkStream.Read() waits until it reads something or not. Find more information about (network)stream and how it works. What does it look like in the background
+                    networkStream.Read(receptionAnswerByte, 0, 1); //penty of exceptions to deal with regarding .Write() and .Read()
+                    //it does not seem like there is a function that allows to control whether a networkstream can write or not, so the .CanWrite() will be needed most likely. Try and find out what determine if it possible to write to a stream or not. 
+                    //same for .CanRead()
+                    //After the CanRead() page: "Provide the appropriate FileAccess enumerated value in the constructor to set the readability and writability of the NetworkStream.", so most likely will not have to worry about it. Can be useful for other projects
+                    receptionAnswer = receptionAnswerByte[0];
+
+                    //shut down transmission
+                    networkStream.Close();
+                    transmitter.Close();
+
+                }
+                catch
+                {
+
+                }
+
             }
 
         }
@@ -329,6 +372,31 @@ namespace Chess
 
             public static void ReceiveData()
             { //try catch
+                try //Maybe thread this function to ensure that there it is always ready to recieve, and transmit response, data. Else a player might try to transmit data before the receiver is ready. 
+                {
+                    bool otherPlayersTurn = true;
+                    TcpClient otherPlayer;
+                    receiver.Start();
+                    while (!otherPlayersTurn) //find a bool for condition
+                    {
+                        otherPlayer = receiver.AcceptTcpClient();
+                        NetworkStream networkStream = otherPlayer.GetStream();
+                        //how to know how much data to receive? And transmit for that sake? 
+                        //Maybe calculate it from the mapstring, done in the transmitter, transmit that size data to the receiver and when it acknowledge it got it, transmit the data itself
+                        byte[] dataSizeByte = new byte[4];
+                        //use the converter lib. you wrote.
+                        ushort dataSize = 0; //use the converter here.
+                        Converter.Conversion.ByteConverterToInterger(dataSizeByte, ref dataSize); //figure out how to solve this conflict. Seems like it is fixed.
+                        byte[] data = new byte[dataSize];
+
+                    }
+
+                    receiver.Stop();
+                }
+                catch
+                {
+
+                }
 
             }
 
@@ -340,11 +408,11 @@ namespace Chess
             public static string MapToStringConvertion()
             {
                 string mapString = "";
-                for (int n = 0; n < MapMatrix.Map.GetLength(0); n++)
+                for (int x = 0; x < MapMatrix.Map.GetLength(0); x++)
                 {
-                    for (int m = 0; m < MapMatrix.Map.GetLength(1); m++)
+                    for (int y = 0; y < MapMatrix.Map.GetLength(1); y++)
                     {
-                        mapString += MapMatrix.Map[n, m] + "!"; //the ! is to help seperate the string into a 1d array.
+                        mapString += MapMatrix.Map[x, y] + "!"; //the ! is to help seperate the string into a 1d array.
                     }
                 }
                 return mapString;
@@ -360,16 +428,55 @@ namespace Chess
                 //for pawns, just check if if the piece has moved one or two squares.
                 string[] mapStringSeperated = data.Split('!'); //how well does it work regarding to the ""s. E.g. "+..."!""!""!"-..:"!. Will this give "+..." "-..." or "+..." " " " " "-..." or "+..." "" "" "-..."? Add the non-ID filled square setting to Settings
                 string[,] newMap = new string[8, 8];
-                byte colmn = 0;
+                byte y = 0;
                 for (int n = 0; n < mapStringSeperated.Length; n++)
                 {
-                    byte row = (byte)Math.Floor(n / 8d);
-                    colmn = colmn < 8 ? (byte)0 : colmn++;
-                    newMap[colmn, row] = mapStringSeperated[n]; 
+                    byte x = (byte)Math.Floor(n / 8d);
+                    y = y < 8 ? (byte)0 : y++;
+                    newMap[x, y] = mapStringSeperated[n]; 
                 }
-
-                return null;
+                return newMap;
             }
+
+            public static void UpdatedChessPieces(string[,] map)
+            {
+                for(int x = 0; x < 8; x++) 
+                    for(int y = 0; y < 8; y++)
+                    {
+                        if(map[x,y] != MapMatrix.Map[x, y])
+                        {
+                            string feltIDNew = map[x, y];
+                            string feltIDOld = MapMatrix.Map[x, y];
+                            if(feltIDOld != "" && feltIDNew == "")
+                            {//moved
+                                //look for the location of the feltIDOld on the variable map
+                                //need to check if there is a pawn that is missing, i.e. en passant, above or below the current location. 
+                                if(feltIDOld.Split(':')[1] == "6")
+                                {
+
+                                }
+                                else
+                                {
+
+                                }
+                            }
+                            else if(feltIDOld != "" && feltIDNew != "" && feltIDOld != feltIDNew)
+                            {//a piece has been taken and a new stand on it. //does not deal with the en passant
+
+                            }
+                            //else if (feltIDNew == "" && feltIDOld != "")
+                            //{//should be able to do deal with en passant. Just need to get the direction, depending on the player, look at the above or below square for a pawn ID and then update its location. 
+
+                            //}
+                        }
+                    }
+            }
+
+            public static void UpdateMap(string[,] map)
+            {
+                MapMatrix.Map = map;
+            }
+
         }
 
     }
@@ -2960,6 +3067,27 @@ namespace Chess
         protected virtual void EndLocations()
         {
 
+        }
+
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="newLocation"></param>
+        /// <param name="captured"></param>
+        public virtual void Network(int[] newLocation, bool captured = false)
+        {
+            if (captured)
+                Taken();
+            else
+            { //for king, rock and pawn it needs more code. 
+               if(newLocation != null)
+                {
+                    RemoveDraw(mapLocation);
+                    mapLocation = newLocation;
+                    Draw();
+                }
+            }
+                
         }
 
         /// <summary>
