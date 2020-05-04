@@ -378,13 +378,14 @@ namespace Chess
                     TcpClient otherPlayer;
                     receiver.Start();
                     //string mapdataString;
+                    //receiver.Pending(); could be used for something.
                     while (otherPlayersTurn) //find a bool for condition
                     {
                         byte[] tranmissionAnswerByte = new byte[1];
+
                         otherPlayer = receiver.AcceptTcpClient();
                         NetworkStream networkStream = otherPlayer.GetStream();
-                        //how to know how much data to receive? And transmit for that sake? 
-                        //Maybe calculate it from the mapstring, done in the transmitter, transmit that size data to the receiver and when it acknowledge it got it, transmit the data itself
+
                         byte[] dataSizeByte = new byte[4];
                         //use the converter lib. you wrote.
                         ushort dataSize = 0; //use the converter here
@@ -399,7 +400,7 @@ namespace Chess
                         networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
 
                         //receive the map data
-                        networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, does it matter? 
+                        networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, does it matter? Would matter if it was UDP. 
 
                         //transmit an answer depending on the received data
                         Converter.Conversion.ValueToBitArrayQuick(0, out tranmissionAnswerByte);
@@ -474,34 +475,63 @@ namespace Chess
                             string feltIDNew = map[x, y];
                             string feltIDOld = MapMatrix.Map[x, y];
                             if(feltIDNew != "" && feltIDOld == "")
-                            {//moved
-                                //look for the location of the feltIDOld on the variable map
-                                //need to check if there is a pawn that is missing, i.e. en passant, above or below the current location. 
-                                if(feltIDNew.Split(':')[1] == "6")
+                            {//a piece has moved to the location
+                                if (feltIDNew.Split(':')[1] == "6")
                                 {
                                     foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
                                     {
                                         if (chePie.GetID == feltIDNew)
                                         {
-                                            if(Math.Abs(y-chePie.GetMapLocation[1]) == 2) //moved 2, i.e. double moved
+                                            if (chePie.GetMapLocation[0] != x) //en passant
                                             {
-                                                chePie.Network(new int[] { x, y });
-                                                
-                                            }
-                                            else //moved 1
-                                            {
-                                                //need to check if it did an en passant or not.
-                                                if(chePie.GetMapLocation[0] != x)
+                                                //find out the move direction and check the y in the other direction. 
+                                                sbyte direction = (sbyte)(chePie.GetMapLocation[1] - y) > 0 ? (sbyte)1 : (sbyte)-1; //if positive, the pieces has moved up. If negative, it has moved down.
+                                                string capturedPawn = MapMatrix.Map[x, y + direction];
+                                                foreach (ChessPiece chePieCaptured in ChessList.GetList(team)) //find the player's piece that has been taken.
                                                 {
-                                                    //find out the move direction and check the y in the other direction. 
+                                                    if (chePieCaptured.GetID == capturedPawn)
+                                                    {
+                                                        chePieCaptured.Network(captured: true);
+                                                        break;
+                                                    }
+                                                }
 
+                                            }
+                                            chePie.Network(new int[] { x, y });
+                                            break;
+                                        }
+                                    }
+                                } //the king most likely will need specialised code in case of castling and you will need to do something to about the rock. For the rock, it only need to change state on the variable for whether it has moved or not.
+                                else if (feltIDNew.Split(':')[1] == "1")
+                                {
+                                    foreach (ChessPiece chePie in ChessList.GetList(!team))
+                                    {
+                                        if(chePie.GetID == feltIDNew)
+                                        {
+                                            if(Math.Abs(chePie.GetMapLocation[0] - x) > 1) //true only if the king castled.
+                                            {
+                                                //find direction of the castling to determine the rock. Find the rock and the call its Network()
+                                                //can be done by checking both ends of x on the y of the king. If one of those two ends do not have a rock on the new map and there was a rock on the old map, it must be the castling rock.
+                                                string rockStartLocation1 = map[0, chePie.GetMapLocation[1]];
+                                                string rockStartLocation2 = map[7, chePie.GetMapLocation[1]];
+                                                string chosenRock = rockStartLocation1 != "" ? rockStartLocation1 : rockStartLocation2;
+                                                bool chosenRockDirection = rockStartLocation1 != "" ? true : false; //if true, left. Else, right
+                                                foreach (ChessPiece chePieRock in ChessList.GetList(!team))
+                                                {
+                                                    if(chePieRock.GetID == chosenRock)
+                                                    {
+                                                        sbyte location = chosenRockDirection ? (sbyte) 1 : (sbyte) -1; //Right rock goes to left side of the king. Left rock goes to the right side of the king.
+                                                        chePieRock.Network(new int[] {x+location,y }); 
+                                                        break;
+                                                    }
                                                 }
                                             }
+                                            chePie.Network(new int[] { x, y });
                                             break;
                                         }
                                     }
                                 }
-                                else
+                                else 
                                 {
                                     foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
                                     {
@@ -532,10 +562,7 @@ namespace Chess
                                     }
                                 }
                             }
-                            //else if (feltIDNew == "" && feltIDOld != "")
-                            //{//should be able to do deal with en passant. Just need to get the direction, depending on the player, look at the above or below square for a pawn ID and then update its location. 
 
-                            //}
                         }
                     }
             }
@@ -614,7 +641,7 @@ namespace Chess
                         Environment.Exit(0);
                         break;
 
-                    case "Net Play":
+                    case "Net Play": //have two options, one to create and one to join a game. When creating a game, can select ones team. The player joining gets the other. 
                         Network Nettest = new Network();
                         break;
 
@@ -2096,6 +2123,23 @@ namespace Chess
             }
         }
 
+        public override void Network(int[] newLocation = null, bool captured = false)
+        {
+            if (captured)
+                Taken();
+            else
+            {
+                if (newLocation != null)
+                {
+                    HasMoved = true;
+                    RemoveDraw(mapLocation);
+                    mapLocation = newLocation;
+                    Draw();
+                }
+            }
+
+        }
+
         /// <summary>
         /// Returns true if the king is checked, false otherwise. 
         /// </summary>
@@ -2211,9 +2255,9 @@ namespace Chess
                             {
                                 couldMove = true;
                                 bool castling = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] }; 
                                 castling = FeltIDCheck(cursorLocation);
-                                if (castling)
+                                if (castling) //this if-statement and the code above could be written better. Took some time to figure out how castling was done after not looked at the code for a while. 
                                 {
                                     Castling(cursorLocation);
                                     hasSelected = true;
@@ -2803,6 +2847,23 @@ namespace Chess
             //Castling();
             Castling();
             return false;
+        }
+
+        public override void Network(int[] newLocation = null, bool captured = false)
+        {
+            if (captured)
+                Taken();
+            else
+            { //for king, rock and pawn it needs more code. 
+                if (newLocation != null)
+                {
+                    HasMoved = true;
+                    RemoveDraw(mapLocation);
+                    mapLocation = newLocation;
+                    Draw();
+                }
+            }
+
         }
 
         /// <summary>
