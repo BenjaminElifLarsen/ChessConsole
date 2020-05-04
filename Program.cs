@@ -5,6 +5,7 @@ using System.IO;
 using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
+using System.Threading;
 
 namespace Chess
 {   //https://www.chessvariants.com/d.chess/chess.html
@@ -370,7 +371,7 @@ namespace Chess
                 receiver = new TcpListener(receiverAddress, port);
             }
 
-            public static void ReceiveData(bool team)
+            public static void ReceiveData(object team)
             { //try catch
                 try //Maybe thread this function to ensure that there it is always ready to recieve, and transmit response, data. Else a player might try to transmit data before the receiver is ready. 
                 {
@@ -379,8 +380,12 @@ namespace Chess
                     receiver.Start();
                     //string mapdataString;
                     //receiver.Pending(); could be used for something.
-                    while (otherPlayersTurn) //find a bool for condition
+                    while (true) //find a bool for condition. I.e. when game ends, end this while loop and break out of it. 
                     {
+                        while (!receiver.Pending())
+                        { //will not really help. This will run until it gets a pending connection, but it needs to know it should not wait for a connection if the game is over 
+
+                        }
                         byte[] tranmissionAnswerByte = new byte[1];
 
                         otherPlayer = receiver.AcceptTcpClient();
@@ -413,7 +418,7 @@ namespace Chess
                         //decode data and update the chess pieces and the map
                         string mapdataString = System.Text.Encoding.ASCII.GetString(data);
                         string[,] newMap = NetworkSupport.StringToMapConvertion(mapdataString);
-                        NetworkSupport.UpdatedChessPieces(newMap, team);
+                        NetworkSupport.UpdatedChessPieces(newMap, (bool)team);
                         NetworkSupport.UpdateMap(newMap);
                         otherPlayersTurn = false; //change later.
                     }
@@ -465,18 +470,23 @@ namespace Chess
                 return newMap;
             }
 
-            public static void UpdatedChessPieces(string[,] map, bool team)
+            public static void UpdatedChessPieces(string[,] newMap, bool team)
             {
-                for(int x = 0; x < 8; x++) 
+                string[,] oldMap = new string[8,8];
+                for (int x = 0; x < 8; x++)
+                    for (int y = 0; y < 8; y++)
+                        oldMap[x, y] = MapMatrix.Map[x, y];
+
+                        for (int x = 0; x < 8; x++) 
                     for(int y = 0; y < 8; y++)
                     {
-                        if(map[x,y] != MapMatrix.Map[x, y])
+                        if(newMap[x,y] != oldMap[x, y]) //problem: Each time you call Network() you change MapMatrix.Map, might want to make a copy of mapMatrix.Map and then call it instead of 
                         {
-                            string feltIDNew = map[x, y];
-                            string feltIDOld = MapMatrix.Map[x, y];
+                            string feltIDNew = newMap[x, y];
+                            string feltIDOld = oldMap[x, y];
                             if(feltIDNew != "" && feltIDOld == "")
                             {//a piece has moved to the location
-                                if (feltIDNew.Split(':')[1] == "6")
+                                if (feltIDNew.Split(':')[1] == "6") 
                                 {
                                     foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
                                     {
@@ -486,8 +496,8 @@ namespace Chess
                                             {
                                                 //find out the move direction and check the y in the other direction. 
                                                 sbyte direction = (sbyte)(chePie.GetMapLocation[1] - y) > 0 ? (sbyte)1 : (sbyte)-1; //if positive, the pieces has moved up. If negative, it has moved down.
-                                                string capturedPawn = MapMatrix.Map[x, y + direction];
-                                                foreach (ChessPiece chePieCaptured in ChessList.GetList(team)) //find the player's piece that has been taken.
+                                                string capturedPawn = oldMap[x, y + direction];
+                                                foreach (ChessPiece chePieCaptured in ChessList.GetList(team)) //finds the player's piece that has been taken.
                                                 {
                                                     if (chePieCaptured.GetID == capturedPawn)
                                                     {
@@ -512,15 +522,18 @@ namespace Chess
                                             {
                                                 //find direction of the castling to determine the rock. Find the rock and the call its Network()
                                                 //can be done by checking both ends of x on the y of the king. If one of those two ends do not have a rock on the new map and there was a rock on the old map, it must be the castling rock.
-                                                string rockStartLocation1 = map[0, chePie.GetMapLocation[1]];
-                                                string rockStartLocation2 = map[7, chePie.GetMapLocation[1]];
-                                                string chosenRock = rockStartLocation1 != "" ? rockStartLocation1 : rockStartLocation2;
+                                                string rockStartLocation1 = newMap[0, chePie.GetMapLocation[1]];
+                                                string rockStartLocation2 = newMap[7, chePie.GetMapLocation[1]];
+                                                string rockStartLocation1Old = oldMap[0, chePie.GetMapLocation[1]];
+                                                string chosenRock = rockStartLocation1 != rockStartLocation1Old ? rockStartLocation1 : rockStartLocation2; //either new locations will be the same as their old locations if they have not castled.
+                                                //this code can only be reached if the king has moved, and moved using castling, so we do know that neither of the rocks have been moved since the last change to the map.
+
                                                 bool chosenRockDirection = rockStartLocation1 != "" ? true : false; //if true, left. Else, right
                                                 foreach (ChessPiece chePieRock in ChessList.GetList(!team))
                                                 {
                                                     if(chePieRock.GetID == chosenRock)
                                                     {
-                                                        sbyte location = chosenRockDirection ? (sbyte) 1 : (sbyte) -1; //Right rock goes to left side of the king. Left rock goes to the right side of the king.
+                                                        sbyte location = chosenRockDirection ? (sbyte) 1 : (sbyte) -1; //Left rock goes to the right side of the king. Right rock goes to left side of the king. 
                                                         chePieRock.Network(new int[] {x+location,y }); 
                                                         break;
                                                     }
@@ -642,12 +655,21 @@ namespace Chess
                         break;
 
                     case "Net Play": //have two options, one to create and one to join a game. When creating a game, can select ones team. The player joining gets the other. 
-                        Network Nettest = new Network();
+                        NetMenu();
                         break;
 
                 }
 
             } while (true);
+        }
+
+
+        private void NetMenu()
+        {
+            Network Nettest = new Network(); //not final NetMenu setup, need to allow for selection of team.
+            Console.Clear();
+            ChessTable chess = new ChessTable();
+            chess.NetPlay();
         }
 
         /// <summary>
@@ -683,7 +705,7 @@ namespace Chess
         {
             Console.Clear();
             ChessTable chess = new ChessTable();
-            chess.Play();
+            chess.LocalPlay();
         }
 
         /// <summary>
@@ -981,6 +1003,60 @@ namespace Chess
             }
         }
 
+        private void GameLoopNet()
+        { //not final version. Just used to test if the net and netsupprot functions are working, for now. 
+            bool gameEnded = false; bool whiteWon = false;
+            Thread receiveThread = new Thread(Network.Receive.ReceiveData);
+            receiveThread.Start(false);
+            do
+            {
+                gameEnded = PlayerControlNet(true);
+                if (gameEnded)
+                {
+                    whiteWon = true;
+                    break;
+                }
+                //Network.Receive.ReceiveData(false); //white is transmitting data, so black should receive data. //This will cause a problem under testing since currently data is trying to be transmitted before the reciever is on.
+                //maybe add this one, the one above, to before the game loop and tread it. You should be able to test for any errors and bugs then regarding most movements. 
+                //for further testing, you want to allow the Setups to take different ports, and later IPs, and create one of each type for each team. 
+                gameEnded = PlayerControlNet(false);
+                //Network.Receive.ReceiveData(true); //bkac is transmitting data, so white should receive data. 
+            } while (!gameEnded);
+
+            bool PlayerControlNet(bool team)
+                {
+                bool checkmate = false; bool draw = false;
+                Player player;
+                if (team)
+                    player = white;
+                else
+                    player = black;
+                player.Control();
+                ProtectKing.ProtectEndLocations.Clear();
+                checkmate = CheckmateChecker(!team, out List<string> saveKingList);
+
+                ProtectKing.Protect = saveKingList;
+                draw = Draw(); //maybe move this one out to the outer loop
+                if (checkmate || draw) //checkmate seems to work as it should. 
+                    return true;
+
+                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) 
+                {
+                    if (ChessList.GetList(team)[i].BeenTaken)
+                        ChessList.GetList(team).RemoveAt(i);
+                }
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--)
+                {
+                    if (ChessList.GetList(!team)[i] is Pawn && ChessList.GetList(!team)[i].SpecialBool == true)
+                        ChessList.GetList(!team)[i].SpecialBool = false;
+                }
+
+                Network.Transmit.TransmitData();
+
+                return false;
+            }
+        }
+
         /// <summary>
         /// Contains the code that allows the game to be played and loops through it until either a draw or one side wins.
         /// </summary>
@@ -1038,10 +1114,15 @@ namespace Chess
             }
         }
 
+        public void NetPlay()
+        {
+            GameLoopNet();
+        }
+
         /// <summary>
         /// Runs the loop and code that plays the game.
         /// </summary>
-        public void Play()
+        public void LocalPlay()
         {
             GameLoop();
         }
