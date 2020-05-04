@@ -314,7 +314,7 @@ namespace Chess
                     //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
                     //transmit map data.
                     //data should be sent back to indicate that the data has been received. 
-                    byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData);
+                    byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData); //could use your own converter
                     byte[] mapdataByteSize = null;
                     Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length, out mapdataByteSize); //use your own converter. For some reason the xml it not showing... fixed
                     //open transmission
@@ -370,25 +370,51 @@ namespace Chess
                 receiver = new TcpListener(receiverAddress, port);
             }
 
-            public static void ReceiveData()
+            public static void ReceiveData(bool team)
             { //try catch
                 try //Maybe thread this function to ensure that there it is always ready to recieve, and transmit response, data. Else a player might try to transmit data before the receiver is ready. 
                 {
                     bool otherPlayersTurn = true;
                     TcpClient otherPlayer;
                     receiver.Start();
-                    while (!otherPlayersTurn) //find a bool for condition
+                    //string mapdataString;
+                    while (otherPlayersTurn) //find a bool for condition
                     {
+                        byte[] tranmissionAnswerByte = new byte[1];
                         otherPlayer = receiver.AcceptTcpClient();
                         NetworkStream networkStream = otherPlayer.GetStream();
                         //how to know how much data to receive? And transmit for that sake? 
                         //Maybe calculate it from the mapstring, done in the transmitter, transmit that size data to the receiver and when it acknowledge it got it, transmit the data itself
                         byte[] dataSizeByte = new byte[4];
                         //use the converter lib. you wrote.
-                        ushort dataSize = 0; //use the converter here.
+                        ushort dataSize = 0; //use the converter here
+
+                        //receive the size of the mapdata string
+                        networkStream.Read(dataSizeByte, 0, dataSizeByte.Length);
                         Converter.Conversion.ByteConverterToInterger(dataSizeByte, ref dataSize); //figure out how to solve this conflict. Seems like it is fixed.
                         byte[] data = new byte[dataSize];
 
+                        //transmit an answer depending if it received data
+                        Converter.Conversion.ValueToBitArrayQuick(0, out tranmissionAnswerByte);
+                        networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
+
+                        //receive the map data
+                        networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, does it matter? 
+
+                        //transmit an answer depending on the received data
+                        Converter.Conversion.ValueToBitArrayQuick(0, out tranmissionAnswerByte);
+                        networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
+
+                        //shutdown connection to client. 
+                        networkStream.Close();
+                        otherPlayer.Close();
+
+                        //decode data and update the chess pieces and the map
+                        string mapdataString = System.Text.Encoding.ASCII.GetString(data);
+                        string[,] newMap = NetworkSupport.StringToMapConvertion(mapdataString);
+                        NetworkSupport.UpdatedChessPieces(newMap, team);
+                        NetworkSupport.UpdateMap(newMap);
+                        otherPlayersTurn = false; //change later.
                     }
 
                     receiver.Stop();
@@ -438,7 +464,7 @@ namespace Chess
                 return newMap;
             }
 
-            public static void UpdatedChessPieces(string[,] map)
+            public static void UpdatedChessPieces(string[,] map, bool team)
             {
                 for(int x = 0; x < 8; x++) 
                     for(int y = 0; y < 8; y++)
@@ -447,22 +473,64 @@ namespace Chess
                         {
                             string feltIDNew = map[x, y];
                             string feltIDOld = MapMatrix.Map[x, y];
-                            if(feltIDOld != "" && feltIDNew == "")
+                            if(feltIDNew != "" && feltIDOld == "")
                             {//moved
                                 //look for the location of the feltIDOld on the variable map
                                 //need to check if there is a pawn that is missing, i.e. en passant, above or below the current location. 
-                                if(feltIDOld.Split(':')[1] == "6")
+                                if(feltIDNew.Split(':')[1] == "6")
                                 {
+                                    foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
+                                    {
+                                        if (chePie.GetID == feltIDNew)
+                                        {
+                                            if(Math.Abs(y-chePie.GetMapLocation[1]) == 2) //moved 2, i.e. double moved
+                                            {
+                                                chePie.Network(new int[] { x, y });
+                                                
+                                            }
+                                            else //moved 1
+                                            {
+                                                //need to check if it did an en passant or not.
+                                                if(chePie.GetMapLocation[0] != x)
+                                                {
+                                                    //find out the move direction and check the y in the other direction. 
 
+                                                }
+                                            }
+                                            break;
+                                        }
+                                    }
                                 }
                                 else
                                 {
-
+                                    foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
+                                    {
+                                        if (chePie.GetID == feltIDNew)
+                                        {
+                                            chePie.Network(new int[] { x, y });
+                                            break;
+                                        }
+                                    }
                                 }
                             }
                             else if(feltIDOld != "" && feltIDNew != "" && feltIDOld != feltIDNew)
                             {//a piece has been taken and a new stand on it. //does not deal with the en passant
-
+                                foreach (ChessPiece chePie in ChessList.GetList(team)) //find the player's piece that has been taken.
+                                {
+                                    if(chePie.GetID == feltIDOld)
+                                    {
+                                        chePie.Network(captured: true);
+                                        break;
+                                    }
+                                }
+                                foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
+                                {
+                                    if(chePie.GetID == feltIDNew)
+                                    {
+                                        chePie.Network(new int[] { x, y });
+                                        break;
+                                    }
+                                }
                             }
                             //else if (feltIDNew == "" && feltIDOld != "")
                             //{//should be able to do deal with en passant. Just need to get the direction, depending on the player, look at the above or below square for a pawn ID and then update its location. 
@@ -2415,6 +2483,26 @@ namespace Chess
 
         }
 
+        public override void Network(int[] newLocation = null, bool captured = false)
+        {
+            if (captured)
+                Taken();
+            else
+            { //for king, rock and pawn it needs more code. 
+                if (newLocation != null)
+                {
+                    if(Math.Abs(newLocation[1] - mapLocation[1]) == 2)
+                    {
+                        specialBool = true;
+                    }
+                    RemoveDraw(mapLocation);
+                    mapLocation = newLocation;
+                    Draw();
+                }
+            }
+
+        }
+
         /// <summary>
         /// Overriden control function of the base class. Checks if the chess piece is ready for a promotion. 
         /// </summary>
@@ -3074,7 +3162,7 @@ namespace Chess
         /// </summary>
         /// <param name="newLocation"></param>
         /// <param name="captured"></param>
-        public virtual void Network(int[] newLocation, bool captured = false)
+        public virtual void Network(int[] newLocation = null, bool captured = false)
         {
             if (captured)
                 Taken();
