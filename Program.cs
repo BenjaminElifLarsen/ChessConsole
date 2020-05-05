@@ -309,7 +309,7 @@ namespace Chess
                     //https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.sockettype?view=netcore-3.1#System_Net_Sockets_SocketType_Stream
                     //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/using-an-asynchronous-client-socket?view=netcore-3.1
                     //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/sockets?view=netcore-3.1
-                    byte[] receptionAnswerByte = new byte[1];
+                    byte[] receptionAnswerByte = new byte[4];
                     byte receptionAnswer; 
                     TransmitSetup();
                     string mapData = NetworkSupport.MapToStringConvertion();
@@ -318,7 +318,7 @@ namespace Chess
                     //data should be sent back to indicate that the data has been received. 
                     byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData); //could use your own converter
                     byte[] mapdataByteSize = null;
-                    Converter.Conversion.ValueToBitArrayQuick((int)Math.Ceiling(mapdataByte.Length / 255d), out mapdataByteSize);
+                    Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length/*(int)Math.Ceiling(mapdataByte.Length / 255d)*/, out mapdataByteSize);
                     //open transmission
                     NetworkStream networkStream = transmitter.GetStream();
 
@@ -327,14 +327,17 @@ namespace Chess
 
                     //wait on answer from the receiver
                     //what should the response be? That is type. String? Interger, e.g. 0 for no error? What to do in case of an error
-                    networkStream.Read(receptionAnswerByte, 0, 1); //depending on the answer, different things should be done, e.g. retransmission of data, nothing etc.
+                    networkStream.Read(receptionAnswerByte, 0, 4); //depending on the answer, different things should be done, e.g. retransmission of data, nothing etc.
                     receptionAnswer = receptionAnswerByte[0];
 
                     //transmit the mapdataByte
                     networkStream.Write(mapdataByte, 0, mapdataByte.Length);
 
+                    //while (!networkStream.DataAvailable) //it states that there is data available
+                    //{
+                    //}
                     //wait on answer from the receiver. These might need a loop. Not fully sure if NetworkStream.Read() waits until it reads something or not. Find more information about (network)stream and how it works. What does it look like in the background
-                    networkStream.Read(receptionAnswerByte, 0, 1); //penty of exceptions to deal with regarding .Write() and .Read()
+                    networkStream.Read(receptionAnswerByte, 0, 4); //penty of exceptions to deal with regarding .Write() and .Read()
                     //it does not seem like there is a function that allows to control whether a networkstream can write or not, so the .CanWrite() will be needed most likely. Try and find out what determine if it possible to write to a stream or not. 
                     //same for .CanRead()
                     //After the CanRead() page: "Provide the appropriate FileAccess enumerated value in the constructor to set the readability and writability of the NetworkStream.", so most likely will not have to worry about it. Can be useful for other projects
@@ -385,9 +388,9 @@ namespace Chess
                     {
                         while (!receiver.Pending())
                         { //will not really help. This will run until it gets a pending connection, but it needs to know it should not wait for a connection if the game is over 
-
+                            //could always abort the thread, but consider better and safer ways to do that.
                         }
-                        byte[] tranmissionAnswerByte = new byte[1];
+                        byte[] tranmissionAnswerByte = new byte[4];
 
                         otherPlayer = receiver.AcceptTcpClient();
                         NetworkStream networkStream = otherPlayer.GetStream();
@@ -398,33 +401,66 @@ namespace Chess
 
                         //receive the size of the mapdata string
                         while (!networkStream.DataAvailable)
-                        { //DataAvailable does not become true after data is transmitted the first time in TransmitData()
-                            //Thread.Sleep(50);
+                        { 
                         }
                         networkStream.Read(dataSizeByte, 0, dataSizeByte.Length);
-                        Converter.Conversion.ByteConverterToInterger(dataSizeByte, ref dataSize); //figure out how to solve this conflict. Seems like it is fixed.
+                        Converter.Conversion.ByteConverterToInterger(dataSizeByte, ref dataSize);
                         byte[] data = new byte[dataSize];
 
-                        //transmit an answer depending if it received data
-                        Converter.Conversion.ValueToBitArrayQuick(0, out tranmissionAnswerByte);
-                        networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length); //Error: Unable to read data from the transport connection: En eksisterende forbindelse blev tvangsafbrudt af en ekstern vært.
-
-                        //receive the map data
-                        networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, does it matter? Would matter if it was UDP. 
-
-                        //transmit an answer depending on the received data
+                        //transmit an answer depending om the received data
                         Converter.Conversion.ValueToBitArrayQuick(0, out tranmissionAnswerByte);
                         networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
 
-                        //shutdown connection to client. 
-                        networkStream.Close();
-                        otherPlayer.Close();
+
+                        while (!networkStream.DataAvailable)
+                        {
+                        }
+                        //receive the map data
+                        networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, does it matter? Would matter if it was UDP. 
+                        //Error: Unable to read data from the transport connection: En eksisterende forbindelse blev tvangsafbrudt af en ekstern vært.
+                        //after netstat in the command window, the connection seize to exist somewhere after networkStream.Read and Converter.Conversion.Value....
+                        //does not always happen. So far, unable to diagnose what is causing the problem. Debugging and going through any of the writes/reads, at least the last two, seems to cause problems. 
+                        //However, the problem have happened without debugging. The while loop above might have fixed the non-debug issue, but why? I think I got an idea, but read up more on the subject and 
+                        //look for possible reasons and ways to solve it. 
+                        //When standing on networkStream.Read and calling the netstat the connection is shown. When pressing Step Into, the connection is no longer in the netstat list. 
+                        //this happens no matter where this is done, it seems
+
+                        //while (!networkStream.DataAvailable)
+                        //{ 
+                        //}
 
                         //decode data and update the chess pieces and the map
                         string mapdataString = System.Text.Encoding.ASCII.GetString(data);
                         string[,] newMap = NetworkSupport.StringToMapConvertion(mapdataString);
                         NetworkSupport.UpdatedChessPieces(newMap, (bool)team);
                         NetworkSupport.UpdateMap(newMap);
+
+                        //transmit an answer depending on the received data. This is needed to prevent the game from continue before the map and pieces are updated. Maybe move this and the close to under the mapupdating code below
+                        //tranmissionAnswerByte[0] = 1;
+                        Converter.Conversion.ValueToBitArrayQuick(11, out tranmissionAnswerByte);
+                        networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
+                        //Error: Unable to read data from the transport connection: En eksisterende forbindelse blev tvangsafbrudt af en ekstern vært.
+                        //the transmitter reads some data, a response, before the code above is reached. Outcommeting tranmisster' two Close() allows this code to reach the breakpoint below.
+                        //the transmitted transmissionAnswerByte is not being read by the transmitter. 
+                        //the transmitter reads data from the networkStream before the above code writes data to the networkStream. 
+                        //problem is solved. Not fully sure, but the problem seemed to have been this. Need to read more up on it to be fully sure.
+                        /*The Read() over in transmitter read 1 byte at the time, however, the transmissionAnswerByte is 4 long, since the Converter.Conversion.ValueToBitArrayQuick(11, out tranmissionAnswerByte)
+                         * converted the number into 32 bits split over 4 bytes. E.g. 11 became 11 0 0 0. The transmitter network stream would then have 4 bytes. It was programmed to read 1 byte.
+                         * At the next Read() it would then read the next byte of those original 4. Thus it would not wait on a reponse from the server and it would close its networkStream and Client,
+                         * thus this function could not write data to the client later on. 
+                         * This did leave a question, if I write to the stream and then read, how come the program does not read what it just wrote? Most likely something in the background, but how does it work?
+                         * Most likely it knows which packets are for it, e.g. headers and that, but since this is operating on the same local address, there could, and might, be more to it, figure it out.
+                         * That would be the sockets. From a netstat: 
+                         * Proto  Local Address          Foreign Address        State
+                         * TCP    127.0.0.1:23000        ~:63841        ESTABLISHED
+                         * TCP    127.0.0.1:63841        ~:23000        ESTABLISHED
+                         * 
+                         */
+
+                        //shutdown connection to client. 
+                        networkStream.Close();
+                        otherPlayer.Close();
+
                         otherPlayersTurn = false; //change later.
                     }
 
@@ -440,6 +476,9 @@ namespace Chess
 
         }
 
+        /// <summary>
+        /// Class to support the network, only used by Network. 
+        /// </summary>
         static class NetworkSupport
         {
             public static string MapToStringConvertion()
@@ -449,7 +488,10 @@ namespace Chess
                 {
                     for (int y = 0; y < MapMatrix.Map.GetLength(1); y++)
                     {
-                        mapString += MapMatrix.Map[x, y] + "!"; //the ! is to help seperate the string into a 1d array.
+                        if(y == 7 && x == 7)
+                            mapString += MapMatrix.Map[x, y]; //last part of the string does not need a !, if it got one, the string will be split into 65 parts.
+                        else
+                            mapString += MapMatrix.Map[x, y] + "!"; //the ! is to help seperate the string into a 1d array.
                     }
                 }
                 return mapString;
@@ -464,13 +506,15 @@ namespace Chess
                 //remember for castling, two pieces will have moved, and en passant. 
                 //for pawns, just check if if the piece has moved one or two squares.
                 string[] mapStringSeperated = data.Split('!'); //how well does it work regarding to the ""s. E.g. "+..."!""!""!"-..:"!. Will this give "+..." "-..." or "+..." " " " " "-..." or "+..." "" "" "-..."? Add the non-ID filled square setting to Settings
+                //data.Split gives 65 strings instead of 64. the last ! creates a "" after it even thought nothing is ont that side
+                //how to best solve this. Just subtract one from the length or change something in the code that creates the orginal string?
                 string[,] newMap = new string[8, 8];
                 byte y = 0;
                 for (int n = 0; n < mapStringSeperated.Length; n++)
                 {
                     byte x = (byte)Math.Floor(n / 8d);
-                    y = y < 8 ? (byte)0 : y++;
-                    newMap[x, y] = mapStringSeperated[n]; 
+                    newMap[x, y] = mapStringSeperated[n]; //puts in nulls instead of ""s for some reason. Also it does not return the same map layout. White is on the top. Problem is y
+                    y = y == 7 ? (byte)0 : (byte)(y+1); //this is not working. It is just 0 all the time. Okay, the y++ did not work, good to know
                 }
                 return newMap;
             }
@@ -482,11 +526,13 @@ namespace Chess
                     for (int y = 0; y < 8; y++)
                         oldMap[x, y] = MapMatrix.Map[x, y];
 
-                        for (int x = 0; x < 8; x++) 
+                for (int x = 0; x < 8; x++) 
                     for(int y = 0; y < 8; y++)
                     {
                         if(newMap[x,y] != oldMap[x, y]) //problem: Each time you call Network() you change MapMatrix.Map, might want to make a copy of mapMatrix.Map and then call it instead of 
-                        {
+                        {//given how it is programmed, this will be hard to test as the MapMatrix.Map is being updated from the move
+                            //possible solution: save a copy of the map before any move and then create a new function in the MapMatrix class that holds this and call it above. 
+                            //when this is tested and everything is working, remove that function and change this back to MapMatrix.Map
                             string feltIDNew = newMap[x, y];
                             string feltIDOld = oldMap[x, y];
                             if(feltIDNew != "" && feltIDOld == "")
