@@ -275,7 +275,8 @@ namespace Chess
             //Receive reTest = new Receive();
             //Transmit trTest = new Transmit();
             Receive.ReceiveSetup();
-            Transmit.TransmitSetup();
+            
+            //Transmit.TransmitSetup();
         }
 
         public class Transmit
@@ -317,7 +318,7 @@ namespace Chess
                     //data should be sent back to indicate that the data has been received. 
                     byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData); //could use your own converter
                     byte[] mapdataByteSize = null;
-                    Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length, out mapdataByteSize); //use your own converter. For some reason the xml it not showing... fixed
+                    Converter.Conversion.ValueToBitArrayQuick((int)Math.Ceiling(mapdataByte.Length / 255d), out mapdataByteSize);
                     //open transmission
                     NetworkStream networkStream = transmitter.GetStream();
 
@@ -344,9 +345,9 @@ namespace Chess
                     transmitter.Close();
 
                 }
-                catch
+                catch (Exception e)
                 {
-
+                    Console.WriteLine(e);
                 }
 
             }
@@ -396,13 +397,17 @@ namespace Chess
                         ushort dataSize = 0; //use the converter here
 
                         //receive the size of the mapdata string
+                        while (!networkStream.DataAvailable)
+                        { //DataAvailable does not become true after data is transmitted the first time in TransmitData()
+                            //Thread.Sleep(50);
+                        }
                         networkStream.Read(dataSizeByte, 0, dataSizeByte.Length);
                         Converter.Conversion.ByteConverterToInterger(dataSizeByte, ref dataSize); //figure out how to solve this conflict. Seems like it is fixed.
                         byte[] data = new byte[dataSize];
 
                         //transmit an answer depending if it received data
                         Converter.Conversion.ValueToBitArrayQuick(0, out tranmissionAnswerByte);
-                        networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
+                        networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length); //Error: Unable to read data from the transport connection: En eksisterende forbindelse blev tvangsafbrudt af en ekstern vært.
 
                         //receive the map data
                         networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, does it matter? Would matter if it was UDP. 
@@ -425,9 +430,9 @@ namespace Chess
 
                     receiver.Stop();
                 }
-                catch
+                catch (Exception e)
                 {
-
+                    Console.WriteLine(e);
                 }
 
             }
@@ -1008,6 +1013,7 @@ namespace Chess
             bool gameEnded = false; bool whiteWon = false;
             Thread receiveThread = new Thread(Network.Receive.ReceiveData);
             receiveThread.Start(false);
+            //Network.Transmit.TransmitSetup();
             do
             {
                 gameEnded = PlayerControlNet(true);
