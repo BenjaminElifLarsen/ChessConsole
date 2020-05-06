@@ -15,8 +15,10 @@ namespace Chess
     /// </summary>
     public class MapMatrix
     {
+        //all test variables and functions should be removed when the NetworkSupport and Network are fully working and well tested. 
         private static string[,] map = new string[8, 8];
         private static bool mapPrepared = false;
+        private static string[,] testMap = new string[8, 8]; //for testing purposes only.
         private MapMatrix()
         {
 
@@ -38,6 +40,20 @@ namespace Chess
         /// Used to get and set values on the board.
         /// </summary>
         public static string[,] Map { get => map; set => map = value; }
+
+
+        public static void TestMap() //for testing only. 
+        {
+            for (int n = 0; n < 8; n++)
+            {
+                for (int m = 0; m < 8; m++)
+                {
+                    testMap[n, m] = map[n, m];
+                }
+            }
+            //return testMap;
+        }
+        public static string[,] TestingMap { get => testMap; } //for testing one. 
     }
 
     /// <summary>
@@ -281,13 +297,13 @@ namespace Chess
 
         public class Transmit
         {
-            public Transmit()
+            public static void TransmitSetup(string IPaddress)
             {
                 //TcpClient transmitter = null; //for now just use the 127.0.0.1 
                 Int32 port = 23000;
-                IPAddress transmitterAddress = IPAddress.Parse("127.0.0.1");
+                IPAddress transmitterAddress = IPAddress.Parse(IPaddress);
                 //transmitter = new TcpClient(transmitterAddress.ToString(), port);
-                transmitter = new TcpClient("localhost", port);
+                transmitter = new TcpClient(IPaddress, port);
                 //hmmm... cannot connect, the computer denies connection... Can't ping this computer either... If a way around is not found, just write as much code as possible and boot up the laptop, at least it can be pinged. 
                 //got a lot to read and study anyway.
                 //need a try catch 
@@ -298,6 +314,7 @@ namespace Chess
                 Int32 port = 23000;
                 IPAddress transmitterAddress = IPAddress.Parse("127.0.0.1");
                 transmitter = new TcpClient("localhost", port);
+                //https://docs.microsoft.com/en-us/dotnet/api/system.net.networkinformation.tcpconnectioninformation?redirectedfrom=MSDN&view=netcore-3.1
             }
 
             public static void TransmitData()
@@ -310,38 +327,38 @@ namespace Chess
                     //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/using-an-asynchronous-client-socket?view=netcore-3.1
                     //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/sockets?view=netcore-3.1
                     byte[] receptionAnswerByte = new byte[4];
-                    byte receptionAnswer; 
+                    short receptionAnswer = -1; 
                     TransmitSetup();
                     string mapData = NetworkSupport.MapToStringConvertion();
                     //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
+
                     //transmit map data.
-                    //data should be sent back to indicate that the data has been received. 
-                    byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData); //could use your own converter
+                    //byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData); //could use your own converter
+                    byte[] mapdataByte = Converter.Conversion.ASCIIToByteArray(mapData);
                     byte[] mapdataByteSize = null;
                     Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length/*(int)Math.Ceiling(mapdataByte.Length / 255d)*/, out mapdataByteSize);
                     //open transmission
                     NetworkStream networkStream = transmitter.GetStream();
 
-                    //transmit the size of the array first, so the receiver knows how much data is coming.
+                    //transmits the size of the array first, so the receiver knows how much data is coming.
                     networkStream.Write(mapdataByteSize, 0, mapdataByteSize.Length);
 
                     //wait on answer from the receiver
-                    //what should the response be? That is type. String? Interger, e.g. 0 for no error? What to do in case of an error
-                    networkStream.Read(receptionAnswerByte, 0, 4); //depending on the answer, different things should be done, e.g. retransmission of data, nothing etc.
-                    receptionAnswer = receptionAnswerByte[0];
+                    networkStream.Read(receptionAnswerByte, 0, 4);  //the reads are used to ensure that the TransmitData is not ahead of ReceiveData. This ensures the next turn is not started before the map and chess pieces are ready.
+                    Converter.Conversion.ByteConverterToInterger(receptionAnswerByte, ref receptionAnswer);
+                    //should be 0.
 
                     //transmit the mapdataByte
                     networkStream.Write(mapdataByte, 0, mapdataByte.Length);
 
-                    //while (!networkStream.DataAvailable) //it states that there is data available
-                    //{
-                    //}
-                    //wait on answer from the receiver. These might need a loop. Not fully sure if NetworkStream.Read() waits until it reads something or not. Find more information about (network)stream and how it works. What does it look like in the background
+
+                    //wait on answer from the receiver. 
                     networkStream.Read(receptionAnswerByte, 0, 4); //penty of exceptions to deal with regarding .Write() and .Read()
                     //it does not seem like there is a function that allows to control whether a networkstream can write or not, so the .CanWrite() will be needed most likely. Try and find out what determine if it possible to write to a stream or not. 
                     //same for .CanRead()
                     //After the CanRead() page: "Provide the appropriate FileAccess enumerated value in the constructor to set the readability and writability of the NetworkStream.", so most likely will not have to worry about it. Can be useful for other projects
-                    receptionAnswer = receptionAnswerByte[0];
+                    Converter.Conversion.ByteConverterToInterger(receptionAnswerByte, ref receptionAnswer);
+                    //should be 1. 
 
                     //shut down transmission
                     networkStream.Close();
@@ -349,7 +366,7 @@ namespace Chess
 
                 }
                 catch (Exception e)
-                {
+                { //what to do if this is entered?
                     Console.WriteLine(e);
                 }
 
@@ -359,31 +376,69 @@ namespace Chess
 
         public class Receive
         {
-            public Receive()
+            public static void ReceiveSetup(string IPaddress) //this one is not really needed, since the program will figure out the IP-address in the function itself.
             { //try catch
                 //
                 //TcpListener receiver = null; //for now just use the 127.0.0.1 
                 Int32 port = 23000;
-                IPAddress receiverAddress = IPAddress.Parse("127.0.0.1");
+                IPAddress receiverAddress = IPAddress.Parse(IPaddress);
                 receiver = new TcpListener(receiverAddress, port);
             }
 
             public static void ReceiveSetup()
             { //try catch
                 Int32 port = 23000;
-                IPAddress receiverAddress = IPAddress.Parse("127.0.0.1");
+                IPAddress receiverAddress = IPAddress.Parse("127.0.0.1"); //change later
                 receiver = new TcpListener(receiverAddress, port);
+                //when ensuring the game can be played on two computers, it is needed to ensure that the "server" is up on the other computer and running before running the TransmitSetup.
+                //how to ensure TransmitSetup or later does not crash if there is no server
+                /*Idea: 
+                 * Peer-to-Peer connection.
+                 * Player 1 selects "Net Play" and "Host" and their IP address is showned and "Waiting on player" or something like that. 
+                 * Player 1' receiver has started up the moment they select "Host". 
+                 * Player 2 selects "Net Play" and "Join". They enter Player 1' IP address and their receiver, with their own IP address, has started up and TransmitSetup(string Player 1' Ipaddress) connects to Player 1' receiver. 
+                 * Player 2' transmitter transmits their IP address to Player 1.
+                 * Player 1' receiver receives Player 2' IP address, starts up their transmitter with Player 2' IP address using TransmitSetup(string player 2' Ipaddress). 
+                 * Both transmitters now know the other players receiver IP address and port, 23000. Both receivers are running.
+                 * Player 1 selects a colour and transmit it to Player 2 (i.e. "White" and "Black")
+                 * Player 2 receives the colour and selects the other colour. 
+                 * Maybe transmit data from Player 2 to Player 1 to inform Player 1 to start their game. At the same time Player 2 starts their game 
+                 * Game starts. 
+                 * Player 1 makes a move. Transmit the map.
+                 * Player 2 receives the map, updates their map and chess pieces and makes their move.
+                 * Player 2 transmit their map and Player 1 receives etc.
+                 * ???
+                 * Game ends and last map transmission is done. 
+                 * Both player's tranmitters shuts down and the recievers do the same.
+                 * Display, now or before shutting down, who won or if it is a draw. 
+                 * Goes back to the main menu.
+                 * 
+                 * Depending on which Player is white, they go first. 
+                 * 
+                 * Anything else that needs to be done, before the game starts?
+                 * 
+                 * How to handle errors? Like wrong IP address has been entered for the transmitsetup
+                 * Also, currently it only allows local play, NAT is not active. 
+                 * do you need otherPlayer.Client.LocalEndPoint or otherPlayer.Client.RemoteEndPoint to get the IP address of the client, otherPlayer, that is connected to the TcpListener? Could just transmit it, but if a write and read is 
+                 * not needed, it would be prefered not to do that.
+                 * If done using otherPlayer.Clinet... transmitter transmit data to to the receiver and receiver transmit data back to the transmitter, both player do this, to ensure the connections are working. 
+                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.localendpoint?view=netcore-3.1#System_Net_Sockets_Socket_LocalEndPoint
+                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.remoteendpoint?view=netcore-3.1#System_Net_Sockets_Socket_RemoteEndPoint
+                 * 
+                 * For Player 1, the receiver needs to start the moment they host, so ReceiveData(object team) needs to check if the receiver is started. Maybe just move the .Start() out of that function and into a new function, 
+                 *  since both receivers needs to run all the time and first need to close down when the game is over or an error occur.
+                 * 
+                 */
+                //OSSupportsIPv4 aand OSSupportsIPv6 might be useful at some points, used to check whether the underlying operating system and network adaptors support support those specific IPvs
             }
 
             public static void ReceiveData(object team)
-            { //try catch
-                try //Maybe thread this function to ensure that there it is always ready to recieve, and transmit response, data. Else a player might try to transmit data before the receiver is ready. 
+            { 
+                try 
                 {
-                    bool otherPlayersTurn = true;
                     TcpClient otherPlayer;
                     receiver.Start();
-                    //string mapdataString;
-                    //receiver.Pending(); could be used for something.
+
                     while (true) //find a bool for condition. I.e. when game ends, end this while loop and break out of it. 
                     {
                         while (!receiver.Pending())
@@ -394,7 +449,6 @@ namespace Chess
 
                         otherPlayer = receiver.AcceptTcpClient();
                         NetworkStream networkStream = otherPlayer.GetStream();
-
                         byte[] dataSizeByte = new byte[4];
                         //use the converter lib. you wrote.
                         ushort dataSize = 0; //use the converter here
@@ -417,27 +471,15 @@ namespace Chess
                         }
                         //receive the map data
                         networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, does it matter? Would matter if it was UDP. 
-                        //Error: Unable to read data from the transport connection: En eksisterende forbindelse blev tvangsafbrudt af en ekstern vært.
-                        //after netstat in the command window, the connection seize to exist somewhere after networkStream.Read and Converter.Conversion.Value....
-                        //does not always happen. So far, unable to diagnose what is causing the problem. Debugging and going through any of the writes/reads, at least the last two, seems to cause problems. 
-                        //However, the problem have happened without debugging. The while loop above might have fixed the non-debug issue, but why? I think I got an idea, but read up more on the subject and 
-                        //look for possible reasons and ways to solve it. 
-                        //When standing on networkStream.Read and calling the netstat the connection is shown. When pressing Step Into, the connection is no longer in the netstat list. 
-                        //this happens no matter where this is done, it seems
-
-                        //while (!networkStream.DataAvailable)
-                        //{ 
-                        //}
-
+                        
                         //decode data and update the chess pieces and the map
-                        string mapdataString = System.Text.Encoding.ASCII.GetString(data);
+                        string mapdataString = Converter.Conversion.ByteArrayToASCII(data);
                         string[,] newMap = NetworkSupport.StringToMapConvertion(mapdataString);
                         NetworkSupport.UpdatedChessPieces(newMap, (bool)team);
                         NetworkSupport.UpdateMap(newMap);
 
                         //transmit an answer depending on the received data. This is needed to prevent the game from continue before the map and pieces are updated. Maybe move this and the close to under the mapupdating code below
-                        //tranmissionAnswerByte[0] = 1;
-                        Converter.Conversion.ValueToBitArrayQuick(11, out tranmissionAnswerByte);
+                        Converter.Conversion.ValueToBitArrayQuick(1, out tranmissionAnswerByte);
                         networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
                         //Error: Unable to read data from the transport connection: En eksisterende forbindelse blev tvangsafbrudt af en ekstern vært.
                         //the transmitter reads some data, a response, before the code above is reached. Outcommeting tranmisster' two Close() allows this code to reach the breakpoint below.
@@ -458,17 +500,28 @@ namespace Chess
                          */
 
                         //shutdown connection to client. 
-                        networkStream.Close();
+                        networkStream.Close(); //read up on what the differences between .Close and .Dispose are and which is best to use here. 
                         otherPlayer.Close();
 
-                        otherPlayersTurn = false; //change later.
+
                     }
 
                     receiver.Stop();
                 }
-                catch (Exception e)
+                catch (System.IO.IOException e) //failed read, write or connection closed (forced or not forced).
                 {
-                    Console.WriteLine(e);
+                    Debug.WriteLine(e); //might not be needed with the InnerException, need to read some more up on InnerException
+                    Debug.WriteLine(e.InnerException); //helps with identified which specific error. 
+                    //receiver.Stop();
+                }
+                catch (Exception e) //other.
+                { //what to do. Some of the possible expections are known from testing, e.g. nulls in the new map array (caused by a bug in the code, might want to catch it anyway).
+                    Debug.WriteLine(e);
+                    Debug.WriteLine(e.InnerException);
+                }
+                finally
+                {
+                    receiver.Stop();
                 }
 
             }
@@ -481,6 +534,10 @@ namespace Chess
         /// </summary>
         static class NetworkSupport
         {
+            /// <summary>
+            /// Convert the MapMatrix.Map into a string. Each entry is seperated using a !. 
+            /// </summary>
+            /// <returns>Returns a string consisting of all MapMatrix.Map entires.</returns>
             public static string MapToStringConvertion()
             {
                 string mapString = "";
@@ -497,6 +554,11 @@ namespace Chess
                 return mapString;
             }
 
+            /// <summary>
+            /// Converts a string into a 2d string array, size of 8,8. Each entry is taken from <paramref name="data"/>.
+            /// </summary>
+            /// <param name="data">The string to convert.</param>
+            /// <returns>Returns a 8,8 array of strings.</returns>
             public static string[,] StringToMapConvertion(string data)
             { //Should not overwrite the map. It should just return an array and then somewhere in the code that calls it or another function recreate the board after this array. 
                 //need a way to figure out if chess piece specific code has been activated/change, e.g. hasMoved, specialbools etc.
@@ -519,13 +581,18 @@ namespace Chess
                 return newMap;
             }
 
+            /// <summary>
+            /// Find any changes between <paramref name="newMap"/> and MapMatrix.Map and updates the chess pieces accordingly. 
+            /// </summary>
+            /// <param name="newMap">The map, 2d array of 8,8, used to compare to MapMatrix.Map.</param>
+            /// <param name="team">The team of the player that has just moved. E.g. if white moves a piece it is true. If black, false.</param>
             public static void UpdatedChessPieces(string[,] newMap, bool team)
             {
                 string[,] oldMap = new string[8,8];
                 for (int x = 0; x < 8; x++)
                     for (int y = 0; y < 8; y++)
-                        oldMap[x, y] = MapMatrix.Map[x, y];
-
+                        oldMap[x, y] = MapMatrix.TestingMap[x, y]; //when done testing on a single computer, change back to .Map
+                //it seems to be working, but to be sure it is needed to be tested when connected to another computer
                 for (int x = 0; x < 8; x++) 
                     for(int y = 0; y < 8; y++)
                     {
@@ -536,8 +603,8 @@ namespace Chess
                             string feltIDNew = newMap[x, y];
                             string feltIDOld = oldMap[x, y];
                             if(feltIDNew != "" && feltIDOld == "")
-                            {//a piece has moved to the location
-                                if (feltIDNew.Split(':')[1] == "6") 
+                            {//a piece has moved to the, empty, location
+                                if (feltIDNew.Split(':')[1] == "6") //pawn
                                 {
                                     foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
                                     {
@@ -563,7 +630,7 @@ namespace Chess
                                         }
                                     }
                                 } //the king most likely will need specialised code in case of castling and you will need to do something to about the rock. For the rock, it only need to change state on the variable for whether it has moved or not.
-                                else if (feltIDNew.Split(':')[1] == "1")
+                                else if (feltIDNew.Split(':')[1] == "1") //king
                                 {
                                     foreach (ChessPiece chePie in ChessList.GetList(!team))
                                     {
@@ -571,15 +638,17 @@ namespace Chess
                                         {
                                             if(Math.Abs(chePie.GetMapLocation[0] - x) > 1) //true only if the king castled.
                                             {
-                                                //find direction of the castling to determine the rock. Find the rock and the call its Network()
-                                                //can be done by checking both ends of x on the y of the king. If one of those two ends do not have a rock on the new map and there was a rock on the old map, it must be the castling rock.
-                                                string rockStartLocation1 = newMap[0, chePie.GetMapLocation[1]];
-                                                string rockStartLocation2 = newMap[7, chePie.GetMapLocation[1]];
-                                                string rockStartLocation1Old = oldMap[0, chePie.GetMapLocation[1]];
-                                                string chosenRock = rockStartLocation1 != rockStartLocation1Old ? rockStartLocation1 : rockStartLocation2; //either new locations will be the same as their old locations if they have not castled.
-                                                //this code can only be reached if the king has moved, and moved using castling, so we do know that neither of the rocks have been moved since the last change to the map.
+                                                //rewrite the comments to be better, spent a little to much time trying to remember why it is written as it is and what is happening...
+                                                //Finds direction of the castling to determine the rock. 
+                                                //Checking both ends of x on the y of the king. If one of those two ends do not have a rock on the new map and there was a rock on the old map, it must be the castling rock.
+                                                string leftRock = newMap[0, chePie.GetMapLocation[1]];
+                                                string rightRock = newMap[7, chePie.GetMapLocation[1]];
+                                                string leftRockOld = oldMap[0, chePie.GetMapLocation[1]];
+                                                string chosenRock = leftRock != leftRockOld ? leftRock : rightRock; //if true, chosenRock is left rock. Else, chosenRock is right rock.
+                                                //either new locations, of the rocks, will be the same as their old locations if they have not castled.
+                                                //this code can only be reached if the king has moved, and moved using castling, so neither of the rocks have been moved since the last change to the map.
 
-                                                bool chosenRockDirection = rockStartLocation1 != "" ? true : false; //if true, left. Else, right
+                                                bool chosenRockDirection = leftRock != leftRockOld ? true : false; //if true, chosenRock go left. Else, chosenRock go right
                                                 foreach (ChessPiece chePieRock in ChessList.GetList(!team))
                                                 {
                                                     if(chePieRock.GetID == chosenRock)
@@ -721,6 +790,52 @@ namespace Chess
             Console.Clear();
             ChessTable chess = new ChessTable();
             chess.NetPlay();
+
+
+            void CodeToReplaceAboveWhenMultipleComputerConnectionTestsAreReady()
+            {
+                string[] options = { "Host", "Join", "Back" };
+                string option;
+
+                do
+                {
+                    Console.Clear();
+                    option = Interact(options);
+
+                    switch (option)
+                    {
+                        case "Host":
+                            Host();
+                            break;
+
+                        case "Join":
+                            Join();
+                            break;
+
+                        case "Back":
+                            break;
+                    }
+                } while (option != options[2]);
+
+
+                void Host()
+                {
+                    Network.Receive.ReceiveSetup(); 
+                    //select a colour. 
+                }
+
+                void Join()
+                {
+                    Console.Clear();
+                    Console.WriteLine("Enter IP address");
+                    string ipAddress = Console.ReadLine();
+                    //ensure it is a proper address.
+                    Network.Receive.ReceiveSetup();
+                    Network.Transmit.TransmitSetup(ipAddress);
+                    //what more to do.
+
+                }
+            }
         }
 
         /// <summary>
@@ -1062,6 +1177,7 @@ namespace Chess
             //Network.Transmit.TransmitSetup();
             do
             {
+                MapMatrix.TestMap();
                 gameEnded = PlayerControlNet(true);
                 if (gameEnded)
                 {
