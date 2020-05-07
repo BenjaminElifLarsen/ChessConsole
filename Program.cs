@@ -149,6 +149,8 @@ namespace Chess
         private static byte extraSpacing = 1; //if changes, numbers and letters do not move down, edges moves the correct amount and the squares moves to very much wrong locations
         private static byte edgeSize = (byte)(extraSpacing + 1); //does not affect top and left side numbers and letters in the correct way
         private static byte[] windowSizeModifer = new byte[] { 20, 4 }; //not a setting that should be access too.
+        private static byte[] colourWhite = { 255, 255, 255 };
+        private static byte[] colourBlack = { 0, 0, 0 };
         private static int[] windowSize = new int[] { squareSize * 8 + 9 + 2 * edgeSize + offset[0] * 2 + windowSizeModifer[0], squareSize * 8 + 9 + 2 * edgeSize + offset[1] * 2 + windowSizeModifer[1] };
         private static int[,] writeLocationCheckHeader = new int[,] { { windowSize[0] - windowSizeModifer[0], 10 }, { windowSize[0] - windowSizeModifer[0] + 8, 10 } };
         private static int[,] writeLocationCheck = new int[,] { { writeLocationCheckHeader[0, 0], writeLocationCheckHeader[0, 1] + 2 }, { writeLocationCheckHeader[1, 0], writeLocationCheckHeader[1, 1] + 2 } }; //x,y //each line should contain two symbols, e.g. D5, A2 etc..
@@ -240,7 +242,14 @@ namespace Chess
         /// The offset of the menu. 
         /// </summary>
         public static byte[] MenuOffset { get => menuOffset; }
-
+        /// <summary>
+        /// The colour for the white chess pieces.
+        /// </summary>
+        public static byte[] WhiteColour { get => colourWhite; }
+        /// <summary>
+        /// The colour for the black chess pieces. 
+        /// </summary>
+        public static byte[] BlackColour { get => colourBlack; }
 
     }
 
@@ -297,6 +306,13 @@ namespace Chess
 
         public class Transmit
         {
+            private static string ipAddress;
+            public static string OtherPlayerIpAddress { get => ipAddress; set => ipAddress = value; }
+
+            /// <summary>
+            /// Sets up the transmitter with <paramref name="IPaddress"/>.
+            /// </summary>
+            /// <param name="IPaddress"></param>
             public static void TransmitSetup(string IPaddress)
             {
                 //TcpClient transmitter = null; //for now just use the 127.0.0.1 
@@ -304,9 +320,21 @@ namespace Chess
                 IPAddress transmitterAddress = IPAddress.Parse(IPaddress);
                 //transmitter = new TcpClient(transmitterAddress.ToString(), port);
                 transmitter = new TcpClient(IPaddress, port);
-                //hmmm... cannot connect, the computer denies connection... Can't ping this computer either... If a way around is not found, just write as much code as possible and boot up the laptop, at least it can be pinged. 
                 //got a lot to read and study anyway.
                 //need a try catch 
+            }
+
+            public static void ColourTransmit(string colour)
+            {
+                GeneralDataTransmission(colour);
+            }
+
+            /// <summary>
+            /// Used before starting the game to ensure there is a connection 
+            /// </summary>
+            public static void ConnectionToNonHost(string ipAddress)
+            {
+                TransmitSetup(ipAddress);
             }
 
             public static void TransmitSetup()
@@ -317,7 +345,10 @@ namespace Chess
                 //https://docs.microsoft.com/en-us/dotnet/api/system.net.networkinformation.tcpconnectioninformation?redirectedfrom=MSDN&view=netcore-3.1
             }
 
-            public static void TransmitData()
+            /// <summary>
+            /// Transmit the map data to the IP address stored in <c>OtherPlayerIpAddress</c>.
+            /// </summary>
+            public static void TransmitMapData()
             { //might need a try catch
                 //should it only allow IPv4 or also IPv6?
                 try //is it better to use Socket or TcpListiner/TcpClient?
@@ -328,15 +359,14 @@ namespace Chess
                     //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/sockets?view=netcore-3.1
                     byte[] receptionAnswerByte = new byte[4];
                     short receptionAnswer = -1; 
-                    TransmitSetup();
+                    TransmitSetup(OtherPlayerIpAddress); //this needs to be change, when testing over multiple computers, to the one with a string parameter, i.e. the ipaddress needs to be stored somewhere, where it can be retrivved multiple times. 
                     string mapData = NetworkSupport.MapToStringConvertion();
                     //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
 
                     //transmit map data.
-                    //byte[] mapdataByte = System.Text.Encoding.ASCII.GetBytes(mapData); //could use your own converter
                     byte[] mapdataByte = Converter.Conversion.ASCIIToByteArray(mapData);
                     byte[] mapdataByteSize = null;
-                    Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length/*(int)Math.Ceiling(mapdataByte.Length / 255d)*/, out mapdataByteSize);
+                    Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length, out mapdataByteSize);
                     //open transmission
                     NetworkStream networkStream = transmitter.GetStream();
 
@@ -372,10 +402,160 @@ namespace Chess
 
             }
 
+            /// <summary>
+            /// Transmit any <paramref name="data"/> string to the IP-address stored in <c>OtherPlayerIpAddress</c>.
+            /// </summary>
+            /// <param name="data">String to transmit.</param>
+            /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
+            public static bool GeneralDataTransmission(string data)
+            { //see explanation in Receiver.GeneralDataReception() for what this should do
+                //for the game start string data should be "Ready", so the receiver general... function returns the string, it gets compared and if it states "Ready" the game start. 
+                byte[] reply = new byte[1];
+
+                //connect to server
+                TransmitSetup(OtherPlayerIpAddress);
+                NetworkStream networkStream = transmitter.GetStream();
+
+                //read data
+                networkStream.Read(reply, 0, reply.Length);
+
+                //transmit string length
+                byte[] stringByte = Converter.Conversion.ASCIIToByteArray(data);
+                byte[] stringByteLengthByte;
+                Converter.Conversion.ValueToBitArrayQuick(stringByte.Length, out stringByteLengthByte);
+                networkStream.Write(stringByteLengthByte, 0, stringByteLengthByte.Length);
+
+                //read data
+                networkStream.Read(reply, 0, reply.Length);
+
+                //transmit string byte array
+                networkStream.Write(stringByte, 0, stringByte.Length);
+
+                //read data
+                networkStream.Read(reply, 0, reply.Length);
+
+                //shut down
+                networkStream.Close();
+                transmitter.Close();
+
+                //return
+                return true; //should return false if it fails, i.e. try-catch
+
+            }
         }
 
         public class Receive
         {
+
+            /// <summary>
+            /// Starts the receiver. 
+            /// </summary>
+            public static void Start()
+            {
+                receiver.Start();
+            }
+
+            /// <summary>
+            /// Stops the receiver.
+            /// </summary>
+            public static void Stop()
+            {
+                receiver.Stop();
+            }
+
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <returns></returns>
+            public static string WaitingOnConnection()
+            {
+                while (!receiver.Pending())
+                {
+                    
+                }
+                TcpClient client = receiver.AcceptTcpClient();
+                string endPoint = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                client.Close();
+                return endPoint;
+            }
+
+            //public static string Colour() //maybe drop this one and the transmitter version for the general functions you are writting. 
+            //{
+            //    TcpClient colourClient;
+            //    byte[] colourBytes = new byte[5]; //both colours consists of 5 letters.
+            //    while (!receiver.Pending())
+            //    {
+
+            //    }
+            //    colourClient = receiver.AcceptTcpClient();
+            //    NetworkStream colourStream = colourClient.GetStream();
+            //    //write to the other player, theirs transmitter, so they know they can transmit the colour 
+
+
+            //    //reads the colour
+            //    colourStream.Read(colourBytes, 0, colourBytes.Length);
+            //    //transmit a single back to the other player, so they know the colour has been received and can close down their transmit.
+            //    byte[] colourReceived = { 0 };
+            //    colourStream.Write(colourReceived, 0, colourReceived.Length);
+
+            //    //convert array to string.
+            //    string colour = Converter.Conversion.ByteArrayToASCII(colourBytes);
+            //    return colour;
+            //}
+
+            /// <summary>
+            /// Waits on a client to connect and transmit data. The data is then converted into a ASCII string. //rewrite
+            /// </summary>
+            /// <returns>Returns an ASCII string received from a client.</returns>
+            public static string GeneralDataReception()
+            {
+                //maybe just have a single function for receiving data and transmitting data. The reciver returns a bool and the transmitter got a string parameter.
+                /* Client connect to server. 
+                 * Waits on answer from the server
+                 * Client writes the string and waits on an answer
+                 * Receiver reads the bytes and convert them to a string.
+                 * Receiver transmit an answer and the function returns the string. 
+                 * Client reads the answer and the function returns "true"
+                 */
+                while (!receiver.Pending())
+                {
+
+                }
+                TcpClient client = receiver.AcceptTcpClient();
+                NetworkStream networkStream = client.GetStream();
+                byte[] receivedData;
+
+                //writes to the client so it knows a connection has been established.
+                networkStream.Write(new byte[] { 0 }, 0, 1);
+
+                //reads data that states the length of the string that is going to be transmitted
+                receivedData = new byte[4];
+                networkStream.Read(receivedData, 0, receivedData.Length);
+                uint dataLength = 0;
+                Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
+
+
+                //writes an answer so the transmitter knows it can transmit the string byte array.
+                networkStream.Write(new byte[] { 1 }, 0, 1);
+
+                //reads string data sent by the client 
+                receivedData = new byte[dataLength];
+                networkStream.Read(receivedData, 0, receivedData.Length);
+
+                //converts it to a string
+                string data = Converter.Conversion.ByteArrayToASCII(receivedData); 
+
+                //writes an answer back, so the transmitter knows it can stop.
+                networkStream.Write(new byte[] { 2 }, 0, 1);
+
+                //close connections
+                networkStream.Close();
+                client.Close();
+
+                //returns the string 
+                return data;
+            }
+
             public static void ReceiveSetup(string IPaddress) //this one is not really needed, since the program will figure out the IP-address in the function itself.
             { //try catch
                 //
@@ -432,12 +612,12 @@ namespace Chess
                 //OSSupportsIPv4 aand OSSupportsIPv6 might be useful at some points, used to check whether the underlying operating system and network adaptors support support those specific IPvs
             }
 
-            public static void ReceiveData(object team)
+            public static void ReceiveMapData(object team)
             { 
                 try 
                 {
                     TcpClient otherPlayer;
-                    receiver.Start();
+                    //receiver.Start(); //not needed when testing over multiple computers
 
                     while (true) //find a bool for condition. I.e. when game ends, end this while loop and break out of it. 
                     {
@@ -450,8 +630,7 @@ namespace Chess
                         otherPlayer = receiver.AcceptTcpClient();
                         NetworkStream networkStream = otherPlayer.GetStream();
                         byte[] dataSizeByte = new byte[4];
-                        //use the converter lib. you wrote.
-                        ushort dataSize = 0; //use the converter here
+                        ushort dataSize = 0; 
 
                         //receive the size of the mapdata string
                         while (!networkStream.DataAvailable)
@@ -477,7 +656,7 @@ namespace Chess
                         string[,] newMap = NetworkSupport.StringToMapConvertion(mapdataString);
                         NetworkSupport.UpdatedChessPieces(newMap, (bool)team);
                         NetworkSupport.UpdateMap(newMap);
-
+                        
                         //transmit an answer depending on the received data. This is needed to prevent the game from continue before the map and pieces are updated. Maybe move this and the close to under the mapupdating code below
                         Converter.Conversion.ValueToBitArrayQuick(1, out tranmissionAnswerByte);
                         networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
@@ -502,14 +681,14 @@ namespace Chess
                         //shutdown connection to client. 
                         networkStream.Close(); //read up on what the differences between .Close and .Dispose are and which is best to use here. 
                         otherPlayer.Close();
-
+                        NetworkSupport.CanMove = true;
 
                     }
 
-                    receiver.Stop();
+                    //receiver.Stop();
                 }
                 catch (System.IO.IOException e) //failed read, write or connection closed (forced or not forced).
-                {
+                { //this should catch in case of a lost connection, but what to do? Go back to the main menu? Try some times to get a connection and it failes n times, do something else?
                     Debug.WriteLine(e); //might not be needed with the InnerException, need to read some more up on InnerException
                     Debug.WriteLine(e.InnerException); //helps with identified which specific error. 
                     //receiver.Stop();
@@ -521,7 +700,7 @@ namespace Chess
                 }
                 finally
                 {
-                    receiver.Stop();
+                    //receiver.Stop();
                 }
 
             }
@@ -530,10 +709,32 @@ namespace Chess
         }
 
         /// <summary>
-        /// Class to support the network, only used by Network. 
+        /// Class to support the network, only used by Network. //not fully true anymore.
         /// </summary>
-        static class NetworkSupport
+        public static class NetworkSupport
         {
+
+            private static bool canMove;
+            public static bool CanMove { get => canMove; set => canMove = value; }
+
+            /// <summary>
+            /// Gets the address used by the computer and given by the router. 
+            /// </summary>
+            /// <returns></returns>
+            public static string LocalAddress
+            {
+                get {
+                    string localIP;
+                    using (Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, 0)) //https://en.wikipedia.org/wiki/Berkeley_sockets
+                    { //https://stackoverflow.com/questions/6803073/get-local-ip-address
+                        socket.Connect("8.8.8.8", 65530);
+                        IPEndPoint endPoint = socket.LocalEndPoint as IPEndPoint;
+                        localIP = endPoint.Address.ToString();
+                    }
+                    return localIP;
+                }
+            }
+
             /// <summary>
             /// Convert the MapMatrix.Map into a string. Each entry is seperated using a !. 
             /// </summary>
@@ -591,7 +792,7 @@ namespace Chess
                 string[,] oldMap = new string[8,8];
                 for (int x = 0; x < 8; x++)
                     for (int y = 0; y < 8; y++)
-                        oldMap[x, y] = MapMatrix.TestingMap[x, y]; //when done testing on a single computer, change back to .Map
+                        oldMap[x, y] = MapMatrix.Map[x, y]; //when done testing on a single computer, change back to .Map
                 //it seems to be working, but to be sure it is needed to be tested when connected to another computer
                 for (int x = 0; x < 8; x++) 
                     for(int y = 0; y < 8; y++)
@@ -676,22 +877,66 @@ namespace Chess
                                     }
                                 }
                             }
-                            else if(feltIDOld != "" && feltIDNew != "" && feltIDOld != feltIDNew)
-                            {//a piece has been taken and a new stand on it. //does not deal with the en passant
-                                foreach (ChessPiece chePie in ChessList.GetList(team)) //find the player's piece that has been taken.
+                            else if(feltIDOld != "" && feltIDNew != "" && feltIDOld != feltIDNew) //forgot about pawn promotions...
+                            /* "P" is the last part of a promoted pawn and it got the same number digit 
+                             * e.g. +:6:1 can become +:2:1P. So check if the old and new ID share the same +. If they do, pawn promotion. 
+                             * Only way two different pieces of the same colour can stand on the same square after the move of a single piece of that colour.  
+                             */
+                            {//a piece has been taken and a new stand on it or pawn promotion.
+                                if(feltIDNew.Split(':')[0] == "+" && feltIDOld.Split(':')[0] == "+") //only legal move that allows this is a pawn promotion.
                                 {
-                                    if(chePie.GetID == feltIDOld)
+                                    if(feltIDNew.Split(':')[2] == feltIDOld.Split(':')[2] + "P") //pawn promotion
                                     {
-                                        chePie.Network(captured: true);
-                                        break;
+                                        foreach (ChessPiece chePie in ChessList.GetList(!team))
+                                        {
+                                            if(chePie.GetID == feltIDOld)
+                                            {
+                                                byte[] colour = !team ? Settings.BlackColour : Settings.WhiteColour ; //recheck that it needs to be "!team" and not "team". A lot of these to check in this function. 
+                                                //Start with the gameloop to see what the argument is given after a move 
+                                                string chessNumber = feltIDNew.Split(':')[1];
+                                                if(chessNumber == "2") 
+                                                {
+                                                    ChessList.GetList(!team).Add(new Queen(colour, team, chePie.GetMapLocation, feltIDNew)); //how to get the colour... new function in chess piece?
+                                                }
+                                                else if (chessNumber == "3")
+                                                {
+                                                    ChessList.GetList(!team).Add(new Bishop(colour, team, chePie.GetMapLocation, feltIDNew));
+                                                }
+                                                else if (chessNumber == "4")
+                                                {
+                                                    ChessList.GetList(!team).Add(new Knight(colour, team, chePie.GetMapLocation, feltIDNew));
+                                                }
+                                                else if (chessNumber == "5")
+                                                {
+                                                    ChessList.GetList(!team).Add(new Rock(colour, team, chePie.GetMapLocation, feltIDNew));
+                                                }
+
+                                            }
+                                        }
+                                    }
+                                    else //if entered, something is wrong.
+                                    {
+                                        //error. A piece moved onto the location of a friendly piece. Nothing bug has found that allows this, but might as well have this here in case
+                                        Debug.WriteLine("Bug: Friendly piece moved to another friendly piece location.");
                                     }
                                 }
-                                foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
-                                {
-                                    if(chePie.GetID == feltIDNew)
+                                else //a piece has captured another. 
+                                {                        
+                                    foreach (ChessPiece chePie in ChessList.GetList(team)) //find the player's piece that has been taken.
                                     {
-                                        chePie.Network(new int[] { x, y });
-                                        break;
+                                        if(chePie.GetID == feltIDOld)
+                                        {
+                                            chePie.Network(captured: true);
+                                            break;
+                                        }
+                                    }
+                                    foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
+                                    {
+                                        if(chePie.GetID == feltIDNew)
+                                        {
+                                            chePie.Network(new int[] { x, y });
+                                            break;
+                                        }
                                     }
                                 }
                             }
@@ -786,14 +1031,12 @@ namespace Chess
 
         private void NetMenu()
         {
-            Network Nettest = new Network(); //not final NetMenu setup, need to allow for selection of team.
-            Console.Clear();
-            ChessTable chess = new ChessTable();
-            chess.NetPlay();
+            //Network Nettest = new Network(); //not final NetMenu setup, need to allow for selection of team.
+            //Console.Clear();
+            //ChessTable chess = new ChessTable();
+            //chess.NetPlay(); //this function should take a bool: true for white, false for black.
 
 
-            void CodeToReplaceAboveWhenMultipleComputerConnectionTestsAreReady()
-            {
                 string[] options = { "Host", "Join", "Back" };
                 string option;
 
@@ -818,24 +1061,85 @@ namespace Chess
                 } while (option != options[2]);
 
 
-                void Host()
-                {
-                    Network.Receive.ReceiveSetup(); 
-                    //select a colour. 
+                void Host() //ensure good comments in all of this net code and code related to the net
+                { 
+                    //starts up the receiver
+                    Network.Receive.ReceiveSetup();
+                    Network.Receive.Start();
+
+                    //get and display the IP address the joiner needs
+                    string ipAddress = Network.NetworkSupport.LocalAddress;
+                    Console.Clear();
+                    Console.WriteLine(ipAddress); //make it look better later. 
+                    Console.WriteLine("Waiting on player");
+                    
+                    //waits on the joiner to connect to the receiver so their IP-address, needed for their receiver, is arquired.  
+                    //Network.Receive.WaitingOnConnection() loops until Network.Transmit.TransmitSetup(ipAddress) in Join() has ran.
+                    string ipAddressJoiner = Network.Receive.WaitingOnConnection(); 
+                    Network.Transmit.OtherPlayerIpAddress = ipAddressJoiner; //transmitter now got the ip address needed to contact the receiver of the host
+
+                    //select colour
+                    string[] colourOptions = {"White","Black" };
+                    string colour = null;
+                    colour = Interact(colourOptions);
+                    Console.WriteLine("Conneting");
+
+                    //transmit the colour, maybe transmit the other colour instead of?
+                    //Network.Transmit.ColourTransmit(colour);
+                    Network.Transmit.GeneralDataTransmission(colour);
+
+                    //wait on response from the player joined to ensure they are ready.
+                    string response = Network.Receive.GeneralDataReception();
+
+                    //starts game, string colour parameters that decide whoes get the first turn.
+                    if(response == "ready")
+                    { //what if the response is not "ready"? It would mean there is some unalignment in the transmission and reception of data. So, firstly bugfixing. Else, return to the main menu
+                        bool firstMove = colour == "White" ? true : false;
+                        Console.WriteLine("Game Starting");
+                        Start(firstMove);
+                    }
+                    else
+                    {
+                        Console.WriteLine(response);
+                        Console.ReadKey();
+                    }
                 }
 
                 void Join()
                 {
                     Console.Clear();
                     Console.WriteLine("Enter IP address");
-                    string ipAddress = Console.ReadLine();
+                    string ipAddress = Console.ReadLine(); //make it look better on the console.
                     //ensure it is a proper address.
+                    //set up and start the receiver
                     Network.Receive.ReceiveSetup();
-                    Network.Transmit.TransmitSetup(ipAddress);
-                    //what more to do.
+                    Network.Receive.Start();
+
+                    //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
+                    Network.Transmit.TransmitSetup(ipAddress); //function is run to allows the host' transmitter to get the ip address of the client' receiver. Port is known in the code, just the IP-address that is missing... can be better explained...
+                    Console.WriteLine("Connecting");
+
+                    //gets the colour the host is using and selects the other
+                    string colourHost = Network.Receive.GeneralDataReception();
+                    string colour = colourHost == "White" ? "Black" : "White";
+
+                    //send ready data.
+                    Network.Transmit.GeneralDataTransmission("ready");
+
+                    //starts game, string colour parameters that decide whoes get the first turn.
+                    bool firstMove = colour == "White" ? true : false;
+                    Console.WriteLine("Game Starting");
+                    Start(firstMove);
 
                 }
-            }
+
+                void Start(bool playerStarter)
+                {
+                    Console.Clear();
+                    ChessTable chess = new ChessTable();
+                    chess.NetPlay(playerStarter);
+                }
+            
         }
 
         /// <summary>
@@ -1130,66 +1434,86 @@ namespace Chess
             //how to check for a chesspiece is just moving back and forward. 
             return false;
 
-            void ThreefoldRepetition(bool team) //should this function be changed from an nested function to a normal function.
-            {//how to best now which move is done. Could look through the mapmatrix and look for any changes. So have an old copy of it. 
-                /* Before player turn, copy current mapmatrix into the "old" mapmatrix. Let player move. Compare old to new maptrix. 
-                 * Find the change and added it to the threefoldRepetition array
-                 * Check if the same player has done the exactly same move 3 tiems in row. If true, draw.
-                 * 
-                 * So have two for loops for x an y movement, nested. Run until you find a difference, save into the array and end both loops. 
-                 *
-                 *This idea will not work that easily
-                 *  "threefold repetition rule (also known as repetition of position) states that a player can claim a draw if the same position occurs three times, or will occur after their next move, with the same player to move. 
-                 *  The repeated positions do not need to occur in succession."
-                 * "In chess, in order for a position to be considered the same, each player must have the same set of legal moves each time, including the possible rights to castle and capture en passant. 
-                 * Positions are considered the same if the same type of piece is on a given square. For example, if a player has two knights and the knights are on the same squares, it does not matter if the positions of the two knights have been exchanged. 
-                 * The game is not automatically drawn if a position occurs for the third time – one of the players, on their turn, must claim the draw with the arbiter. "
-                 * https://en.wikipedia.org/wiki/Threefold_repetition
-                 * 
-                 * ...
-                 * Read up some more to make sure you understand it correctly. Also might be easier to not have a function for this, but let the player(s) use a draw function.
-                 */
+            //void ThreefoldRepetition(bool team) //should this function be changed from an nested function to a normal function.
+            //{//how to best now which move is done. Could look through the mapmatrix and look for any changes. So have an old copy of it. 
+            //    /* Before player turn, copy current mapmatrix into the "old" mapmatrix. Let player move. Compare old to new maptrix. 
+            //     * Find the change and added it to the threefoldRepetition array
+            //     * Check if the same player has done the exactly same move 3 tiems in row. If true, draw.
+            //     * 
+            //     * So have two for loops for x an y movement, nested. Run until you find a difference, save into the array and end both loops. 
+            //     *
+            //     *This idea will not work that easily
+            //     *  "threefold repetition rule (also known as repetition of position) states that a player can claim a draw if the same position occurs three times, or will occur after their next move, with the same player to move. 
+            //     *  The repeated positions do not need to occur in succession."
+            //     * "In chess, in order for a position to be considered the same, each player must have the same set of legal moves each time, including the possible rights to castle and capture en passant. 
+            //     * Positions are considered the same if the same type of piece is on a given square. For example, if a player has two knights and the knights are on the same squares, it does not matter if the positions of the two knights have been exchanged. 
+            //     * The game is not automatically drawn if a position occurs for the third time – one of the players, on their turn, must claim the draw with the arbiter. "
+            //     * https://en.wikipedia.org/wiki/Threefold_repetition
+            //     * 
+            //     * ...
+            //     * Read up some more to make sure you understand it correctly. Also might be easier to not have a function for this, but let the player(s) use a draw function.
+            //     */
 
-                byte teamIndex = team ? (byte)0 : (byte)1;
-                for (int i = 2; i > 0; i--)
-                {
-                    threefoldRepetition[teamIndex, i] = threefoldRepetition[teamIndex, i - 1];
-                }
-                for (int n = 0; n < MapMatrix.Map.GetLength(0); n++)
-                {
-                    for (int m = 0; m < MapMatrix.Map.GetLength(1); m++)
-                    {
-                        if (lastUpdateMap[n,m] != MapMatrix.Map[n,m])
-                        {
-                            threefoldRepetition[teamIndex, 0] = MapMatrix.Map[n, m]; //need to add the last location... 
-                        }
-                    }
-                    //lastUpdateMap
-                }
-            }
+            //    byte teamIndex = team ? (byte)0 : (byte)1;
+            //    for (int i = 2; i > 0; i--)
+            //    {
+            //        threefoldRepetition[teamIndex, i] = threefoldRepetition[teamIndex, i - 1];
+            //    }
+            //    for (int n = 0; n < MapMatrix.Map.GetLength(0); n++)
+            //    {
+            //        for (int m = 0; m < MapMatrix.Map.GetLength(1); m++)
+            //        {
+            //            if (lastUpdateMap[n,m] != MapMatrix.Map[n,m])
+            //            {
+            //                threefoldRepetition[teamIndex, 0] = MapMatrix.Map[n, m]; //need to add the last location... 
+            //            }
+            //        }
+            //        //lastUpdateMap
+            //    }
+            //}
         }
 
-        private void GameLoopNet()
+        private void GameLoopNet( bool starter)
         { //not final version. Just used to test if the net and netsupprot functions are working, for now. 
             bool gameEnded = false; bool whiteWon = false;
-            Thread receiveThread = new Thread(Network.Receive.ReceiveData);
-            receiveThread.Start(false);
+            Thread receiveThread = new Thread(Network.Receive.ReceiveMapData);
+            bool whiteTeam = starter;
+            receiveThread.Start(starter);
+            Network.NetworkSupport.CanMove = starter;
             //Network.Transmit.TransmitSetup();
+            //do
+            //{
+            //    MapMatrix.TestMap();
+            //    gameEnded = PlayerControlNet(true);
+            //    if (gameEnded)
+            //    {
+            //        whiteWon = true;
+            //        break;
+            //    }
+            //    //Network.Receive.ReceiveData(false); //white is transmitting data, so black should receive data. //This will cause a problem under testing since currently data is trying to be transmitted before the reciever is on.
+            //    //maybe add this one, the one above, to before the game loop and tread it. You should be able to test for any errors and bugs then regarding most movements. 
+            //    //for further testing, you want to allow the Setups to take different ports, and later IPs, and create one of each type for each team. 
+            //    gameEnded = PlayerControlNet(false);
+            //    //Network.Receive.ReceiveData(true); //black is transmitting data, so white should receive data. 
+            //} while (!gameEnded);
+
+            //new loop
             do
             {
-                MapMatrix.TestMap();
-                gameEnded = PlayerControlNet(true);
-                if (gameEnded)
-                {
-                    whiteWon = true;
-                    break;
+                if (Network.NetworkSupport.CanMove) //only true when Network.Receive.ReceiveMapData has received map data from the other player' transmitter
+                {//figure out a better way to do this Network.NetworkSupport.CanMove. Maybe have it stored somewhere else, like in this class rather than the network class.
+                    gameEnded = PlayerControlNet(starter);
+                    Network.NetworkSupport.CanMove = false;
+                    //most likely will need to transmit data regarding if the game is over or not. Also, got to deal with the king, threats and writing those out. 
                 }
-                //Network.Receive.ReceiveData(false); //white is transmitting data, so black should receive data. //This will cause a problem under testing since currently data is trying to be transmitted before the reciever is on.
-                //maybe add this one, the one above, to before the game loop and tread it. You should be able to test for any errors and bugs then regarding most movements. 
-                //for further testing, you want to allow the Setups to take different ports, and later IPs, and create one of each type for each team. 
-                gameEnded = PlayerControlNet(false);
-                //Network.Receive.ReceiveData(true); //bkac is transmitting data, so white should receive data. 
+                else //not this computer' turn to move. 
+                {
+                    Thread.Sleep(100); //no reason to look quickly through it. Around 10 times per second should be good enough.
+                }
+
             } while (!gameEnded);
+            receiveThread.Abort(); //figure out a better way.
+            Network.Receive.Stop();
 
             bool PlayerControlNet(bool team)
                 {
@@ -1219,7 +1543,7 @@ namespace Chess
                         ChessList.GetList(!team)[i].SpecialBool = false;
                 }
 
-                Network.Transmit.TransmitData();
+                Network.Transmit.TransmitMapData();
 
                 return false;
             }
@@ -1282,9 +1606,9 @@ namespace Chess
             }
         }
 
-        public void NetPlay()
+        public void NetPlay(bool playerStarter)
         {
-            GameLoopNet();
+            GameLoopNet(playerStarter);
         }
 
         /// <summary>

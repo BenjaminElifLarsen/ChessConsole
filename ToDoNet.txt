@@ -1,0 +1,39 @@
+﻿                /*Idea: 
+                 * Peer-to-Peer connection.
+                 * Player 1 selects "Net Play" and "Host" and their IP address is showned and "Waiting on player" or something like that. 
+                 * Player 1' receiver has started up the moment they select "Host". 
+                 * Player 2 selects "Net Play" and "Join". They enter Player 1' IP address and their receiver, with their own IP address, has started up and TransmitSetup(string Player 1' Ipaddress) connects to Player 1' receiver. 
+                 * Player 2' transmitter transmits their IP address to Player 1.
+                 * Player 1' receiver receives Player 2' IP address, starts up their transmitter with Player 2' IP address using TransmitSetup(string player 2' Ipaddress). 
+                 * Both transmitters now know the other players receiver IP address and port, 23000. Both receivers are running.
+                 * Player 1 selects a colour and transmit it to Player 2 (i.e. "White" and "Black")
+                 * Player 2 receives the colour and is given the other colour. 
+                 * Maybe transmit data from Player 2 to Player 1 to inform Player 1 to start their game. At the same time Player 2 starts their game (done using GeneralDataReception() and GeneralDataTransmission())
+                 * Game starts. 
+                 * Player 1 makes a move. Transmit the map.
+                 * Player 2 receives the map, updates their map and chess pieces and makes their move.
+                 * Player 2 transmit their map and Player 1 receives etc.
+                 * ???
+                 * Game ends and last map transmission is done. 
+                 * Both player's tranmitters shuts down and the recievers do the same.
+                 * Display, now or before shutting down, who won or if it is a draw. 
+                 * Goes back to the main menu.
+                 * 
+                 * Depending on which Player is white, they go first. 
+                 * 
+                 * Anything else that needs to be done, before the game starts?
+                 * 
+                 * How to handle errors? Like wrong IP address has been entered for the transmitsetup
+                 * Also, currently it only allows local play, NAT is not active. 
+                 * do you need otherPlayer.Client.LocalEndPoint or otherPlayer.Client.RemoteEndPoint to get the IP address of the client, otherPlayer, that is connected to the TcpListener? Could just transmit it, but if a write and read is 
+                 * not needed, it would be prefered not to do that.
+                 * If done using otherPlayer.Clinet... transmitter transmit data to to the receiver and receiver transmit data back to the transmitter, both player do this, to ensure the connections are working. 
+                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.localendpoint?view=netcore-3.1#System_Net_Sockets_Socket_LocalEndPoint
+                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.remoteendpoint?view=netcore-3.1#System_Net_Sockets_Socket_RemoteEndPoint
+                 * 
+                 * For Player 1, the receiver needs to start the moment they host, so ReceiveData(object team) needs to check if the receiver is started. Maybe just move the .Start() out of that function and into a new function, 
+                 *  since both receivers needs to run all the time and first need to close down when the game is over or an error occur.
+                 * 
+                 */
+
+                 Start multi-computer test on Monday the 11/5-20. Go through code and find anything that be problematic beforehand.

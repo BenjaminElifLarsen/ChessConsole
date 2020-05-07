@@ -10,6 +10,7 @@
     <None Remove="Bugs.txt" />
     <None Remove="Ideas.txt" />
     <None Remove="Rules.txt" />
+    <None Remove="ToDoNet.txt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -23,6 +24,9 @@
 
   <ItemGroup>
     <Content Include="Rules.txt">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="ToDoNet.txt">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>
