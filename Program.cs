@@ -324,10 +324,10 @@ namespace Chess
                 //need a try catch 
             }
 
-            public static void ColourTransmit(string colour)
-            {
-                GeneralDataTransmission(colour);
-            }
+            //public static void ColourTransmit(string colour)
+            //{
+            //    GeneralDataTransmission(colour);
+            //}
 
             /// <summary>
             /// Used before starting the game to ensure there is a connection 
@@ -348,7 +348,7 @@ namespace Chess
             /// <summary>
             /// Transmit the map data to the IP address stored in <c>OtherPlayerIpAddress</c>.
             /// </summary>
-            public static void TransmitMapData()
+            public static void TransmitMapData(string ipAddress)
             { //might need a try catch
                 //should it only allow IPv4 or also IPv6?
                 try //is it better to use Socket or TcpListiner/TcpClient?
@@ -359,7 +359,7 @@ namespace Chess
                     //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/sockets?view=netcore-3.1
                     byte[] receptionAnswerByte = new byte[4];
                     short receptionAnswer = -1; 
-                    TransmitSetup(OtherPlayerIpAddress); //this needs to be change, when testing over multiple computers, to the one with a string parameter, i.e. the ipaddress needs to be stored somewhere, where it can be retrivved multiple times. 
+                    TransmitSetup(ipAddress); 
                     string mapData = NetworkSupport.MapToStringConvertion();
                     //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
 
@@ -407,13 +407,13 @@ namespace Chess
             /// </summary>
             /// <param name="data">String to transmit.</param>
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
-            public static bool GeneralDataTransmission(string data)
+            public static bool GeneralDataTransmission(string data, string ipAddress)
             { //see explanation in Receiver.GeneralDataReception() for what this should do
                 //for the game start string data should be "Ready", so the receiver general... function returns the string, it gets compared and if it states "Ready" the game start. 
                 byte[] reply = new byte[1];
 
                 //connect to server
-                TransmitSetup(OtherPlayerIpAddress);
+                TransmitSetup(ipAddress);
                 NetworkStream networkStream = transmitter.GetStream();
 
                 //read data
@@ -1064,12 +1064,13 @@ namespace Chess
                 void Host() //ensure good comments in all of this net code and code related to the net
                 { 
                     //starts up the receiver
-                    Network.Receive.ReceiveSetup();
-                    Network.Receive.Start();
+
 
                     //get and display the IP address the joiner needs
                     string ipAddress = Network.NetworkSupport.LocalAddress;
                     Console.Clear();
+                    Network.Receive.ReceiveSetup(ipAddress);
+                    Network.Receive.Start();
                     Console.WriteLine(ipAddress); //make it look better later. 
                     Console.WriteLine("Waiting on player");
                     
@@ -1086,7 +1087,7 @@ namespace Chess
 
                     //transmit the colour, maybe transmit the other colour instead of?
                     //Network.Transmit.ColourTransmit(colour);
-                    Network.Transmit.GeneralDataTransmission(colour);
+                    Network.Transmit.GeneralDataTransmission(colour,ipAddressJoiner);
 
                     //wait on response from the player joined to ensure they are ready.
                     string response = Network.Receive.GeneralDataReception();
@@ -1112,9 +1113,10 @@ namespace Chess
                     string ipAddress = Console.ReadLine(); //make it look better on the console.
                     //ensure it is a proper address.
                     //set up and start the receiver
-                    Network.Receive.ReceiveSetup();
+                    string ownIpAddress = Network.NetworkSupport.LocalAddress;
+                    Network.Receive.ReceiveSetup(ownIpAddress);
                     Network.Receive.Start();
-
+                    Network.Transmit.OtherPlayerIpAddress = ipAddress;
                     //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
                     Network.Transmit.TransmitSetup(ipAddress); //function is run to allows the host' transmitter to get the ip address of the client' receiver. Port is known in the code, just the IP-address that is missing... can be better explained...
                     Console.WriteLine("Connecting");
@@ -1124,7 +1126,7 @@ namespace Chess
                     string colour = colourHost == "White" ? "Black" : "White";
 
                     //send ready data.
-                    Network.Transmit.GeneralDataTransmission("ready");
+                    Network.Transmit.GeneralDataTransmission("ready",ipAddress);
 
                     //starts game, string colour parameters that decide whoes get the first turn.
                     bool firstMove = colour == "White" ? true : false;
@@ -1543,7 +1545,7 @@ namespace Chess
                         ChessList.GetList(!team)[i].SpecialBool = false;
                 }
 
-                Network.Transmit.TransmitMapData();
+                Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
 
                 return false;
             }
@@ -2707,6 +2709,7 @@ namespace Chess
                     HasMoved = true;
                     RemoveDraw(mapLocation);
                     mapLocation = newLocation;
+                    LocationUpdate();
                     Draw();
                 }
             }
@@ -3114,6 +3117,7 @@ namespace Chess
                     }
                     RemoveDraw(mapLocation);
                     mapLocation = newLocation;
+                    LocationUpdate();
                     Draw();
                 }
             }
@@ -3433,6 +3437,7 @@ namespace Chess
                     HasMoved = true;
                     RemoveDraw(mapLocation);
                     mapLocation = newLocation;
+                    LocationUpdate();
                     Draw();
                 }
             }
@@ -3806,6 +3811,7 @@ namespace Chess
                 {
                     RemoveDraw(mapLocation);
                     mapLocation = newLocation;
+                    LocationUpdate();
                     Draw();
                 }
             }

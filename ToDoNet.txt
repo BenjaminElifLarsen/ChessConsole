@@ -37,3 +37,7 @@
                  */
 
                  Start multi-computer test on Monday the 11/5-20. Go through code and find anything that be problematic beforehand.
+
+                 White rock took black pawn. White rock did not update its visual.
+                 Map is working. 
+                 The white pawns were updating correctly.
