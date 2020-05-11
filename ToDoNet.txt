@@ -38,6 +38,43 @@
 
                  Start multi-computer test on Monday the 11/5-20. Go through code and find anything that be problematic beforehand.
 
-                 White rock took black pawn. White rock did not update its visual.
-                 Map is working. 
-                 The white pawns were updating correctly.
+                 White rock took black pawn. White rock did not update its visual. Under further testing it has not been possible to replicate. Bug is unsolved for now. Rarely happens. 
+                 Map is working regarding which pieces stand where. 
+                 The white pawns were updating correctly, both for moves and taken a black piece.
+                 If a white pawn takes a black pawn, the white pawn is painted black instead off. Not always, unsolved. 
+                 En Passant does not remove the taken pawn. Used too. Update: Pawn is removed as it should, nothing changed in the code.
+                 PawnPromotion code seems to lock the program. 
+
+                 White queen at D7 somehow treaten the white king, at its spawnlocation, and black could not move, since only two white pieces could save the king and the HoverOver() checks with a list of pieces that can save the king
+                 Seems to be fixed, at least regarding to preventing a player from moving. Not sure about the white piece threating the white king. 
+
+                 White knight, F3, threaten the black king, E1. The selected pawn (E2) to take the knight could not move to F3, it could only move to D3. Another pawn (G2) could not take the knight either, it could only move to H3. 
+                 The black king, E1, was threaten by a white knight, F3, and could move to D2 even though D2 was under threat from the white knight at F3. 
+                 The same bug happens in offline mode, the bug with the king can move to a knight treaten location. Indicates that King.IsInChecked().KnightCheck() is not working as it should. 
+                 The knight IDs are correct, at start.
+                 The pawn movement bug is happening in offline mode too. The king, however, does registrate the correct knight location. The pawn are able to move to the correct locations now.
+                 The king has not been fixed yet. Should be fixed now, found an error in the variable that stated which felt the king should look at. 
+                 New bug: A white pawn could move back and take a knight that threaten a king. Should be fixed now.
+
+                 When a piece takes a pawn, the piece is not displayed instead of the pawn. Everything else seem to display correctly when getting captured. Does not always happen, need testing.
+                 From a single test run: 
+                 When black knight took white pawn, on black side it was displayed correctly, on white side it was shown as a white pawn. 
+                 When White knight took black pawn, both sides displayed correctly.
+                 When black knight took white bishop, it was displayed correctly on both sides.
+                 When white queen took black pawn, on black side it was displayed as a black pawn. White side displayed it correctly.
+                 When white queen took black rock, both sides displayed it correctly. 
+                 When white knight took black pawn, both sides displayed it correctly. 
+                 Regarding the gameloop for netplay, both sides runs the same functions and code, will take time to test and find the error.
+                 
+                 When the joiner was white and a black knight took a white pawn. On the black player side everything was displayed correctly. On the white side the black knight was shown as a white pawn.
+                 When debugging through the part of the UpdateChessPiece function that removes the captured piece and display the piece that captured, the captured are removed as it should and the capture piece is displayed as it should.
+                 Does not always happen when debugging.
+                 It seems to be the:
+                 if (Network.NetworkSupport.CanMove) //only true when Network.Receive.ReceiveMapData has received map data from the other player' transmitter
+                {//figure out a better way to do this Network.NetworkSupport.CanMove. Maybe have it stored somewhere else, like in this class rather than the network class.
+                    gameEnded = PlayerControlNet(starter);
+                    Network.NetworkSupport.CanMove = false;
+                    //most likely will need to transmit data regarding if the game is over or not. Also, got to deal with the king, threats and writing those out. 
+                }
+                that might be a problem
+

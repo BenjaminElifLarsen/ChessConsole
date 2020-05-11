@@ -805,13 +805,14 @@ namespace Chess
                             string feltIDOld = oldMap[x, y];
                             if(feltIDNew != "" && feltIDOld == "")
                             {//a piece has moved to the, empty, location
+                                PawnPromotionCheck(feltIDNew, feltIDOld, x, y);
                                 if (feltIDNew.Split(':')[1] == "6") //pawn
                                 {
                                     foreach (ChessPiece chePie in ChessList.GetList(!team)) //find the other player's piece that has moved.
                                     {
                                         if (chePie.GetID == feltIDNew)
                                         {
-                                            if (chePie.GetMapLocation[0] != x) //en passant
+                                            if (chePie.GetMapLocation[0] != x) //en passant 
                                             {
                                                 //find out the move direction and check the y in the other direction. 
                                                 sbyte direction = (sbyte)(chePie.GetMapLocation[1] - y) > 0 ? (sbyte)1 : (sbyte)-1; //if positive, the pieces has moved up. If negative, it has moved down.
@@ -883,45 +884,13 @@ namespace Chess
                              * Only way two different pieces of the same colour can stand on the same square after the move of a single piece of that colour.  
                              */
                             {//a piece has been taken and a new stand on it or pawn promotion.
-                                if(feltIDNew.Split(':')[0] == "+" && feltIDOld.Split(':')[0] == "+") //only legal move that allows this is a pawn promotion.
-                                {
-                                    if(feltIDNew.Split(':')[2] == feltIDOld.Split(':')[2] + "P") //pawn promotion
-                                    {
-                                        foreach (ChessPiece chePie in ChessList.GetList(!team))
-                                        {
-                                            if(chePie.GetID == feltIDOld)
-                                            {
-                                                byte[] colour = !team ? Settings.BlackColour : Settings.WhiteColour ; //recheck that it needs to be "!team" and not "team". A lot of these to check in this function. 
-                                                //Start with the gameloop to see what the argument is given after a move 
-                                                string chessNumber = feltIDNew.Split(':')[1];
-                                                if(chessNumber == "2") 
-                                                {
-                                                    ChessList.GetList(!team).Add(new Queen(colour, team, chePie.GetMapLocation, feltIDNew)); //how to get the colour... new function in chess piece?
-                                                }
-                                                else if (chessNumber == "3")
-                                                {
-                                                    ChessList.GetList(!team).Add(new Bishop(colour, team, chePie.GetMapLocation, feltIDNew));
-                                                }
-                                                else if (chessNumber == "4")
-                                                {
-                                                    ChessList.GetList(!team).Add(new Knight(colour, team, chePie.GetMapLocation, feltIDNew));
-                                                }
-                                                else if (chessNumber == "5")
-                                                {
-                                                    ChessList.GetList(!team).Add(new Rock(colour, team, chePie.GetMapLocation, feltIDNew));
-                                                }
-
-                                            }
-                                        }
-                                    }
-                                    else //if entered, something is wrong.
-                                    {
-                                        //error. A piece moved onto the location of a friendly piece. Nothing bug has found that allows this, but might as well have this here in case
-                                        Debug.WriteLine("Bug: Friendly piece moved to another friendly piece location.");
-                                    }
-                                }
-                                else //a piece has captured another. 
-                                {                        
+                                //PawnPromotionCheck(feltIDNew, feltIDOld, x, y);
+                                    //else //if entered, something is wrong.
+                                    //{
+                                    //    //error. A piece moved onto the location of a friendly piece. Nothing bug has found that allows this, but might as well have this here in case
+                                    //    Debug.WriteLine("Bug: Friendly piece moved to another friendly piece location.");
+                                    //}
+                                    //if a piece takes another piece it is not updated. 
                                     foreach (ChessPiece chePie in ChessList.GetList(team)) //find the player's piece that has been taken.
                                     {
                                         if(chePie.GetID == feltIDOld)
@@ -938,11 +907,47 @@ namespace Chess
                                             break;
                                         }
                                     }
-                                }
+                                
                             }
 
                         }
                     }
+
+                void PawnPromotionCheck(string feltIDNew, string feltIDOld, int x, int y)
+                {
+                    if(feltIDNew != feltIDOld)
+                        if (feltIDNew.Split(':')[2].ToCharArray().Length == 2)
+                        {
+                            foreach (ChessPiece chePie in ChessList.GetList(!team))
+                            {
+                                if (chePie.GetID.Split(':')[2] + "P" == feltIDNew.Split(':')[2])
+                                {//checks the last two parts to see if there is a pawn promotion
+
+                                        byte[] colour = !team ? Settings.BlackColour : Settings.WhiteColour; //recheck that it needs to be "!team" and not "team". A lot of these to check in this function. 
+                                                                                                             //Start with the gameloop to see what the argument is given after a move 
+                                        string chessNumber = feltIDNew.Split(':')[1];
+                                        chePie.Network(captured: true);
+                                        if (chessNumber == "2")
+                                        {
+                                            ChessList.GetList(!team).Add(new Queen(colour, !team, new int[]{x,y }, feltIDNew)); //how to get the colour... new function in chess piece?
+                                        }
+                                        else if (chessNumber == "3")
+                                        {
+                                            ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew));
+                                        }
+                                        else if (chessNumber == "4")
+                                        {
+                                            ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew));
+                                        }
+                                        else if (chessNumber == "5")
+                                        {
+                                            ChessList.GetList(!team).Add(new Rock(colour, !team, new int[] { x, y }, feltIDNew));
+                                        }
+                                    break;
+                                }
+                            }
+                        }
+                }
             }
 
             public static void UpdateMap(string[,] map)
@@ -1525,19 +1530,23 @@ namespace Chess
                     player = white;
                 else
                     player = black;
-                player.Control();
                 ProtectKing.ProtectEndLocations.Clear();
-                checkmate = CheckmateChecker(!team, out List<string> saveKingList);
-
+                checkmate = CheckmateChecker(team, out List<string> saveKingList); //this might need to be changed, where it is called. For offline play, if white threatens the black king, it will give a list to the black player
+                //however, here, if white is treaten the black king, the list is used by the white player. Would !team to team work fix it? Still need to move it to above player.Control().
+                //but why did it registrate a white piecs as being a treat?
                 ProtectKing.Protect = saveKingList;
+                player.Control();
+
                 draw = Draw(); //maybe move this one out to the outer loop
                 if (checkmate || draw) //checkmate seems to work as it should. 
                     return true;
 
-                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) 
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //this might need to be changed. to the other team... Actually, should this and the offline version not have a change to cause problems? After all, they check this team
+                    //rather than the other team, e.g. white removes its own, so if black takes a white piece it is still in the list and gets first removed after white moved a piece. The only reason for it not to cause problems is becuase 
+                    //the selection function uses the map felt IDs rather than cycling through the list of chess pieces. Changed and tested in in offline mode to !team, does not seem to cause any problems. 
                 {
-                    if (ChessList.GetList(team)[i].BeenTaken)
-                        ChessList.GetList(team).RemoveAt(i);
+                    if (ChessList.GetList(!team)[i].BeenTaken)
+                        ChessList.GetList(!team).RemoveAt(i);
                 }
                 for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--)
                 {
@@ -1594,10 +1603,10 @@ namespace Chess
                 if (checkmate || draw) //checkmate seems to work as it should. 
                     return true;
                 
-                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
                 {
-                    if (ChessList.GetList(team)[i].BeenTaken) 
-                        ChessList.GetList(team).RemoveAt(i);
+                    if (ChessList.GetList(!team)[i].BeenTaken) 
+                        ChessList.GetList(!team).RemoveAt(i);
                 }
                 for(int i = ChessList.GetList(!team).Count - 1; i >= 0; i--)
                 {
@@ -1816,21 +1825,31 @@ namespace Chess
                 int direction = team ? -1 : 1; 
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };
                 endLocations = new List<int[,]>();
-                if (locationDifference[0] == 1) 
+                if (locationDifference[1] == -direction) //only a white pawn can move up and positive locationDifference[0] means the pawn is below the threating piece.
                 { 
-                    if (locationDifference[1] == -direction)
+                    if (locationDifference[0] == -1)
                     {
-                        endLocations.Add(new int[,] { {ownLocation[0] +1 , ownLocation[1] + direction } });
+                        endLocations.Add(new int[,] { {ownLocation[0] + 1 , ownLocation[1] - 1} });
+                        return true;
+                    } 
+                    else if (locationDifference[0] == 1)
+                    {
+                        endLocations.Add(new int[,] { { ownLocation[0] - 1, ownLocation[1] - 1 } });
                         return true;
                     }
                 }
-                else if (locationDifference[0] == -1)
+                else if (locationDifference[1] == -direction) //only a black pawn can move down and negative lcoationDifference[0] means the pawn is above the threatining piece. 
                 {
-                    if (locationDifference[1] == -direction)
+                    if (locationDifference[0] == -1)
                     {
-                        endLocations.Add(new int[,] { { ownLocation[0] - 1, ownLocation[1] + direction } });
+                        endLocations.Add(new int[,] { { ownLocation[0] + 1, ownLocation[1] + 1 } });
                         return true;
-                    } 
+                    }
+                    else if (locationDifference[0] == 1)
+                    {
+                        endLocations.Add(new int[,] { { ownLocation[0] - 1, ownLocation[1] + 1 } });
+                        return true;
+                    }
                 }
 
                 if (!isKnight)
@@ -2582,7 +2601,7 @@ namespace Chess
                 Placement(placement_);
                 placement_ = new int[] { 2, -1 }; //two right, up
                 Placement(placement_);
-                placement_ = new int[] { 2, -1 }; //two right, down
+                placement_ = new int[] { 2, 1 }; //two right, down
                 Placement(placement_);
                 placement_ = new int[] { -1, -2 }; //left, 2 up
                 Placement(placement_);
@@ -2959,7 +2978,6 @@ namespace Chess
                     if ((loc[0] + mapLocation[0] > 7 || loc[0] + mapLocation[0] < 0) || (loc[1] + mapLocation[1] > 7 || loc[1] + mapLocation[1] < 0))
                     {
                         break;
-
                     }
                     string feltID = MapMatrix.Map[loc[0] + mapLocation[0], mapLocation[1] + loc[1]];
                     if (feltID == "")
