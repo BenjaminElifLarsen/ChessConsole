@@ -38,12 +38,33 @@
 
                  Start multi-computer test on Monday the 11/5-20. Go through code and find anything that be problematic beforehand.
 
-                 White rock took black pawn. White rock did not update its visual. Under further testing it has not been possible to replicate. Bug is unsolved for now. Rarely happens. 
+                
+                Currently, if the player whoes turn it is disconnect, nothing happens on the other player side. They will just wait forever. 
+                    A solution could be to try and contact the current player' receiver in a specific interval. So in ReceiveMapData() have a if-statement after the while (!receiver.Pending()) loop.
+                    The transmitter will transmit data like every 2 seconds or like that and in the ReceiveMapData(). 
+                    If the data value is 0 it knows the data is for receiving the map or 1 it should not do anything, it is just the other player ensuring there still is a connection.
+                        Maybe just have a bool, in the if-statement, instead of the transmitter transmitting data, e.g. NetworkSupport.CanMove
+                        After all, if the it is true the receiver should not expect map data as it is the player it belongs to that is making a move.
+                        If it is false, it means it is waiting on map data and thus it is that player whoes transmitter should contact the other player receiver. 
+                        Might have to write some data, like 4 bytes and then read those 4 bytes to ensure there is a connection. TcpClient.Connected(), from reading, depends on the last operation.
+                        Just dont like the idea of having a function that kind of do two things. Maybe move the pending() and that into another function that calls the ReceiveMapData() and a new function. 
+                        Not happy with the current attempt Receive.ReceiverWaiting() and Transmit.StillConnected(). Both require changes to other functions (map reception and transmission functions).
+                        Just calling TransmitSetup(ipAddress) will not work that well, since it will set Recieve.ReceiveMapData()' while (!receiver.Pending()) { } to be true.
+                            Maybe alter Reciever.RecieveMapData to first needing a transmission of data from TransmitMap. It should be a specific value so Reciever.RecieveMapData knows it is 
+                                1) the correct player that is connected as currently multiple sources could connect to the receiver and 2) to ensure it is map data it is about to receive. 
+                                This could work. It would only require a tiny bit of changes to both map reception and transmission and would allow the player whoes turn it is not to ensure there still is a connection
+                            Consider some other ways to solve this
+
+                ---bug---
+
+                White rock took black pawn. White rock did not update its visual. Under further testing it has not been possible to replicate. Bug is unsolved for now. Rarely happens. 
                  Map is working regarding which pieces stand where. 
                  The white pawns were updating correctly, both for moves and taken a black piece.
                  If a white pawn takes a black pawn, the white pawn is painted black instead off. Not always, unsolved. 
                  En Passant does not remove the taken pawn. Used too. Update: Pawn is removed as it should, nothing changed in the code.
-                 PawnPromotion code seems to lock the program. 
+                 PawnPromotion code seems to lock the program. An out of bounds regarding an array and indexes could happen and it was caught, but the program did not see CanMove to true. An if-statement was placed before the code that could cause 
+                    the out of bounds. 
+                    Current problem with the PawnPromotion(): When a pawn is promoted, the colour is correct on the side it belongs too, but the other side shows the promoted piece in the wrong colour. Fixed. 
 
                  White queen at D7 somehow treaten the white king, at its spawnlocation, and black could not move, since only two white pieces could save the king and the HoverOver() checks with a list of pieces that can save the king
                  Seems to be fixed, at least regarding to preventing a player from moving. Not sure about the white piece threating the white king. 
@@ -77,4 +98,10 @@
                     //most likely will need to transmit data regarding if the game is over or not. Also, got to deal with the king, threats and writing those out. 
                 }
                 that might be a problem
-
+                Current status: Sometimes when a black knight takes a white pawn both sides show it correctly, other times white side shows a white pawn.
+                Also, one white pawn visual was not removed after the black knight moved away. The pawn was the first pawn, and thus the first in the white chess list, and when it was white player turn the first hovered over piece would be that one
+                    and it would be hight lighted
+                Map data is correct
+                Think I found the problem the SquareHighLight(true) in Player.HoverOver() will by default highlight the first piece in the currect player chesslist. This does not explain why, sometimes, moving a knight from the location does not remove the old pawn visuals
+                Moved the code that removed captured pieces that belong to the current player to before the player.Control(). This seems to have fixed the displaying when a piece capture a pawn. 
+                
