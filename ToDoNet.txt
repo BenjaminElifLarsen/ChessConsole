@@ -1,4 +1,5 @@
-﻿                /*Idea: 
+﻿        
+                /*Idea: 
                  * Peer-to-Peer connection.
                  * Player 1 selects "Net Play" and "Host" and their IP address is showned and "Waiting on player" or something like that. 
                  * Player 1' receiver has started up the moment they select "Host". 
@@ -105,3 +106,9 @@
                 Think I found the problem the SquareHighLight(true) in Player.HoverOver() will by default highlight the first piece in the currect player chesslist. This does not explain why, sometimes, moving a knight from the location does not remove the old pawn visuals
                 Moved the code that removed captured pieces that belong to the current player to before the player.Control(). This seems to have fixed the displaying when a piece capture a pawn. 
                 
+                If a player, who is waiting, presses keys, they will be stored and used when it is their turn. Need to flush the key buffer before allowing them move the cursor and selecting. Fixed
+
+                Pawn in the CheckmateChecker got a bug. Black queen was 3 to the left and 3 up from the white king with a direct path to the king. The white pawn at C7 could only double move, not single move as it should.
+                    The double move would place it next to the black queen, at C5, and not between king and queen at C6. Changed some code and it seems to be fixed now. "ownLocation[1] + maxRange * direction }" to "ownLocation[1] + (pos-1) * direction }"
+
+                The king under treat is not writting out to both players. Need to implement some code that find and check both kings

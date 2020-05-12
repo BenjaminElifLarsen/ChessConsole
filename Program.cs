@@ -53,7 +53,7 @@ namespace Chess
             }
             //return testMap;
         }
-        public static string[,] TestingMap { get => testMap; } //for testing one. 
+        public static string[,] TestingMap { get => testMap; } //for testing only. 
     }
 
     /// <summary>
@@ -260,7 +260,7 @@ namespace Chess
             Menu menu = new Menu();
             menu.Run();
         }
-    } //for the network testing, transmit and receive on two different ports. Consider if it is better to do this in the final version or better to transmit and receive on the same port
+    } 
 
     class Network
     {
@@ -291,18 +291,15 @@ namespace Chess
          */
         static TcpClient transmitter = null;
         static TcpListener receiver = null;
-        //is it a good idea to have them as two classes? 
-        /* you will need to be able to call functions to transmit and receive at times from the ChessTable class. 
-         * Wether it should transmit after whites or blacks control and recevice before that colour depends on the team.  
-         */
-        public Network()
-        {
-            //Receive reTest = new Receive();
-            //Transmit trTest = new Transmit();
-            Receive.ReceiveSetup();
 
-            //Transmit.TransmitSetup();
-        }
+        //public Network()
+        //{
+        //    //Receive reTest = new Receive();
+        //    //Transmit trTest = new Transmit();
+        //    Receive.ReceiveSetup();
+
+        //    //Transmit.TransmitSetup();
+        //}
 
         public class Transmit
         {
@@ -331,12 +328,17 @@ namespace Chess
 
             }
 
+            /// <summary>
+            /// Called to ensure that the receiver of the other player is still running. 
+            /// </summary>
+            /// <param name="ipAddress"></param>
+            /// <returns></returns>
             public static bool StillConnected(string ipAddress)
             {
                 try
                 {
                     TransmitSetup(ipAddress);
-                    Converter.Conversion.ValueToBitArrayQuick(1, out byte[] dataArray);
+                    Converter.Conversion.ValueToBitArrayQuick(2, out byte[] dataArray);
                     NetworkStream networkStream = transmitter.GetStream();
                     networkStream.Write(dataArray, 0, dataArray.Length);
                     networkStream.Close();
@@ -349,19 +351,7 @@ namespace Chess
                 }
             }
 
-            //public static void ColourTransmit(string colour)
-            //{
-            //    GeneralDataTransmission(colour);
-            //}
-
-            ///// <summary>
-            ///// Used before starting the game to ensure there is a connection 
-            ///// </summary>
-            //public static void ConnectionToNonHost(string ipAddress)
-            //{
-            //    TransmitSetup(ipAddress);
-            //}
-
+           
             //public static void TransmitSetup()
             //{ //might need a try catch
             //    Int32 port = 23000;
@@ -396,12 +386,10 @@ namespace Chess
                     Converter.Conversion.ValueToBitArrayQuick(1, out data);
                     networkStream.Write(data, 0, data.Length);
 
-                    //transmit map data.
+                    //transmit map data size.
                     byte[] mapdataByte = Converter.Conversion.ASCIIToByteArray(mapData);
                     byte[] mapdataByteSize = null;
                     Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length, out mapdataByteSize);
-
-                    //transmits the size of the array first, so the receiver knows how much data is coming.
                     networkStream.Write(mapdataByteSize, 0, mapdataByteSize.Length);
 
                     //wait on answer from the receiver
@@ -494,10 +482,10 @@ namespace Chess
             }
 
             /// <summary>
-            /// 
+            /// Waits on a client connection to the listiner and returns the IP address of the client.
             /// </summary>
-            /// <returns></returns>
-            public static string WaitingOnConnection()
+            /// <returns>Returns the IP address of the client.</returns>
+            public static string GetConnectionIpAddress() 
             {
                 while (!receiver.Pending())
                 {
@@ -508,30 +496,6 @@ namespace Chess
                 client.Close();
                 return endPoint;
             }
-
-            //public static string Colour() //maybe drop this one and the transmitter version for the general functions you are writting. 
-            //{
-            //    TcpClient colourClient;
-            //    byte[] colourBytes = new byte[5]; //both colours consists of 5 letters.
-            //    while (!receiver.Pending())
-            //    {
-
-            //    }
-            //    colourClient = receiver.AcceptTcpClient();
-            //    NetworkStream colourStream = colourClient.GetStream();
-            //    //write to the other player, theirs transmitter, so they know they can transmit the colour 
-
-
-            //    //reads the colour
-            //    colourStream.Read(colourBytes, 0, colourBytes.Length);
-            //    //transmit a single back to the other player, so they know the colour has been received and can close down their transmit.
-            //    byte[] colourReceived = { 0 };
-            //    colourStream.Write(colourReceived, 0, colourReceived.Length);
-
-            //    //convert array to string.
-            //    string colour = Converter.Conversion.ByteArrayToASCII(colourBytes);
-            //    return colour;
-            //}
 
             /// <summary>
             /// Waits on a client to connect and transmit data. The data is then converted into a ASCII string. //rewrite
@@ -563,8 +527,7 @@ namespace Chess
                 networkStream.Read(receivedData, 0, receivedData.Length);
                 uint dataLength = 0;
                 Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
-
-
+                
                 //writes an answer so the transmitter knows it can transmit the string byte array.
                 networkStream.Write(new byte[] { 1 }, 0, 1);
 
@@ -587,17 +550,15 @@ namespace Chess
             }
 
             /// <summary>
-            /// Sets up the receiver uwith the <paramref name="IPaddress"/>.
+            /// Sets up the receiver with the <paramref name="IPaddress"/>.
             /// </summary>
-            /// <param name="IPaddress">IP addresss to ...</param>
-            /// <returns>...</returns>
-            public static bool ReceiveSetup(string IPaddress) //this one is not really needed, since the program will figure out the IP-address in the function itself.
-            { //try catch
-                //
-                //TcpListener receiver = null; //for now just use the 127.0.0.1 
+            /// <param name="IPaddress">IP addresss to initialise the receiver with.</param>
+            /// <returns>Returns true if the receiver is initialised, else false.</returns>
+            public static bool ReceiveSetup(string IPaddress)
+            {
                 try
                 {
-                    Int32 port = 23000;
+                    int port = 23000;
                     IPAddress receiverAddress = IPAddress.Parse(IPaddress);
                     receiver = new TcpListener(receiverAddress, port);
                     return true;
@@ -613,81 +574,13 @@ namespace Chess
                 Int32 port = 23000;
                 IPAddress receiverAddress = IPAddress.Parse("127.0.0.1"); //change later
                 receiver = new TcpListener(receiverAddress, port);
-                //when ensuring the game can be played on two computers, it is needed to ensure that the "server" is up on the other computer and running before running the TransmitSetup.
-                //how to ensure TransmitSetup or later does not crash if there is no server
-                /*Idea: 
-                 * Peer-to-Peer connection.
-                 * Player 1 selects "Net Play" and "Host" and their IP address is showned and "Waiting on player" or something like that. 
-                 * Player 1' receiver has started up the moment they select "Host". 
-                 * Player 2 selects "Net Play" and "Join". They enter Player 1' IP address and their receiver, with their own IP address, has started up and TransmitSetup(string Player 1' Ipaddress) connects to Player 1' receiver. 
-                 * Player 2' transmitter transmits their IP address to Player 1.
-                 * Player 1' receiver receives Player 2' IP address, starts up their transmitter with Player 2' IP address using TransmitSetup(string player 2' Ipaddress). 
-                 * Both transmitters now know the other players receiver IP address and port, 23000. Both receivers are running.
-                 * Player 1 selects a colour and transmit it to Player 2 (i.e. "White" and "Black")
-                 * Player 2 receives the colour and selects the other colour. 
-                 * Maybe transmit data from Player 2 to Player 1 to inform Player 1 to start their game. At the same time Player 2 starts their game 
-                 * Game starts. 
-                 * Player 1 makes a move. Transmit the map.
-                 * Player 2 receives the map, updates their map and chess pieces and makes their move.
-                 * Player 2 transmit their map and Player 1 receives etc.
-                 * ???
-                 * Game ends and last map transmission is done. 
-                 * Both player's tranmitters shuts down and the recievers do the same.
-                 * Display, now or before shutting down, who won or if it is a draw. 
-                 * Goes back to the main menu.
-                 * 
-                 * Depending on which Player is white, they go first. 
-                 * 
-                 * Anything else that needs to be done, before the game starts?
-                 * 
-                 * How to handle errors? Like wrong IP address has been entered for the transmitsetup
-                 * Also, currently it only allows local play, NAT is not active. 
-                 * do you need otherPlayer.Client.LocalEndPoint or otherPlayer.Client.RemoteEndPoint to get the IP address of the client, otherPlayer, that is connected to the TcpListener? Could just transmit it, but if a write and read is 
-                 * not needed, it would be prefered not to do that.
-                 * If done using otherPlayer.Clinet... transmitter transmit data to to the receiver and receiver transmit data back to the transmitter, both player do this, to ensure the connections are working. 
-                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.localendpoint?view=netcore-3.1#System_Net_Sockets_Socket_LocalEndPoint
-                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.remoteendpoint?view=netcore-3.1#System_Net_Sockets_Socket_RemoteEndPoint
-                 * 
-                 * For Player 1, the receiver needs to start the moment they host, so ReceiveData(object team) needs to check if the receiver is started. Maybe just move the .Start() out of that function and into a new function, 
-                 *  since both receivers needs to run all the time and first need to close down when the game is over or an error occur.
-                 * 
-                 */
                 //OSSupportsIPv4 aand OSSupportsIPv6 might be useful at some points, used to check whether the underlying operating system and network adaptors support support those specific IPvs
             }
 
             /// <summary>
             /// 
             /// </summary>
-            /// <param name="team"></param>
-            public static void ReceiverWaiting(object team) //rename
-            {
-                TcpClient otherPlayer;
-                while (true) //should remove the TcpClient and while(true) in ReceiveMapData(object team)
-                {
-                    while (!receiver.Pending()) ;
-
-                    otherPlayer = receiver.AcceptTcpClient();
-                    NetworkStream networkStream = otherPlayer.GetStream();
-                    byte[] controlDataSize = new byte[4];
-                    ushort controlData = 0;
-
-
-                    while (!networkStream.DataAvailable) ;
-                    networkStream.Read(controlDataSize, 0, controlDataSize.Length);
-                    Converter.Conversion.ByteConverterToInterger(controlDataSize, ref controlData);
-                    networkStream.Close();
-                    otherPlayer.Close();
-                    if(controlData == 0)
-                    {
-                        ReceiveMapData(team/*, otherPlayer*/);
-                    }
-                    else if(controlData == 1)
-                    {
-                        //do something here?
-                    }
-                };
-            }
-
+            /// <param name="team">True for white player, false for black player.</param>
             public static void ReceiveMapData(object team/*, TcpClient otherPlayer*/)
             {
                 try
@@ -697,18 +590,16 @@ namespace Chess
 
                     while (true) //find a bool for condition. I.e. when game ends, end this while loop and break out of it. 
                     {
-                        while (!receiver.Pending()) { }
+                        while (!receiver.Pending()) { } //waits on someone to connect
                         //will not really help. This will run until it gets a pending connection, but it needs to know it should not wait for a connection if the game is over 
                             //could always abort the thread, but consider better and safer ways to do that.
                         
                         byte[] tranmissionAnswerByte = new byte[4];
-
-                        otherPlayer = receiver.AcceptTcpClient();
-                        NetworkStream networkStream = otherPlayer.GetStream();
                         byte[] dataSizeByte = new byte[4];
                         ushort dataSize = 0;
 
-
+                        otherPlayer = receiver.AcceptTcpClient();
+                        NetworkStream networkStream = otherPlayer.GetStream();
 
                         //receive data to ensure the connected client is about to transmit map data
                         while (!networkStream.DataAvailable) ;
@@ -774,8 +665,9 @@ namespace Chess
                             NetworkSupport.CanMove = true;
                         }
                         else
-                        {
-                            //do something more?
+                        {//connected client is not about to transmit map data
+                            //do something more? 
+                            //networkStream.Flush(); //"... however, because NetworkStream is not buffered, it has no effect on network streams." - https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.flush?view=netcore-3.1
                             networkStream.Close(); 
                             otherPlayer.Close();
                         }
@@ -858,23 +750,15 @@ namespace Chess
             /// <param name="data">The string to convert.</param>
             /// <returns>Returns a 8,8 array of strings.</returns>
             public static string[,] StringToMapConvertion(string data)
-            { //Should not overwrite the map. It should just return an array and then somewhere in the code that calls it or another function recreate the board after this array. 
-                //need a way to figure out if chess piece specific code has been activated/change, e.g. hasMoved, specialbools etc.
-                //maybe have that chesspiece reaction code in this class. Maybe have a network function in all chesspieces that allows to set a new maplocation and call the (remove)draw. 
-                //so instead of recreating all chesspieces, find that one spot on the maps that differ. If the change is from ID to "" or otherway find that piece and move it. If a ID is replace with an ID from the other team...
-                //call the taken pieces been taken fucntion and then move the other piece.
-                //remember for castling, two pieces will have moved, and en passant. 
-                //for pawns, just check if if the piece has moved one or two squares.
-                string[] mapStringSeperated = data.Split('!'); //how well does it work regarding to the ""s. E.g. "+..."!""!""!"-..:"!. Will this give "+..." "-..." or "+..." " " " " "-..." or "+..." "" "" "-..."? Add the non-ID filled square setting to Settings
-                //data.Split gives 65 strings instead of 64. the last ! creates a "" after it even thought nothing is ont that side
-                //how to best solve this. Just subtract one from the length or change something in the code that creates the orginal string?
+            { 
+                string[] mapStringSeperated = data.Split('!'); 
                 string[,] newMap = new string[8, 8];
                 byte y = 0;
                 for (int n = 0; n < mapStringSeperated.Length; n++)
                 {
                     byte x = (byte)Math.Floor(n / 8d);
-                    newMap[x, y] = mapStringSeperated[n]; //puts in nulls instead of ""s for some reason. Also it does not return the same map layout. White is on the top. Problem is y
-                    y = y == 7 ? (byte)0 : (byte)(y + 1); //this is not working. It is just 0 all the time. Okay, the y++ did not work, good to know
+                    newMap[x, y] = mapStringSeperated[n]; 
+                    y = y == 7 ? (byte)0 : (byte)(y + 1); 
                 }
                 return newMap;
             }
@@ -889,15 +773,13 @@ namespace Chess
                 string[,] oldMap = new string[8, 8];
                 for (int x = 0; x < 8; x++)
                     for (int y = 0; y < 8; y++)
-                        oldMap[x, y] = MapMatrix.Map[x, y]; //when done testing on a single computer, change back to .Map
-                //it seems to be working, but to be sure it is needed to be tested when connected to another computer
+                        oldMap[x, y] = MapMatrix.Map[x, y];
+
                 for (int x = 0; x < 8; x++)
                     for (int y = 0; y < 8; y++)
                     {
-                        if (newMap[x, y] != oldMap[x, y]) //problem: Each time you call Network() you change MapMatrix.Map, might want to make a copy of mapMatrix.Map and then call it instead of 
-                        {//given how it is programmed, this will be hard to test as the MapMatrix.Map is being updated from the move
-                            //possible solution: save a copy of the map before any move and then create a new function in the MapMatrix class that holds this and call it above. 
-                            //when this is tested and everything is working, remove that function and change this back to MapMatrix.Map
+                        if (newMap[x, y] != oldMap[x, y]) 
+                        {
                             string feltIDNew = newMap[x, y];
                             string feltIDOld = oldMap[x, y];
                             PawnPromotionCheck(feltIDNew, x, y);
@@ -922,7 +804,6 @@ namespace Chess
                                                         break;
                                                     }
                                                 }
-
                                             }
                                             chePie.Network(new int[] { x, y });
                                             break;
@@ -975,19 +856,9 @@ namespace Chess
                                     }
                                 }
                             }
-                            else if (feltIDOld != "" && feltIDNew != "" && feltIDOld != feltIDNew) //forgot about pawn promotions...
-                            /* "P" is the last part of a promoted pawn and it got the same number digit 
-                             * e.g. +:6:1 can become +:2:1P. So check if the old and new ID share the same +. If they do, pawn promotion. 
-                             * Only way two different pieces of the same colour can stand on the same square after the move of a single piece of that colour.  
-                             */
+                            else if (feltIDOld != "" && feltIDNew != "" && feltIDOld != feltIDNew) 
                             {//a piece has been taken and a new stand on it or pawn promotion.
-                             //PawnPromotionCheck(feltIDNew, feltIDOld, x, y);
-                             //else //if entered, something is wrong.
-                             //{
-                             //    //error. A piece moved onto the location of a friendly piece. Nothing bug has found that allows this, but might as well have this here in case
-                             //    Debug.WriteLine("Bug: Friendly piece moved to another friendly piece location.");
-                             //}
-                             //if a piece takes another piece it is not updated. 
+
                                 foreach (ChessPiece chePie in ChessList.GetList(team)) //find the player's piece that has been taken.
                                 {
                                     if (chePie.GetID == feltIDOld)
@@ -1020,13 +891,12 @@ namespace Chess
                                 if (chePie.GetID.Split(':')[2] + "P" == feltIDNew.Split(':')[2])
                                 {//checks the last two parts to see if there is a pawn promotion
 
-                                    byte[] colour = team ? Settings.BlackColour : Settings.WhiteColour; //recheck that it needs to be "!team" and not "team". A lot of these to check in this function. 
-                                                                                                        //Start with the gameloop to see what the argument is given after a move 
+                                    byte[] colour = team ? Settings.BlackColour : Settings.WhiteColour; 
                                     string chessNumber = feltIDNew.Split(':')[1];
                                     chePie.Network(captured: true);
                                     if (chessNumber == "2")
                                     {
-                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew)); //how to get the colour... new function in chess piece?
+                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew));
                                     }
                                     else if (chessNumber == "3")
                                     {
@@ -1062,7 +932,9 @@ namespace Chess
     /// </summary>
     class Menu
     {
-
+        /// <summary>
+        /// Sets up the Menu for use
+        /// </summary>
         public Menu()
         {
             var handle = GetStdHandle(-11);
@@ -1121,7 +993,7 @@ namespace Chess
                         Environment.Exit(0);
                         break;
 
-                    case "Net Play": //have two options, one to create and one to join a game. When creating a game, can select ones team. The player joining gets the other. 
+                    case "Net Play": 
                         NetMenu();
                         break;
 
@@ -1130,14 +1002,11 @@ namespace Chess
             } while (true);
         }
 
-
+        /// <summary>
+        /// The net menu. Allows for people to host, join and return the main menu.
+        /// </summary>
         private void NetMenu()
         {
-            //Network Nettest = new Network(); //not final NetMenu setup, need to allow for selection of team.
-            //Console.Clear();
-            //ChessTable chess = new ChessTable();
-            //chess.NetPlay(); //this function should take a bool: true for white, false for black.
-
 
             string[] options = { "Host", "Join", "Back" };
             string option;
@@ -1165,20 +1034,19 @@ namespace Chess
 
             void Host() //ensure good comments in all of this net code and code related to the net
             {
-                //starts up the receiver
-
-
-                //get and display the IP address the joiner needs
+                //gets and displays the IP address the joiner needs
                 string ipAddress = Network.NetworkSupport.LocalAddress;
                 Console.Clear();
+                Console.WriteLine(ipAddress); //make it look better later. 
+                Console.WriteLine("Waiting on player"); //might want an ability to leave in case of not wanting to play anyway or if something goes wrong, but how to do it? 
+
+                //starts up the reciver. 
                 Network.Receive.ReceiveSetup(ipAddress);
                 Network.Receive.Start();
-                Console.WriteLine(ipAddress); //make it look better later. 
-                Console.WriteLine("Waiting on player");
 
-                //waits on the joiner to connect to the receiver so their IP-address, needed for their receiver, is arquired.  
+                //waits on the joiner to connect to the receiver so their IP-address, needed to know their receiver, is arquired.  
                 //Network.Receive.WaitingOnConnection() loops until Network.Transmit.TransmitSetup(ipAddress) in Join() has ran.
-                string ipAddressJoiner = Network.Receive.WaitingOnConnection();
+                string ipAddressJoiner = Network.Receive.GetConnectionIpAddress();
                 Network.Transmit.OtherPlayerIpAddress = ipAddressJoiner; //transmitter now got the ip address needed to contact the receiver of the host
 
                 //select colour
@@ -1187,7 +1055,7 @@ namespace Chess
                 colour = Interact(colourOptions);
                 Console.WriteLine("Conneting");
 
-                //transmit the colour, maybe transmit the other colour instead of?
+                //transmit the colour
                 //Network.Transmit.ColourTransmit(colour);
                 Network.Transmit.GeneralDataTransmission(colour, ipAddressJoiner);
 
@@ -1260,8 +1128,6 @@ namespace Chess
         private void RulesMenu()
         {
             Console.Clear();
-            //make it read from a text file at some point.
-
             try
             {
                 string[] about = File.ReadAllLines("Rules.txt");
@@ -1380,16 +1246,7 @@ namespace Chess
         private Player black; //black bottom
         private int[,] whiteSpawnLocation; //since the map matrix is being used, no real reason for having these outside their player class
         private int[,] blackSpawnLocation;
-        private byte squareSize;
-        private byte[] lineColour;
-        private byte[] lineColourBase;
-        private byte[] squareColour1;
-        private byte[] squareColour2;
-        private byte[] offset;
         private int[] windowsSize = new int[2];
-        private bool[,] isCheckedTwiceInARow = new bool[,] { { false, false }, { false, false } }; //[0][] is white. [1][0] is black. 
-        private string[,] threefoldRepetition = new string[2, 3];
-        private string[,] lastUpdateMap; //find a better name
 
         public ChessTable()
         {
@@ -1399,12 +1256,6 @@ namespace Chess
             GetConsoleMode(handle, out mode);
             SetConsoleMode(handle, mode | 0x4);
 
-            squareSize = 5;
-            lineColour = new byte[] { 122, 122, 122 };
-            lineColourBase = new byte[] { 87, 65, 47 };
-            squareColour1 = new byte[] { 182, 123, 91 };
-            squareColour2 = new byte[] { 135, 68, 31 };
-            offset = new byte[] { 2, 2 };
 
             windowsSize[0] = Settings.WindowSize[0];
             windowsSize[1] = Settings.WindowSize[1];
@@ -1438,25 +1289,25 @@ namespace Chess
         private void BoardSetup()
         {//8 squares in each direction. Each piece is 3*3 currently, each square is 5*5 currently. 
             Console.CursorVisible = false;
-            ushort distance = (ushort)(9 + 8 * squareSize);
+            ushort distance = (ushort)(9 + 8 * Settings.SquareSize);
             string[] letters = { "a", "b", "c", "d", "e", "f", "g", "h" };
             string[] numbers = { "1", "2", "3", "4", "5", "6", "7", "8" };
             byte alignment = (byte)Math.Ceiling(Settings.SquareSize / 2f);
             for (int k = 0; k < distance; k++)
-                for (int i = 0; i < distance; i += 1 + squareSize)
+                for (int i = 0; i < distance; i += 1 + Settings.SquareSize)
                 {
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
-                    Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
+                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m ");
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
-                    Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineY);
+                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineY);
                 }
-            for (int k = 0; k < distance; k += 1 + squareSize)
+            for (int k = 0; k < distance; k += 1 + Settings.SquareSize)
                 for (int i = 1; i < distance - 1; i++)
                 {
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
-                    Console.Write("\x1b[48;2;" + lineColourBase[0] + ";" + lineColourBase[1] + ";" + lineColourBase[2] + "m ");
+                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m ");
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
-                    Console.Write("\x1b[38;2;" + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineX);
+                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineX);
                 }
 
             for (int k = 0; k < numbers.Length; k++)
@@ -1484,21 +1335,21 @@ namespace Chess
         /// </summary>
         private void BoardColouring()
         {
-            ushort distance = (ushort)(8 + 8 * squareSize);
+            ushort distance = (ushort)(8 + 8 * Settings.SquareSize);
             byte location = 1;
-            for (int n = 0; n < distance; n += 1 + squareSize)
+            for (int n = 0; n < distance; n += 1 + Settings.SquareSize)
             {
-                for (int m = 0; m < distance; m += 1 + squareSize)
+                for (int m = 0; m < distance; m += 1 + Settings.SquareSize)
                 {
-                    for (int i = 0; i < squareSize; i++)
+                    for (int i = 0; i < Settings.SquareSize; i++)
                     {
-                        for (int k = 0; k < squareSize; k++)
+                        for (int k = 0; k < Settings.SquareSize; k++)
                         {
                             Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing + n, k + Settings.Offset[1] + Settings.Spacing + Settings.EdgeSpacing + m);
                             if (location % 2 == 1)
-                                Console.Write("\x1b[48;2;" + squareColour1[0] + ";" + squareColour1[1] + ";" + squareColour1[2] + "m " + "\x1b[0m");
+                                Console.Write("\x1b[48;2;" + Settings.SquareColour1[0] + ";" + Settings.SquareColour1[1] + ";" + Settings.SquareColour1[2] + "m " + "\x1b[0m");
                             else if (location % 2 == 0)
-                                Console.Write("\x1b[48;2;" + squareColour2[0] + ";" + squareColour2[1] + ";" + squareColour2[2] + "m " + "\x1b[0m");
+                                Console.Write("\x1b[48;2;" + Settings.SquareColour2[0] + ";" + Settings.SquareColour2[1] + ";" + Settings.SquareColour2[2] + "m " + "\x1b[0m");
                         }
                     }
                     location++;
@@ -1508,7 +1359,7 @@ namespace Chess
         }
 
         /// <summary>
-        /// 
+        /// Setup the location the two kings are going to write to, if they are under threat. 
         /// </summary>
         private void KingWriteLocationSetup()
         {
@@ -1592,26 +1443,12 @@ namespace Chess
             bool whiteTeam = starter;
             receiveThread.Start(starter);
             Network.NetworkSupport.CanMove = starter;
-            //Network.Transmit.TransmitSetup();
-            //do
-            //{
-            //    MapMatrix.TestMap();
-            //    gameEnded = PlayerControlNet(true);
-            //    if (gameEnded)
-            //    {
-            //        whiteWon = true;
-            //        break;
-            //    }
-            //    //Network.Receive.ReceiveData(false); //white is transmitting data, so black should receive data. //This will cause a problem under testing since currently data is trying to be transmitted before the reciever is on.
-            //    //maybe add this one, the one above, to before the game loop and tread it. You should be able to test for any errors and bugs then regarding most movements. 
-            //    //for further testing, you want to allow the Setups to take different ports, and later IPs, and create one of each type for each team. 
-            //    gameEnded = PlayerControlNet(false);
-            //    //Network.Receive.ReceiveData(true); //black is transmitting data, so white should receive data. 
-            //} while (!gameEnded);
 
             //new loop
             do
             {
+                byte counter = 0;
+                bool connectionExist;
                 if (Network.NetworkSupport.CanMove) //only true when Network.Receive.ReceiveMapData has received map data from the other player' transmitter
                 {//figure out a better way to do this Network.NetworkSupport.CanMove. Maybe have it stored somewhere else, like in this class rather than the network class.
                     gameEnded = PlayerControlNet(starter);
@@ -1621,6 +1458,19 @@ namespace Chess
                 else //not this computer' turn to move. 
                 {
                     Thread.Sleep(100); //no reason to look quickly through it. Around 10 times per second should be good enough.
+                    if(counter == 10)
+                    {
+                        counter = 0;
+                        connectionExist = Network.Transmit.StillConnected(Network.Transmit.OtherPlayerIpAddress); //called to ensure there still is a connection.
+                        //what to do if connectionExist is false?
+                        if (!connectionExist) //Network.Transmit.StillConnected() does not work if the other player' program is just shut down. Netstat shows connections with the state of "TIME_WAIT" on the computer that closed the program. 
+                            //From reading, the connections will be removed after 4 mins.... 
+                            Console.WriteLine("Lost connection");//test
+                    }
+                    else
+                    {
+                        counter++;
+                    }
                 }
 
             } while (!gameEnded);
@@ -1637,7 +1487,7 @@ namespace Chess
                     player = black;
                 ProtectKing.ProtectEndLocations.Clear();
 
-                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //needs to remove it owns too
+                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //removes it own, captured, pieces. Needs to be called before player.Control else the default hover overed piece might be one of the captured. 
                 {
                     if (ChessList.GetList(team)[i].BeenTaken)
                         ChessList.GetList(team).RemoveAt(i);
@@ -1653,9 +1503,7 @@ namespace Chess
                 if (checkmate || draw) //checkmate seems to work as it should. 
                     return true;
 
-                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //this might need to be changed. to the other team... Actually, should this and the offline version not have a change to cause problems? After all, they check this team
-                                                                              //rather than the other team, e.g. white removes its own, so if black takes a white piece it is still in the list and gets first removed after white moved a piece. The only reason for it not to cause problems is becuase 
-                                                                              //the selection function uses the map felt IDs rather than cycling through the list of chess pieces. Changed and tested in in offline mode to !team, does not seem to cause any problems. 
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) 
                 {
                     if (ChessList.GetList(!team)[i].BeenTaken)
                         ChessList.GetList(!team).RemoveAt(i);
@@ -2005,7 +1853,7 @@ namespace Chess
                                 if (feltID != "")
                                     return false;
                             } while (pos < maxRange);
-                            endLocations.Add(new int[,] { { ownLocation[0], ownLocation[1] + maxRange * direction } });
+                            endLocations.Add(new int[,] { { ownLocation[0], ownLocation[1] + (pos-1) * direction } }); //this here is the problem, the maxRange.
                             return true;
                         }
                     }
@@ -2334,6 +2182,11 @@ namespace Chess
         private bool FeltMove(int[] currentLocation)
         {
             //uint[] currentLocation = location; //remember that both arrays point to the same memory.
+
+            while (Console.KeyAvailable) //this should flush the keys
+            {
+                Console.ReadKey(true);
+            }
 
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
             SquareHighLight(false);
@@ -3187,6 +3040,7 @@ namespace Chess
             }
             if (possibleEndLocations.Count != 0)
             {
+                firstTurn = false; //firstTurn ? false : false;
                 DisplayPossibleMove();
                 int[] cursorLocation = GetMapLocation;
                 do
@@ -3288,7 +3142,7 @@ namespace Chess
 
             }
             CheckAttackPossbilities();
-            firstTurn = firstTurn ? false : false;
+            
         }
 
         /// <summary>
