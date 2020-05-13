@@ -112,3 +112,26 @@
                     The double move would place it next to the black queen, at C5, and not between king and queen at C6. Changed some code and it seems to be fixed now. "ownLocation[1] + maxRange * direction }" to "ownLocation[1] + (pos-1) * direction }"
 
                 The king under treat is not writting out to both players. Need to implement some code that find and check both kings
+
+                Castling bugs:
+                    Black king castled with the right rock: Everything worked as it should. 
+                    White king castled with the left rock: On the black player side, the right rock was moved to b8, king was moved to c8 and the left rock stayed at a8.
+                        On the white player side, the left rock moved to d8 and the king to c8. However, when hovering over a8 it highlights the left rock at d8. Trying to select the rock at d8 does nothing. Selecting a8 selects the rock and it could
+                            only move to e8. Moving the rock moved it do e1 on both sides. 
+                            Black pawn at a7 could not move to b8. White knight could move to b8.
+
+                    White king castled with the right rock: Everything worked as it should expect the right rock was highlighted and could only be selected with hovering over h8 (this was not tested for in the black case), yet it could move to the correct locations.
+                    Black king castled with the left rock: On the white player side, the right rock was moved to b1, king was moved to c1 and the left rock stayed at a1.
+                        On the black player side, the left rock moved to d1 and the king to c1. However, when hovering over a1 it highlights the left rock at d1. Trying to select the rock at d1 does nothing. Selecting a1 selects the rock and it could
+                            only move to e1. Moving the rock moved it do e1 on both sides. 
+                        After the map on black side: A1 contained -:5:1 (left rock). B1 contained nothing. C1 contained -:1:1. D1 contained nothing. E1 contained nothing. F1 contained -:3:2. G1 contained -:4:2. H1 contained -:5:2 (right rock).
+                        After the map on white side: A1 contained -:5:1 (left rock). B1 contained nothing. C1 contained -:1:1. D1 contained nothing. E1 contained nothing. F1 contained -:3:2. G1 contained -:4:2. H1 contained -:5:2 (right rock).
+                        So the bug consist of two erros: 1) visual of moving right rock when it was the left rock that should have moved. 2) Map IDs of one to both rocks did not move. Yet the mapLocations in the rock pieces would,
+                            out from the hovering over, be correct.
+
+                        When castling in offline with the left rock, the ID of the left rock was not moved. Same for the right rock when it was castled.
+                        Forgot about ChessPiece.UpdateMapMatrix(oldMapLocation), but for some reason none of the ChessPiece.Network are calling UpdateMapMatrix(oldMapLocation) and in all cases, but those above, the map is updated?
+                            Remember, the new map contains the correct ID locations already because of ChessPiece.UpdateMapMatrix() is called when moving the piece and ChessPiece.Network should always place the moved piece to the spot where its ID is at.
+                            Rock.Castling() does not call the ChessPiece.UpdateMapMatrix() which is why it' ID is not moved with it.
+                        The offline castling is working now. Need to test the online version. Oneline version tested and is working.
+                        
