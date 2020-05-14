@@ -258,7 +258,9 @@ namespace Chess
         private GameStates() { }
         private static bool canMove;
         private static bool? won; //null for draw, true for win, false for lose.
-        private static bool gameEnded; 
+        private static bool gameEnded;
+        private static bool isOnline;
+        private static bool whiteWon; //true for white, false for black.
 
         /// <summary>
         /// True if it is player turn, else false.
@@ -272,6 +274,14 @@ namespace Chess
         /// True if the game has ended, false otherwise. 
         /// </summary>
         public static bool GameEnded { get => gameEnded; set => gameEnded = value; }
+        /// <summary>
+        /// If true the game is played online, else false.
+        /// </summary>
+        public static bool IsOnline { get => isOnline; set => isOnline = value; }
+        /// <summary>
+        /// True if the white player won, false otherwise.
+        /// </summary>
+        public static bool WhiteWin { get => whiteWon; set => whiteWon = value; }
     }
 
 
@@ -438,7 +448,7 @@ namespace Chess
             /// <param name="ipAddress"></param>
             /// <returns></returns>
             public static bool GeneralValueTransmission(int data, string ipAddress)
-            { //use to transmit the game ending value.
+            { 
                 try
                 {
                     TransmitSetup(ipAddress);
@@ -462,37 +472,45 @@ namespace Chess
             /// <param name="data">String to transmit.</param>
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
             public static bool GeneralDataTransmission(string data, string ipAddress)
-            { 
-                byte[] reply = new byte[1];
+            {
+                try
+                {
+                    byte[] reply = new byte[1];
 
-                //connect to server
-                TransmitSetup(ipAddress);
-                NetworkStream networkStream = transmitter.GetStream();
+                    //connect to server
+                    TransmitSetup(ipAddress);
+                    NetworkStream networkStream = transmitter.GetStream();
 
-                //read data
-                networkStream.Read(reply, 0, reply.Length);
+                    //read data
+                    networkStream.Read(reply, 0, reply.Length);
 
-                //transmit data string length
-                byte[] stringByte = Converter.Conversion.ASCIIToByteArray(data);
-                byte[] stringByteLengthByte;
-                Converter.Conversion.ValueToBitArrayQuick(stringByte.Length, out stringByteLengthByte);
-                networkStream.Write(stringByteLengthByte, 0, stringByteLengthByte.Length);
+                    //transmit data string length
+                    byte[] stringByte = Converter.Conversion.ASCIIToByteArray(data);
+                    byte[] stringByteLengthByte;
+                    Converter.Conversion.ValueToBitArrayQuick(stringByte.Length, out stringByteLengthByte);
+                    networkStream.Write(stringByteLengthByte, 0, stringByteLengthByte.Length);
 
-                //read data
-                networkStream.Read(reply, 0, reply.Length);
+                    //read data
+                    networkStream.Read(reply, 0, reply.Length);
 
-                //transmit string byte array
-                networkStream.Write(stringByte, 0, stringByte.Length);
+                    //transmit string byte array
+                    networkStream.Write(stringByte, 0, stringByte.Length);
 
-                //read data
-                networkStream.Read(reply, 0, reply.Length);
+                    //read data
+                    networkStream.Read(reply, 0, reply.Length);
 
-                //shut down
-                networkStream.Close();
-                transmitter.Close();
+                    //shut down
+                    networkStream.Close();
+                    transmitter.Close();
 
-                //return
-                return true; //should return false if it fails, i.e. try-catch
+                    //return
+                    return true; 
+                }
+                catch (Exception e)
+                {
+                    Debug.WriteLine(e);
+                    return false;
+                }
 
             }
         }
@@ -538,7 +556,7 @@ namespace Chess
             /// <returns>Returns an ASCII string received from a client.</returns>
             public static string GeneralDataReception()
             {
-                //maybe just have a single function for receiving data and transmitting data. The reciver returns a bool and the transmitter got a string parameter.
+                //maybe just have general functions for receiving data and transmitting data. The reciver returns a bool and the transmitter got a string parameter.
                 /* Client connect to server. 
                  * Waits on answer from the server
                  * Client writes the string and waits on an answer
@@ -609,7 +627,7 @@ namespace Chess
                 Int32 port = 23000;
                 IPAddress receiverAddress = IPAddress.Parse("127.0.0.1"); //change later
                 receiver = new TcpListener(receiverAddress, port);
-                //OSSupportsIPv4 aand OSSupportsIPv6 might be useful at some points, used to check whether the underlying operating system and network adaptors support support those specific IPvs
+                //OSSupportsIPv4 aand OSSupportsIPv6 might be useful at some points, used to check whether the underlying operating system and network adaptors support those specific IPvs
             }
 
             /// <summary>
@@ -702,13 +720,19 @@ namespace Chess
                             networkStream.Close(); //read up on what the differences between .Close and .Dispose are and which is best to use here. 
                             otherPlayer.Close();
                             GameStates.IsTurn = true;
-                            //NetworkSupport.CanMove = true;
                         }
-                        else if (type == 2)
+                        else if (type == 2) //draw
                         { //game has ended.
                             networkStream.Close(); //maybe just have a finally.
                             otherPlayer.Close();
                             GameStates.GameEnded = true;
+                        }
+                        else if (type == 3) //victory/defeat.
+                        {
+                            networkStream.Close(); //maybe just have a finally.
+                            otherPlayer.Close();
+                            GameStates.GameEnded = true;
+                            //GameStates.Won
                         }
                         else
                         {//connected client is not about to transmit map data
@@ -747,10 +771,6 @@ namespace Chess
         /// </summary>
         public static class NetworkSupport
         {
-
-            //private static bool canMove;
-            //public static bool CanMove { get => canMove; set => canMove = value; }
-
             /// <summary>
             /// Gets the, internetwork, address used by the computer when contacting the router to get out on the internet. 
             /// </summary>
@@ -846,16 +866,16 @@ namespace Chess
                                                 {
                                                     if (chePieCaptured.GetID == capturedPawn)
                                                     {
-                                                        chePieCaptured.Network(captured: true);
+                                                        chePieCaptured.NetworkUpdate(captured: true);
                                                         break;
                                                     }
                                                 }
                                             }
-                                            chePie.Network(new int[] { x, y });
+                                            chePie.NetworkUpdate(new int[] { x, y });
                                             break;
                                         }
                                     }
-                                } //the king most likely will need specialised code in case of castling and you will need to do something to about the rock. For the rock, it only need to change state on the variable for whether it has moved or not.
+                                } 
                                 else if (feltIDNew.Split(':')[1] == "1") //king
                                 {
                                     foreach (ChessPiece chePie in ChessList.GetList(!team))
@@ -880,12 +900,12 @@ namespace Chess
                                                     if (chePieRock.GetID == chosenRock)
                                                     {
                                                         sbyte location = chosenRockDirection ? (sbyte)1 : (sbyte)-1; //Left rock goes to the right side of the king. Right rock goes to left side of the king. 
-                                                        chePieRock.Network(new int[] { x + location, y });
+                                                        chePieRock.NetworkUpdate(new int[] { x + location, y });
                                                         break;
                                                     }
                                                 }
                                             }
-                                            chePie.Network(new int[] { x, y });
+                                            chePie.NetworkUpdate(new int[] { x, y });
                                             break;
                                         }
                                     }
@@ -896,7 +916,7 @@ namespace Chess
                                     {
                                         if (chePie.GetID == feltIDNew)
                                         {
-                                            chePie.Network(new int[] { x, y });
+                                            chePie.NetworkUpdate(new int[] { x, y });
                                             break;
                                         }
                                     }
@@ -909,7 +929,7 @@ namespace Chess
                                 {
                                     if (chePie.GetID == feltIDOld)
                                     {
-                                        chePie.Network(captured: true);
+                                        chePie.NetworkUpdate(captured: true);
                                         break;
                                     }
                                 }
@@ -917,7 +937,7 @@ namespace Chess
                                 {
                                     if (chePie.GetID == feltIDNew)
                                     {
-                                        chePie.Network(new int[] { x, y });
+                                        chePie.NetworkUpdate(new int[] { x, y });
                                         break;
                                     }
                                 }
@@ -939,7 +959,7 @@ namespace Chess
 
                                     byte[] colour = team ? Settings.BlackColour : Settings.WhiteColour; 
                                     string chessNumber = feltIDNew.Split(':')[1];
-                                    chePie.Network(captured: true);
+                                    chePie.NetworkUpdate(captured: true);
                                     if (chessNumber == "2")
                                     {
                                         ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew));
@@ -954,7 +974,7 @@ namespace Chess
                                     }
                                     else if (chessNumber == "5")
                                     {
-                                        ChessList.GetList(!team).Add(new Rock(colour, !team, new int[] { x, y }, feltIDNew));
+                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew));
                                     }
                                     break;
                                 }
@@ -1102,7 +1122,6 @@ namespace Chess
                 Console.WriteLine("Conneting");
 
                 //transmit the colour
-                //Network.Transmit.ColourTransmit(colour);
                 Network.Transmit.GeneralDataTransmission(colour, ipAddressJoiner);
 
                 //wait on response from the player joined to ensure they are ready.
@@ -1125,9 +1144,6 @@ namespace Chess
             void Join()
             {
                 string ipAddress;
-                //Console.Clear();
-                //Console.WriteLine("Enter IP address");
-                //string ipAddress = Console.ReadLine(); //make it look better on the console.
                 //ensure it is a proper address.
                 //set up and start the receiver
                 string ownIpAddress = Network.NetworkSupport.LocalAddress;
@@ -1203,11 +1219,21 @@ namespace Chess
         }
 
         /// <summary>
+        /// Allows other classes to use to menu interaction and displaying. 
+        /// </summary>
+        /// <param name="options">String array of options.</param>
+        /// <returns>Returns the selected option.</returns>
+        public static string MenuAccess(string[] options)
+        {
+            return Interact(options);
+        }
+
+        /// <summary>
         /// Allows for the select of an index in <paramref name="options"/>. This function will also call the <c>Display</c> function.
         /// </summary>
         /// <param name="options">String array of options.</param>
         /// <returns>Returns the selected option.</returns>
-        private string Interact(string[] options)
+        private static string Interact(string[] options)
         { //used to move around in the displayed options. All it should do is being a function that checks if up/down key arrows are pressed and then 
             //increase or decrease a variable used for the hoveredOverOption in Display().
             bool selected = false;
@@ -1253,9 +1279,8 @@ namespace Chess
         /// <param name="optionColours">The default colour of the options.</param>
         /// <param name="hoveredColour">The colour of the hovered over option.</param>
         /// <param name="offset">Offset to the top left corner.</param>
-        private void Display(string[] options, byte hoveredOverOption, byte[] optionColours, byte[] hoveredColour, byte[] offset)
-        { //write a new one instead of recycling the old code. The hoveredOverOption is simply the index of the option in options. 
-            //start simple, make it more complex when the simple versions, Display and Interact, are working without any problems.  
+        private static void Display(string[] options, byte hoveredOverOption, byte[] optionColours, byte[] hoveredColour, byte[] offset)
+        {   
             for (int i = 0; i < options.Length; i++)
             {
                 Console.SetCursorPosition(offset[0], offset[1] + i);
@@ -1277,7 +1302,9 @@ namespace Chess
 
     }
 
-
+    /// <summary>
+    /// Class for creating and displaying the chess table and creating the chess pieces.
+    /// </summary>
     class ChessTable
     {
         [DllImport("kernel32.dll", SetLastError = true)]
@@ -1288,11 +1315,13 @@ namespace Chess
         [DllImport("kernel32.dll", SetLastError = true)]
         public static extern IntPtr GetStdHandle(int handle);
 
-        private Player white; //white top
-        private Player black; //black bottom
-        private int[,] whiteSpawnLocation; //since the map matrix is being used, no real reason for having these outside their player class
+        private Player white; 
+        private Player black; 
+        private int[,] whiteSpawnLocation;
         private int[,] blackSpawnLocation;
         private int[] windowsSize = new int[2];
+        private byte movesWithoutCapture = 0;
+        private byte[] piecesLastTurn = new byte[2];
 
         public ChessTable()
         {
@@ -1301,7 +1330,6 @@ namespace Chess
             int mode;
             GetConsoleMode(handle, out mode);
             SetConsoleMode(handle, mode | 0x4);
-
 
             windowsSize[0] = Settings.WindowSize[0];
             windowsSize[1] = Settings.WindowSize[1];
@@ -1315,24 +1343,36 @@ namespace Chess
                 { 0, 7 }, { 1, 7 }, { 2, 7 }, { 3, 7 }, { 4, 7 }, { 5, 7 }, { 6, 7 }, { 7, 7 }
             };
             BoardSetup();
-            byte[] colourWhite =
-            {
-                255,255,255
-            };
-            byte[] colourBlack =
-            {
-                0,0,0
-            };
-            CreatePieces(true, whiteSpawnLocation, colourWhite);
-            CreatePieces(false, blackSpawnLocation, colourBlack);
-
+            CreatePieces(true, whiteSpawnLocation, Settings.WhiteColour);
+            CreatePieces(false, blackSpawnLocation, Settings.BlackColour);
             PlayerSetup();
+        }
+
+        /// <summary>
+        /// Repaints the board and all of the chess pieces.
+        /// </summary>
+        public static void RepaintBoardAndPieces()
+        {
+            bool kingcheck;
+            BoardSetup();
+            foreach (ChessPiece chePie in ChessList.GetList(true)) //after implementing this the console is really slow to start up the main menu at times.
+            {
+                chePie.IsHoveredOn(false); //this function is not meant for this, but it works. 
+                if (chePie is King king)
+                    kingcheck = king.SpecialBool; //called to get the king, if threaten, to write out the location it is treaten from
+            }
+            foreach (ChessPiece chePie in ChessList.GetList(!true))
+            {
+                chePie.IsHoveredOn(false);
+                if (chePie is King king)
+                    kingcheck = king.SpecialBool; //called to get the king, if threaten, to write out the location it is treaten from
+            }
         }
 
         /// <summary>
         /// Sets up the board and paint the outlines. 
         /// </summary>
-        private void BoardSetup()
+        private static void BoardSetup()
         {//8 squares in each direction. Each piece is 3*3 currently, each square is 5*5 currently. 
             Console.CursorVisible = false;
             ushort distance = (ushort)(9 + 8 * Settings.SquareSize);
@@ -1379,7 +1419,7 @@ namespace Chess
         /// <summary>
         /// Colour the board. 
         /// </summary>
-        private void BoardColouring()
+        private static void BoardColouring()
         {
             ushort distance = (ushort)(8 + 8 * Settings.SquareSize);
             byte location = 1;
@@ -1407,7 +1447,7 @@ namespace Chess
         /// <summary>
         /// Setup the location the two kings are going to write to, if they are under threat. 
         /// </summary>
-        private void KingWriteLocationSetup()
+        private static void KingWriteLocationSetup()
         {
             int[] white = new int[] { Settings.CheckHeaderLocation[0, 0], Settings.CheckHeaderLocation[0, 1] };
             int[] black = new int[] { Settings.CheckHeaderLocation[1, 0], Settings.CheckHeaderLocation[1, 1] };
@@ -1441,6 +1481,12 @@ namespace Chess
                 return true;
             }
             //how to check for a chesspiece is just moving back and forward. 
+
+            //check for the amount of turns gone without a piece been taken.
+            //need to ensure no pawn has moved either the last 50 turns
+            //so each player needs to make 50 moves with no capture or pawn move.
+            //the game does not end automatically after 50 moves, it is only when a player calls draw on their turn and can be after 50 moves...
+            //more reason for surrender and draw functions in the player. E.g. if they press ESC a "menu" appear on the console with the ability to draw, surrender and stay playing 
             return false;
 
             //void ThreefoldRepetition(bool team) //should this function be changed from an nested function to a normal function.
@@ -1494,7 +1540,7 @@ namespace Chess
             bool whiteTeam = starter;
             receiveThread.Start(starter);
             GameStates.IsTurn = starter;
-
+            GameStates.IsOnline = true;
             //game loop
             do
             {
@@ -1502,23 +1548,23 @@ namespace Chess
                 bool connectionExist;
                 if (GameStates.IsTurn) //only true when Network.Receive.ReceiveMapData has received map data from the other player' transmitter
                 {
-                    gameEnded = PlayerControlNet(starter);
+                    GameStates.GameEnded = PlayerControlNet(starter);
                     GameStates.IsTurn = false;
                     if (gameEnded)
                     { //transmit a signal to the other player' receiver to let them know the game has ended. 
                         Network.Transmit.GeneralValueTransmission(2, Network.Transmit.OtherPlayerIpAddress);
-                        receiveThread.Abort(); //figure out a better way.
+                        //receiveThread.Abort(); //figure out a better way.
                         Network.Receive.Stop();
                     }
                 }
                 else //not this computer' turn to move. 
                 {
-                    Thread.Sleep(100); //no reason to check a lot. Around 10 times per second should be good enough.
+                    Thread.Sleep(1000); //no reason to check a lot. Around 1 times per second should be good enough.
                     if(counter == 10)
                     {
                         if (GameStates.GameEnded)
                         {
-                            receiveThread.Abort(); //figure out a better way. One of the computer stated this was not supported on its platform.
+                            //receiveThread.Abort(); //figure out a better way. One of the computer stated this was not supported on its platform. Changes to the functions means there should be no reason to abort the threat anymore. 
                             Network.Receive.Stop();
                         }
                         counter = 0;
@@ -1534,7 +1580,7 @@ namespace Chess
                     }
                 }
 
-            } while (!gameEnded);
+            } while (!GameStates.GameEnded);
 
             Network.Receive.Stop();
 
@@ -1566,14 +1612,14 @@ namespace Chess
                     if(!(bool)checkmate) //if the king is not checkmate, play
                         player.Control();
                 
-                otherPlayerCheckMate = IsKingChecked(!team); //these two updates 
+                otherPlayerCheckMate = IsKingChecked(!team); //these two updates ...
                 checkmate = CheckmateChecker(team);
 
                 draw = Draw(); //maybe move this one out to the outer loop
                 if ((bool)checkmate || draw) //checkmate seems to work as it should. 
                     return true;
 
-                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) 
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes captured pieces.
                 {
                     if (ChessList.GetList(!team)[i].BeenTaken)
                     {
@@ -1590,7 +1636,6 @@ namespace Chess
                         break;
                     }
                 }
-                //Network.Transmit.StillConnected(Network.Transmit.OtherPlayerIpAddress);
                 Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
 
                 return false;
@@ -1603,20 +1648,23 @@ namespace Chess
         private void GameLoop()
         {
             bool gameEnded = false; bool whiteWon = false;
-            do //should the game show what pieces that can save the king from a threat or should the player figure that out themselves? How much to hold their hand
+            GameStates.IsOnline = false;
+            do
             {
                 gameEnded = PlayerControl(true);
-                if (gameEnded)
+                if (gameEnded || GameStates.GameEnded)
                 {
-                    whiteWon = true;
+                    GameStates.GameEnded = true;
                     break;
                 }
                 gameEnded = PlayerControl(false);
-            } while (!gameEnded);
+                if (gameEnded || GameStates.GameEnded)
+                    GameStates.GameEnded = true;
+            } while (!GameStates.GameEnded);
 
 
             Console.Clear();
-            Console.Write("White won = {0}", whiteWon); //just to ensure that the correct team is considered the winner. 
+            Console.Write("White won = {0}", GameStates.WhiteWin); //just to ensure that the correct team is considered the winner. 
             Console.ReadLine();
 
             unsafe bool PlayerControl(bool team)
@@ -1639,7 +1687,6 @@ namespace Chess
                 //if proven problematic to solve, focus on the menu and the net play to keep learning. So if not solved by the 28/4, keep a break from it and move to the other parts. 
                 //checkmate = IsKingChecked(team);
                 ProtectKing.Protect = saveKingList;
-                //if the list is empty and the king is checked. Checkmate 
                 draw = Draw(); //maybe move this one out to the outer loop
                 if (checkmate || draw) //checkmate seems to work as it should. 
                     return true;
@@ -1693,10 +1740,10 @@ namespace Chess
         }
 
         /// <summary>
-        /// 
+        /// Check if a king, depending on <paramref name="team"/> is checkmated or not. If the king is checkmated, it will return true. Else false. 
         /// </summary>
-        /// <param name="team"></param>
-        /// <returns></returns>
+        /// <param name="team">True for white, false for black.</param>
+        /// <returns>True if the king is checkmated, else false</returns>
         private bool CheckmateChecker(bool team)
         {
             return CheckmateChecker(team, out List<string> canProtectKing);
@@ -1730,7 +1777,7 @@ namespace Chess
                     }
                 }
             }
-            if (/*!kingCanMove &&*/ isCheked)
+            if (isCheked)
             {
                 foreach (ChessPiece chePie in ChessList.GetList(team))
                 {
@@ -1746,7 +1793,6 @@ namespace Chess
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, null);
                             canProtectKing.Add(chePie.GetID);
                         }
-
                     }
                     else if (chePie is Queen)
                     {
@@ -1763,12 +1809,11 @@ namespace Chess
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
-                            //return false;
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
-                    else if (chePie is Rock)
+                    else if (chePie is Rook)
                     {
                         int[][] movement = new int[][]
                         {
@@ -1779,7 +1824,6 @@ namespace Chess
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
-                            //return false;
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
@@ -1795,7 +1839,6 @@ namespace Chess
                         };
                         if (QRBCheck(movement, chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
-                            //return false;
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
@@ -1804,17 +1847,14 @@ namespace Chess
                     {
                         if (KnightCheck(chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
-                            //return false;
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
                     }
-                    else if (chePie is Pawn pawn) //had a bug at a time that added it to the list of pieces that could prevent a check, even though it could not reach. Only happened for a non-moved piece. Y difference was 3.
+                    else if (chePie is Pawn pawn)
                     {
                         if (PawnCheck(chePie.GetMapLocation, pawn.HasMoved, out List<int[,]> endLocation))
                         {
-                            //Debug.WriteLine("{0}", chePie.GetID);
-                            //return false;
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
                         }
@@ -1890,7 +1930,6 @@ namespace Chess
                         {
                             if (MapMatrix.Map[movLocation[0], movLocation[1]] == "" || (movLocation[0] == locations[0][0] && movLocation[1] == locations[0][1]))
                                 endLoc.Add(new int[,] { { movLocation[0], movLocation[1] } });
-                            //return true;
                         }
                     }
                     if (endLoc.Count != 0)
@@ -1959,25 +1998,23 @@ namespace Chess
                         do
                         { //finds the y of the square that is between king and hostile piece that got the same x as the pawn.
                             standLocation[0] += movement[0];
-                            standLocation[1] += movement[1]; //end location on y can reach 8
+                            standLocation[1] += movement[1]; 
                         } while (standLocation[0] != ownLocation[0]);
 
                         int yDistance = standLocation[1] - ownLocation[1];
                         int maxRange = hasMoved ? 1 : 2;
                         int pos = 0;
-                        if (maxRange >= Math.Abs(yDistance)) //does not work, if a piece only has to move 1 but can double move, this will be false. 
+                        if (maxRange >= Math.Abs(yDistance)) 
                         {
                             do
                             {
                                 pos++;
                                 string feltID = MapMatrix.Map[ownLocation[0], ownLocation[1] + direction * pos];
                                 if (feltID != "")
-                                    //return false;
                                     break;
                             } while (pos < Math.Abs(yDistance));
                             if(ownLocation[1] + (pos*direction) == standLocation[1])
                                 endLocations.Add(new int[,] { { ownLocation[0], ownLocation[1] + (pos) * direction } }); 
-                            //return true;
                         }
                     }
                 }
@@ -2099,7 +2136,7 @@ namespace Chess
 
                 if (index1Sign && index2Sign && (diagonal || straight))
                 {
-                    /*Idea: 
+                    /*
                      * if both parts of locationDifference is the same, it need to not have the same signs in the dir
                      * E.g. locationDifference == [2,2], dir needs to be [-1,-1]
                      * If LocationDifference == [-2,2], dir needs to be [1,-1]. 
@@ -2107,20 +2144,17 @@ namespace Chess
                      * etc.
                      * So if any index in locationDifference is zero, the same index in dir needs to be zero,
                      * else any index in dir needs to be of oppesit sign of the same index in locationDifference. 
-                     * How to be check this. Could devide, if they got the same sign the devide will be positive. Different signs will give a negative result. Of course no devide for zero.
-                     * So have two bools, one for each index. If true, index in locationDifference and dir is either zero or wiht oppesite signs. If false, got the same signs or not zero in both index.
-                     * Any other way? 
                      */
 
                     int[] currentLocation = new int[] { ownLocation[0], ownLocation[1] };
-                    int locationsRemaining = Math.Abs(locationDifference[0]) > Math.Abs(locationDifference[1]) ? Math.Abs(locationDifference[0]) : Math.Abs(locationDifference[1]); //should be the amount of sqaures from start to and with the end square. 
+                    int locationsRemaining = Math.Abs(locationDifference[0]) > Math.Abs(locationDifference[1]) ? Math.Abs(locationDifference[0]) : Math.Abs(locationDifference[1]); 
                     string feltID = ""; //maybe have a setting for the default value on the map
                     while (locationsRemaining != 0) //rewrite all of this, also write better comments for the future
                     {
                         currentLocation[0] += dir[0];
                         currentLocation[1] += dir[1];
                         feltID = MapMatrix.Map[currentLocation[0], currentLocation[1]];
-                        if (feltID != "" && feltID != MapMatrix.Map[locations[0][0], locations[0][1]]) //currently it does not care if the last square is the one the enemy piece is standing on. Fixed. 
+                        if (feltID != "" && feltID != MapMatrix.Map[locations[0][0], locations[0][1]])
                             return false;
 
                         if (locationsRemaining == 1)
@@ -2141,16 +2175,8 @@ namespace Chess
         /// </summary>
         private void PlayerSetup()
         {
-            byte[] colourWhite =
-            {
-                255,255,255
-            };
-            white = new Player(/*colourWhite,*/ true/*, whiteSpawnLocation*/);
-            byte[] colourBlack =
-            {
-                0,0,0
-            };
-            black = new Player(/*colourBlack,*/ false/*, blackSpawnLocation*/);
+            white = new Player(true);
+            black = new Player(false);
         }
 
         /// <summary>
@@ -2170,10 +2196,10 @@ namespace Chess
             }
             ID = String.Format("{0}:5:{1}", team, 1);
             spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
-            chessPieces.Add(new Rock(colour, white, spawn, ID));
+            chessPieces.Add(new Rook(colour, white, spawn, ID));
             ID = String.Format("{0}:5:{1}", team, 2);
             spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
-            chessPieces.Add(new Rock(colour, white, spawn, ID));
+            chessPieces.Add(new Rook(colour, white, spawn, ID));
             ID = String.Format("{0}:4:{1}", team, 1);
             spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
             chessPieces.Add(new Knight(colour, white, spawn, ID));
@@ -2200,23 +2226,16 @@ namespace Chess
 
     class Player //got to ensure that no spawnlocation is overlapping and deal with it in case there is an overlap. 
     { //this class is set to be an abstract in the UML, but is that really needed? 
-        //private byte[] colour;
         private bool white;
-        //private List<ChessPiece> chessPieces = new List<ChessPiece>();
-        //private int[,] spawnLocations; //start with the pawns, left to right and then the rest, left to right
         private string team;
-        //private string selectedID;
         private int selectedChessPiece;
         private int[] location; //x,y
         private bool didMove = false;
 
-        public Player(/*byte[] colour,*/ bool startTurn/*, int[,] spawnLocations*/)
+        public Player(bool startTurn)
         {
-            //this.colour = colour;
             this.white = startTurn;
-            //this.spawnLocations = spawnLocations;
             team = white == true ? "+" : "-";
-            //CreatePieces();
         }
 
         /// <summary>
@@ -2226,16 +2245,24 @@ namespace Chess
         {
             do
             {
-                HoverOver();
-                MovePiece();
-                didMove = ChessList.GetList(white)[selectedChessPiece].CouldMove;
+                bool didNotSurrender = HoverOver();
+                if (didNotSurrender)
+                {
+                    MovePiece();
+                    didMove = ChessList.GetList(white)[selectedChessPiece].CouldMove;
+                }
+                else
+                {
+                    break;
+                }
+
             } while (!didMove);
         }
 
         /// <summary>
         /// Lets the player hover over a felt on the boardgame and gets the ID of that felt. If the ID is a chesspiece, it will be highlighted. 
         /// </summary>
-        private void HoverOver()
+        private bool HoverOver()
         {
             string lastMapLocationID;
             int? lastPiece = 0;
@@ -2245,7 +2272,7 @@ namespace Chess
             SquareHighLight(true);
             do
             {
-                bool selected = FeltMove(location);
+                bool? selected = FeltMove(location);
                 if (lastPiece != null) //if a previous chess piece has been hovered over, remove the highlight. 
                 {
                     ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
@@ -2253,7 +2280,15 @@ namespace Chess
                     lastMapLocationID = null;
                 }
                 string squareID = MapMatrix.Map[location[0], location[1]];
-                if (squareID != "") //is there a chess piece on the location
+                if(selected == null)
+                {
+                    if (GameStates.GameEnded)
+                    {
+                        hasSelected = true;
+                        return false;
+                    }
+                }
+                else if (squareID != "") //is there a chess piece on the location
                     if (squareID.Split(':')[0] == team) //is it on the team
                     {
                         int posistion = 0;
@@ -2296,8 +2331,72 @@ namespace Chess
 
             } while (!hasSelected);
             SquareHighLight(false);
-            //SelectPiece();
+            return true;
+        }
 
+        /// <summary>
+        /// Menu that allows a player to stay on playing, ask for a draw or surrender 
+        /// </summary>
+        private void PlayerMenu()
+        { //should allow the player to surrender, ask for a draw or return to play.
+            //remember, you can call the board paint and chess paint functions to recreate the visual board and visual pieces.
+            string[] playerOptions =
+            {
+                "Stay Playing",
+                "Call for Draw",
+                "Surrender"
+            };
+            Console.Clear();
+            string answer = Menu.MenuAccess(playerOptions);
+
+            //if they surrender send a victory data to the other player (if they are playing online).
+            //"Stay Playing" should recreate the board and pieces (visually).
+            //FeltMove() should do the registrating of if they press esc. Also need to get access to the menu functions in the Menu class
+            switch (answer)
+            {
+                case "Stay Playing":
+                    //call a function that repaint the board and pieces.
+                    Console.Clear();
+                    ChessTable.RepaintBoardAndPieces();
+                    break;
+
+                case "Call for Draw":
+                    //how to do this? Consider having a function that can be called that redraw the board and the pieces
+                    //when the other player receives the value that indicates asking for a draw, remove their map and pieces and display "Oppesition wants to draw. Allow it?" "yes" and "no" 
+                    //if "yes", games ends. If "no" repaint the board and pieces. The person asking is told "no" and their board and pieces are repainted. 
+                    if (GameStates.IsOnline)
+                    {
+                        Network.Transmit.GeneralValueTransmission(3, Network.Transmit.OtherPlayerIpAddress);
+                        //need to wait on answer, so the other player should transmit an answer back before existing this if-statement.
+                        //maybe have a GameStates for breaks? E.g. transmitting, setting GameStates.Break = true. While true, do nothing. At some point the other player transmit an answer back and GameStates.Break is set to false by the reciver. 
+                    }
+                    else
+                    {
+                        Console.Clear();
+                        string[] drawOptions = {"Accept Draw", "Decline Draw" }; //need an option in the Menu draw function that allows for a "title" e.g. what to do "Will you accept the draw?"
+                        string drawAnswer = Menu.MenuAccess(drawOptions);
+                        switch (drawAnswer)
+                        {
+                            case "Accept Draw":
+                                GameStates.GameEnded = true;
+                                GameStates.Won = null;
+
+                                break;
+                            case "Decline Draw":
+                                break;
+
+                        }
+                    }
+                    break;
+
+                case "Surrender": //currently, this require the player to finish their turn to work. Fixed
+                    GameStates.GameEnded = true;
+                    GameStates.Won = false; 
+                    GameStates.WhiteWin = !white;
+                    if(GameStates.IsOnline)
+                        Network.Transmit.GeneralValueTransmission(2,Network.Transmit.OtherPlayerIpAddress);
+                    break;
+            }
         }
 
         /// <summary>
@@ -2305,10 +2404,8 @@ namespace Chess
         /// </summary>
         /// <param name="currentLocation">The current location on the board.</param>
         /// <returns></returns>
-        private bool FeltMove(int[] currentLocation)
+        private bool? FeltMove(int[] currentLocation)
         {
-            //uint[] currentLocation = location; //remember that both arrays point to the same memory.
-
             while (Console.KeyAvailable) //this should flush the keys
             {
                 Console.ReadKey(true);
@@ -2336,12 +2433,16 @@ namespace Chess
             {
                 return true;
             }
+            else if (keyInfo.Key == ConsoleKey.Escape)
+            {
+                PlayerMenu();
+                return null; 
+            }
 
             SquareHighLight(true);
             return false;
 
         }
-
 
         /// <summary>
         /// Highlights or removes the hightlight of a sqaure. 
@@ -2383,25 +2484,11 @@ namespace Chess
             }
         }
 
-        //private void SelectPiece()
-        //{ //how this function will work will depent on the chosen method for hovering over, i.e. using the list or not.
-        //    selectedID = null; //will be needed to find the chosen chess piece in the list if the list is not the selected hover over method
-
-        //}
-
         /// <summary>
         /// Function that calls the selected chess piece control function. 
         /// </summary>
         private void MovePiece()
         {
-            //if (chessPieces[selectedChessPiece] is King working)
-            //{
-            //    //King working = (King)chessPieces[selectedChessPiece];
-            //    //working.KingTest
-            //    //do stuff, replace the old one with the updated one
-            //    //works, but are there better ways...
-            //}
-            //chessPieces[selectedChessPiece].Control();
             ChessList.GetList(white)[selectedChessPiece].Control();
         }
 
@@ -2481,8 +2568,6 @@ namespace Chess
             LocationUpdate();
             Draw();
             UpdateMapMatrix(oldMapLocation);
-            //CheckWriteOut();
-            //checkLocations.Clear();
             castLingCandidates.Clear();
         }
 
@@ -2493,14 +2578,12 @@ namespace Chess
         {
             if (isChecked || lastAmountOfThreats > 0)
             {
-                //string writeLout = "";
                 int[,] writeLocation = Settings.CheckWriteLocation; //should be modified so it return a new array rather than the existing array. 
                 byte teamLoc;
                 teamLoc = team ? (byte)0 : (byte)1;
 
                 int[] writeAt = new int[] { writeLocation[teamLoc, 0], writeLocation[teamLoc, 1] };
-                //Console.SetCursorPosition(writeAt[0],writeAt[1]); //maybe have the board write the King White and King Black with another setting, then CheckWrtieLocation setting is that setting plus like 2 
-                //Console.WriteLine();
+
                 byte pos = 0;
                 for (byte i = 0; i < lastAmountOfThreats; i++)
                 {
@@ -2604,14 +2687,7 @@ namespace Chess
         /// <param name="toAddToList">List that contains the locations of hostile pieces that are threating the <paramref name="location_"/>.</param>
         /// <returns>Returns true if <paramref name="location_"/>is under threat, false otherwise. </returns>
         private bool IsInChecked(int[] location_, List<int[]> toAddToList)
-        { //if true, it should force the player to move it. Also, it needs to check each time the other player has made a move 
-            //should also check if it even can move, if it cannot the game should end. 
-            //the king does not need to move in a check as long time there is a friendly chesspiece that can take the hostile piece. 
-            //should all the pieces that can move to prevent a mate be highlighted? Should their endlocations be forced to only those that can prevent a check?
-            //how much should the game hold the player in hand?
-            //Should the game write to a location that the king is check and the location (letter and number) of the hostile pieces that threatens the king?
-            //should the king's constructor have a write location, so the king can do the writting and not the board/player?
-            //When should this code be called? Ideally, at the start of the player turn. But should it be called at other moments? E.g. before or after a king movement or should the move code check by itself 
+        { 
             sbyte[,] moveDirection;
             string[][] toLookFor;
             moveDirection = new sbyte[,] { { -1, 0 }, { 0, -1 }, { -1, -1 }, { -1, 1 }, { 0, 1 }, { 1, 0 }, { 1, 1 }, { 1, -1 }, };
@@ -2626,10 +2702,9 @@ namespace Chess
                 new string[]{"2","5"},
                 new string[]{"2","3"},
                 new string[]{"2","3"}
-            }; //knights and pawns need different way of being checked. 
+            }; 
             QRBCheck(moveDirection, toLookFor);
-            //problem: if a square is checked that is not the king's and the code find the king, it will think that direction is fine even though there might be a hostile piece that can take the king on its current posistion and 
-            //the posistion that is being checked. Seems to have been fixed, require more testing.
+
             PawnCheck();
 
             KnightCheck();
@@ -2686,7 +2761,7 @@ namespace Chess
             }
 
             void KnightCheck()
-            { //two in one direction, one in another direction
+            { 
                 int[] placement_;
                 placement_ = new int[] { -2, -1 }; //two left, up
                 Placement(placement_);
@@ -2761,12 +2836,10 @@ namespace Chess
 
 
             void QRBCheck(sbyte[,] directions, string[][] checkpiecesToCheckFor)
-            { //can be used to check for queens, rocks and bishops.
-                //consider coding it such that it can work with a sbyte[,] and go through multiple directions in a single call.
-                //should the checkPiecesToCheckFor also be altered or is it fine 
+            { //can be used to check for queens, rooks and bishops.
+                //consider coding it such that it can work with a sbyte[,] and go through multiple directions in a single call. 
                 for (int i = 0; i < directions.GetLength(0); i++)
                 {
-                    //need to alter this one. Rock and Bishop are considered to have the same movement as the queen. Maybe, let it take a jaggered checkpiecesToCheckFor
                     int[] checkLocation = new int[2] { location_[0], location_[1] };
                     sbyte[] directions_ = new sbyte[2] { directions[i, 0], directions[i, 1] };
                     string[] piecesToCheckFor = checkpiecesToCheckFor[i];
@@ -2810,7 +2883,7 @@ namespace Chess
             }
         }
 
-        public override void Network(int[] newLocation = null, bool captured = false)
+        public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
                 Taken();
@@ -2865,54 +2938,55 @@ namespace Chess
                 castLingCandidates = new List<string>(); //does a string list make sense? 
                 foreach (ChessPiece chepie in ChessList.GetList(team))
                 {
-                    if (chepie is Rock)
+                    if (chepie is Rook)
                     {
-                        if (!chepie.SpecialBool)
-                        {
-                            List<int[]> location_ = new List<int[]>();
-                            bool isEmptyRow = false;
-                            int direction = (int)(chepie.GetMapLocation[0] - mapLocation[0]); //if positive, go left. If negative, go right
-                            int[] currentFeltLocation = new int[] { mapLocation[0], mapLocation[1] };
-                            sbyte moveDirection = direction > 0 ? (sbyte)1 : (sbyte)-1;
-                            byte squareGoneThrough = 0;
-                            do
+                        if(chepie.GetMapLocation[1] == mapLocation[1]) //ensures that no pawn promoted rook can be castled with.
+                            if (!chepie.SpecialBool) //has not moved
                             {
-                                squareGoneThrough++;
-                                currentFeltLocation[0] += moveDirection;
-                                string feltID = MapMatrix.Map[currentFeltLocation[0], currentFeltLocation[1]];
-                                if (chepie.GetMapLocation[0] == currentFeltLocation[0])
+                                List<int[]> location_ = new List<int[]>();
+                                bool isEmptyRow = false;
+                                int direction = (int)(chepie.GetMapLocation[0] - mapLocation[0]); //if positive, go left. If negative, go right
+                                int[] currentFeltLocation = new int[] { mapLocation[0], mapLocation[1] };
+                                sbyte moveDirection = direction > 0 ? (sbyte)1 : (sbyte)-1;
+                                byte squareGoneThrough = 0;
+                                do
                                 {
-                                    isEmptyRow = true;
-                                    break;
-                                }
-                                else if (feltID != "")
-                                {
-                                    isEmptyRow = false;
-                                    break;
-                                }
-                                else
-                                {
-                                    if (squareGoneThrough <= 2)
+                                    squareGoneThrough++;
+                                    currentFeltLocation[0] += moveDirection;
+                                    string feltID = MapMatrix.Map[currentFeltLocation[0], currentFeltLocation[1]];
+                                    if (chepie.GetMapLocation[0] == currentFeltLocation[0])
                                     {
-                                        IsInChecked(currentFeltLocation, location_);
+                                        isEmptyRow = true;
+                                        break;
                                     }
-                                    //the second square is the end location of the king
-                                    //the first square is the end location of the rock
-                                }
-                            } while (chepie.GetMapLocation[0] != currentFeltLocation[0]);
-                            if (isEmptyRow)
-                            {
-                                //from the rules, castling cannot happen if the king is checked. Also, it does not matter if the rock's end location is under threat
-                                //but all sqaures the king moves through also needs not be under threat. 
-                                if (location_.Count == 0)
+                                    else if (feltID != "")
+                                    {
+                                        isEmptyRow = false;
+                                        break;
+                                    }
+                                    else
+                                    {
+                                        if (squareGoneThrough <= 2)
+                                        {
+                                            IsInChecked(currentFeltLocation, location_);
+                                        }
+                                        //the second square is the end location of the king
+                                        //the first square is the end location of the rock
+                                    }
+                                } while (chepie.GetMapLocation[0] != currentFeltLocation[0]);
+                                if (isEmptyRow)
                                 {
-                                    castLingCandidates.Add(chepie.GetID);
-                                    int[,] arr = new int[,] { { chepie.GetMapLocation[0], chepie.GetMapLocation[1] } };
-                                    toAddToo.Add(arr);
-                                }
+                                    //from the rules, castling cannot happen if the king is checked. Also, it does not matter if the rock's end location is under threat
+                                    //but all sqaures the king moves through also needs not be under threat. 
+                                    if (location_.Count == 0)
+                                    {
+                                        castLingCandidates.Add(chepie.GetID);
+                                        int[,] arr = new int[,] { { chepie.GetMapLocation[0], chepie.GetMapLocation[1] } };
+                                        toAddToo.Add(arr);
+                                    }
 
+                                }
                             }
-                        }
                     }
 
                 }
@@ -2981,15 +3055,15 @@ namespace Chess
         }
 
         /// <summary>
-        /// Selects a rock using the map location.
+        /// Selects a rook using the map location.
         /// </summary>
         /// <param name="locationOfRock"></param>
         private void Castling(int[] locationOfRock)
         {
-            string rockID = MapMatrix.Map[locationOfRock[0], locationOfRock[1]];
+            string rookID = MapMatrix.Map[locationOfRock[0], locationOfRock[1]];
             foreach (ChessPiece chePie in ChessList.GetList(team))
             {
-                if (chePie.GetID == rockID)
+                if (chePie.GetID == rookID)
                 {
                     int x = chePie.GetMapLocation[0];
                     if (x < mapLocation[0])
@@ -3035,9 +3109,7 @@ namespace Chess
         /// Calculates end locations and if legal add them to a list. 
         /// </summary>
         protected override void EndLocations()
-        { //implement a check for Castling and/or call the Castling function
-            //is there a better way to do this than the current way. Currently it can go out of bounds. 
-            //could most likely make a nested function of the do while loop
+        {
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
 
@@ -3103,19 +3175,14 @@ namespace Chess
     /// The class for pawns.
     /// </summary>
     sealed class Pawn : ChessPiece
-    { //does not check if a square two away from it is empty. Can jump over another piece with the double first turn move.
-        //bug: If the chess piece cannot move and have not moved and it is selected, its RemoveDraw code will be run and give an error with the oldMapLocation is null.
-        //oldMapLocation is only set in the Move function and is called by RemoveDraw right after. RemoveDraw needs to be able to handle and solve null arrays. 
+    { 
         private bool firstTurn = true;
         private bool hasMoved = false;
         private sbyte moveDirection;
         private Dictionary<string, byte> promotions = new Dictionary<string, byte>(4);
         // https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance
         // https://stackoverflow.com/questions/210601/accessing-a-property-of-derived-class-from-the-base-class-in-c-sharp
-        //consider added a function in the base call that returns whatever is needed, e.g. can castle, has double moved and not moved after etc. Most likely being a bool. 
 
-        //was a bug at a moment where a pawn could not double move in a game, even through it had not moved. Something, I think, had stod on the location before. 
-        //found it what is causing it, if a pawn is selected and cannot move, its firstTurn is still set to false.
         /// <summary>
         /// The constructor for the pawn chess piece. 
         /// </summary>
@@ -3140,7 +3207,6 @@ namespace Chess
             promotions.Add("Queen", 2);
         }
 
-        //public override bool SpecialBool { get => firstTurn; set => base.SpecialBool = value; } //this function is causing problems with the firstTurn
         /// <summary>
         /// Returns true if the pawn has moved at some point. False otherwise. 
         /// </summary>
@@ -3215,7 +3281,12 @@ namespace Chess
 
         }
 
-        public override void Network(int[] newLocation = null, bool captured = false)
+        /// <summary>
+        /// Used by the online play and used to update a piece that has been changed by the other player that is not on this computer. 
+        /// </summary>
+        /// <param name="newLocation"></param>
+        /// <param name="captured"></param>
+        public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
                 Taken();
@@ -3379,7 +3450,7 @@ namespace Chess
                     case "rock":
                         IDParts[1] = "5";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Rock(colour, team, mapLocation, newID));
+                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID));
                         break;
 
                     case "queen":
@@ -3412,18 +3483,18 @@ namespace Chess
     /// <summary>
     /// The class for rocks.
     /// </summary>
-    sealed class Rock : ChessPiece
+    sealed class Rook : ChessPiece
     {
         private bool hasMoved = false;
 
         /// <summary>
-        /// The constructor for the rock chess piece. 
+        /// The constructor for the rook chess piece. 
         /// </summary>
         /// <param name="colour_">The colour of the chess piece.</param>
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Rock(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public Rook(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
         {
             Design = new string[]
             {
@@ -3438,9 +3509,7 @@ namespace Chess
         /// Calculates end locations and if legal add them to a list. 
         /// </summary>
         protected override void EndLocations()
-        { //implement a check for Castling and/or call the Castling function
-            //is there a better way to do this than the current way. Currently it can go out of bounds. 
-            //could most likely make a nested function of the do while loop
+        { 
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
 
@@ -3521,7 +3590,7 @@ namespace Chess
             {
                 hasMoved = value;
             }
-        } //if moved, castling cannot be done. How is the king going to call this code. Currently, the king would only be able to call other's functions that are given in the base class.
+        }
 
         /// <summary>
         /// Calss the castling function. 
@@ -3538,7 +3607,7 @@ namespace Chess
             return false;
         }
 
-        public override void Network(int[] newLocation = null, bool captured = false)
+        public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
                 Taken();
@@ -3567,14 +3636,6 @@ namespace Chess
             newLocation[1] = mapLocation[1];
             newLocation[0] = mapLocation[0] == 0 ? 3 : 5;
             mapLocation = newLocation;
-            //if (mapLocation[0] == 0)
-            //{
-            //    mapLocation[0] = 3;
-            //}
-            //else
-            //{
-            //    mapLocation[0] = 5;
-            //}
             UpdateMapMatrix(oldLocation);
             LocationUpdate();
             Draw();
@@ -3918,7 +3979,7 @@ namespace Chess
         /// </summary>
         /// <param name="newLocation"></param>
         /// <param name="captured"></param>
-        public virtual void Network(int[] newLocation = null, bool captured = false)
+        public virtual void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
                 Taken();

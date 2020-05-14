@@ -6,3 +6,5 @@ At some point the king could not move. The only white piece that was not on its 
 If a, non-moved, pawn tries to move and cannot, because something is in front of it, it cannot double move anymore. - Fixed
 
 Black king was under threat by a white knight. Black knight could not take it, even though it should, and black pawns would move up instead of down. - Fixed
+
+All the place that are using Rock should using Rook...
