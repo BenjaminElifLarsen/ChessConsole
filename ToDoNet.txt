@@ -135,3 +135,14 @@
                             Rock.Castling() does not call the ChessPiece.UpdateMapMatrix() which is why it' ID is not moved with it.
                         The offline castling is working now. Need to test the online version. Oneline version tested and is working.
                         
+
+
+
+               When a player surrender and the game is shutdown they get this message "System.IO.IOException: Unable to read data from the transport connection: A existing connection was force shutdown..." Code line 420.
+                    Transmit.TransmitMapData
+
+               GameStates need to be reset when the game has ended, else a new game ends immertially. Has been implemented
+                Map needs to be reset. Has been implemented 
+
+               The game does not end for the player who calls for a draw. They can still move. The player who accept the surrender have the game ended. 
+               In both cases of the online draw, the map and chess pieces are not redrawn. - Fixed

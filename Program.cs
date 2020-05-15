@@ -37,6 +37,14 @@ namespace Chess
         }
 
         /// <summary>
+        /// Allows the <c>PrepareMap()</c> to be called and run. 
+        /// </summary>
+        public static void AllowForMapPreparation()
+        {
+            mapPrepared = false;
+        }
+
+        /// <summary>
         /// Used to get and set values on the board.
         /// </summary>
         public static string[,] Map { get => map; set => map = value; }
@@ -88,6 +96,14 @@ namespace Chess
         public static List<ChessPiece> GetList(bool team)
         {
             return team == false ? chessListBlack : chessListWhite;
+        }
+        /// <summary>
+        /// Empty both player chess piece lists. 
+        /// </summary>
+        public static void RemoveAllPieces()
+        {
+            chessListBlack = null;
+            chessListWhite = null;
         }
     }
 
@@ -261,6 +277,7 @@ namespace Chess
         private static bool gameEnded;
         private static bool isOnline;
         private static bool whiteWon; //true for white, false for black.
+        private static bool pause;
 
         /// <summary>
         /// True if it is player turn, else false.
@@ -282,6 +299,22 @@ namespace Chess
         /// True if the white player won, false otherwise.
         /// </summary>
         public static bool WhiteWin { get => whiteWon; set => whiteWon = value; }
+        /// <summary>
+        /// Used to "pause" the game while waiting on data from the other player.
+        /// </summary>
+        public static bool Pause { get => pause; set => pause = value; }
+        /// <summary>
+        /// Resets all game states. 
+        /// </summary>
+        public static void Reset()
+        {
+            pause = false;
+            whiteWon = false;
+            isOnline = false;
+            gameEnded = false;
+            won = null;
+            canMove = false;
+        }
     }
 
 
@@ -666,7 +699,7 @@ namespace Chess
                         int type = 0;
                         Converter.Conversion.ByteConverterToInterger(typeOfTransmission, ref type);
 
-                        
+
                         if (type == 1)
                         {//connected client is about to transmit map data
 
@@ -721,31 +754,84 @@ namespace Chess
                             otherPlayer.Close();
                             GameStates.IsTurn = true;
                         }
-                        else if (type == 2) //draw
+                        else if (type == 2) //draw //not really needed
                         { //game has ended.
                             networkStream.Close(); //maybe just have a finally.
                             otherPlayer.Close();
                             GameStates.GameEnded = true;
                         }
-                        else if (type == 3) //victory/defeat.
+                        else if (type == 3) //being asked for a draw
+                        {
+                            string[] drawOptions = { "Accept Draw", "Decline Draw" };
+                            string answer = Menu.MenuAccess(drawOptions);
+                            switch (answer)
+                            { //the transmitter answer will need to be transmitted by the GeneralValueTransmission since the ReceiveGameLoop will receive the data
+                                case "Accept Draw":
+                                    GameStates.GameEnded = true;
+                                    GameStates.Won = null;
+
+                                    //transmit answer
+                                    Transmit.GeneralValueTransmission(30, Transmit.OtherPlayerIpAddress);
+                                    networkStream.Close(); //maybe just have a finally.
+                                    otherPlayer.Close();
+                                    break;
+                                case "Decline Draw":
+                                    Transmit.GeneralValueTransmission(31, Transmit.OtherPlayerIpAddress);
+                                    networkStream.Close(); //maybe just have a finally.
+                                    otherPlayer.Close();
+                                    Console.Clear();
+                                    ChessTable.RepaintBoardAndPieces();
+                                    //redraw map and pieces.
+                                    break;
+                            }
+
+                        }
+                        else if (type == 4) //this player is victory
                         {
                             networkStream.Close(); //maybe just have a finally.
                             otherPlayer.Close();
                             GameStates.GameEnded = true;
-                            //GameStates.Won
+                            GameStates.Won = true;
+                        }
+                        else if (type == 5) //this player is defeated
+                        {
+                            networkStream.Close(); //maybe just have a finally.
+                            otherPlayer.Close();
+                            GameStates.GameEnded = true;
+                            GameStates.Won = false;
+                        }
+                        else if (type == 6) //draw by gamerules.
+                        {
+
+                        }
+                        else if (type == 30) //draw was accepted
+                        {
+                            GameStates.Pause = false;
+                            GameStates.GameEnded = true;
+                            GameStates.Won = null;
+                            networkStream.Close(); //maybe just have a finally.
+                            otherPlayer.Close();
+                        }
+                        else if(type == 31) //draw was denied
+                        {
+                            GameStates.Pause = false;
+                            Console.Clear();
+                            ChessTable.RepaintBoardAndPieces();
+                            networkStream.Close(); //maybe just have a finally.
+                            otherPlayer.Close();
                         }
                         else
                         {//connected client is not about to transmit map data
                             //do something more? 
                             //networkStream.Flush(); //"... however, because NetworkStream is not buffered, it has no effect on network streams." - https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.flush?view=netcore-3.1
-                            networkStream.Close(); 
+                            networkStream.Close();
                             otherPlayer.Close();
                         }
                     }
 
                     //receiver.Stop();
                 }
-                catch (System.IO.IOException e) //failed read, write or connection closed (forced or not forced).
+                catch (IOException e) //failed read, write or connection closed (forced or not forced).
                 { //this should catch in case of a lost connection, but what to do? Go back to the main menu? Try some times to get a connection and it failes n times, do something else?
                     Debug.WriteLine(e); //might not be needed with the InnerException, need to read some more up on InnerException
                     Debug.WriteLine(e.InnerException); //helps with identified which specific error. 
@@ -1399,9 +1485,9 @@ namespace Chess
             for (int k = 0; k < numbers.Length; k++)
             {
                 Console.SetCursorPosition(Settings.Offset[0], k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k));
-                Console.Write(numbers[k]);
+                Console.Write(numbers[7-k]);
                 Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k));
-                Console.Write(numbers[k]);
+                Console.Write(numbers[7-k]);
             }
 
             for (int k = 0; k < letters.Length; k++)
@@ -1552,7 +1638,7 @@ namespace Chess
                     GameStates.IsTurn = false;
                     if (gameEnded)
                     { //transmit a signal to the other player' receiver to let them know the game has ended. 
-                        Network.Transmit.GeneralValueTransmission(2, Network.Transmit.OtherPlayerIpAddress);
+                        Network.Transmit.GeneralValueTransmission(6, Network.Transmit.OtherPlayerIpAddress); //Draw  //5 is loss for the other player, 4 is victory for the other player. 
                         //receiveThread.Abort(); //figure out a better way.
                         Network.Receive.Stop();
                     }
@@ -1581,8 +1667,10 @@ namespace Chess
                 }
 
             } while (!GameStates.GameEnded);
-
+            ChessList.RemoveAllPieces();
+            GameStates.Reset();
             Network.Receive.Stop();
+            MapMatrix.AllowForMapPreparation();
 
             bool PlayerControlNet(bool team)
             {
@@ -1661,11 +1749,12 @@ namespace Chess
                 if (gameEnded || GameStates.GameEnded)
                     GameStates.GameEnded = true;
             } while (!GameStates.GameEnded);
-
-
+            ChessList.RemoveAllPieces();
+            GameStates.Reset();
             Console.Clear();
             Console.Write("White won = {0}", GameStates.WhiteWin); //just to ensure that the correct team is considered the winner. 
             Console.ReadLine();
+            MapMatrix.AllowForMapPreparation();
 
             unsafe bool PlayerControl(bool team)
             {
@@ -2340,6 +2429,7 @@ namespace Chess
         private void PlayerMenu()
         { //should allow the player to surrender, ask for a draw or return to play.
             //remember, you can call the board paint and chess paint functions to recreate the visual board and visual pieces.
+            //Should people be allowed to use the menu while it is not their turn? If they are, have to deal with a menu appearing while they e.g. moving a piece and such.
             string[] playerOptions =
             {
                 "Stay Playing",
@@ -2367,6 +2457,10 @@ namespace Chess
                     if (GameStates.IsOnline)
                     {
                         Network.Transmit.GeneralValueTransmission(3, Network.Transmit.OtherPlayerIpAddress);
+                        GameStates.Pause = true;
+                        while (GameStates.Pause) ;
+
+                        //Network.Receive. have a function that is solo just a data pending loop
                         //need to wait on answer, so the other player should transmit an answer back before existing this if-statement.
                         //maybe have a GameStates for breaks? E.g. transmitting, setting GameStates.Break = true. While true, do nothing. At some point the other player transmit an answer back and GameStates.Break is set to false by the reciver. 
                     }
@@ -2383,6 +2477,8 @@ namespace Chess
 
                                 break;
                             case "Decline Draw":
+                                Console.Clear();
+                                ChessTable.RepaintBoardAndPieces();
                                 break;
 
                         }
@@ -2394,7 +2490,7 @@ namespace Chess
                     GameStates.Won = false; 
                     GameStates.WhiteWin = !white;
                     if(GameStates.IsOnline)
-                        Network.Transmit.GeneralValueTransmission(2,Network.Transmit.OtherPlayerIpAddress);
+                        Network.Transmit.GeneralValueTransmission(4,Network.Transmit.OtherPlayerIpAddress);
                     break;
             }
         }
