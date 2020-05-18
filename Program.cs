@@ -1439,10 +1439,10 @@ namespace Chess
 
             windowsSize[0] = Settings.WindowSize[0];
             windowsSize[1] = Settings.WindowSize[1];
-            if (windowsSize[0] < Console.WindowWidth && windowsSize[1] < Console.WindowHeight)
+            if (windowsSize[0] < Console.LargestWindowWidth && windowsSize[1] < Console.LargestWindowHeight)
                 Console.SetWindowSize(windowsSize[0], windowsSize[1]);
             else
-                Console.SetWindowSize(Console.WindowWidth, Console.WindowHeight);
+                Console.SetWindowSize(Console.LargestWindowWidth, Console.LargestWindowHeight);
             blackSpawnLocation = new int[,] {
                 { 0, 1 }, { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 }, { 7, 1 },
                 { 0, 0 }, { 1, 0 }, { 2, 0 }, { 3, 0 }, { 4, 0 }, { 5, 0 }, { 6, 0 }, { 7, 0 }
