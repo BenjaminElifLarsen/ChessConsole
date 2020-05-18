@@ -146,3 +146,19 @@
 
                The game does not end for the player who calls for a draw. They can still move. The player who accept the surrender have the game ended. 
                In both cases of the online draw, the map and chess pieces are not redrawn. - Fixed
+
+               How to check if a specific player has won or lost 
+
+               Idea to prevent a protecting piece from moving:
+                Find the location of a piece and the location of the friendly king.
+                    Check if any of these are try [-1,0], [1,0], [0,-1], [0,1], [1,1],[-1,1],[1,-1] and [-1,-1]
+                If one of those is correct, take the oppesite one and check each square in that direction until either a hostile piece or an edge.
+                    If a hostile piece is found and the hostile piece can move in the chosen direction (not the oppesite direction), that piece cannot be moved as it keeps the king safe.
+                Add this to the CheckmateChecker(). Any piece found like this should not be chekced if it can take a hostile piece or move between the hostile and the king.
+                    It should be added to a list and when a piece is selected by the player, the player code should check if the piece is on this list or not.
+                    Maybe have its own function and CheckmateChecker will check this list in if (isCheked){foreach (ChessPiece chePie in ChessList.GetList(team))...
+                        if it is in the list, skip it
+                    A piece should be able to move as long time it stay on being between the king and the hostile piece.
+                Current bug: the black knight was between the black queen and white king and yet it could still move.
+
+                Need to set the values in GameStates.PieceAmount, but where?

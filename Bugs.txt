@@ -8,3 +8,15 @@ If a, non-moved, pawn tries to move and cannot, because something is in front of
 Black king was under threat by a white knight. Black knight could not take it, even though it should, and black pawns would move up instead of down. - Fixed
 
 All the place that are using Rock should using Rook...
+
+White queen checkmated the black king in offline play. Game endscreen stated it was a draw.
+
+Fixed a bug in CheckmateChecker().QRBCheck() that did not allow a piece to stand between the king and the hostile one if the piece could capture the hostile piece.
+	The bug happens for the knight too. - Fixed
+
+	
+                Current bug: the black knight was between the black queen and white king and yet it could still move.
+					worked when the knight was right next to the king, but not futher up. Every other time it has been right next to the queen.
+						Fixed, it did not check in the straight directions.
+                Bug regarding the CheckmateChecker(). The white knight cannot jump to be between the white king and black queen. Other pieces could move to be between - fixed
+				Fixed a bug that meant a piece could not stand between the king and a threatning piece if there was only one square between them.
