@@ -1,0 +1,148 @@
+﻿        
+                /*Idea: 
+                 * Peer-to-Peer connection.
+                 * Player 1 selects "Net Play" and "Host" and their IP address is showned and "Waiting on player" or something like that. 
+                 * Player 1' receiver has started up the moment they select "Host". 
+                 * Player 2 selects "Net Play" and "Join". They enter Player 1' IP address and their receiver, with their own IP address, has started up and TransmitSetup(string Player 1' Ipaddress) connects to Player 1' receiver. 
+                 * Player 2' transmitter transmits their IP address to Player 1.
+                 * Player 1' receiver receives Player 2' IP address, starts up their transmitter with Player 2' IP address using TransmitSetup(string player 2' Ipaddress). 
+                 * Both transmitters now know the other players receiver IP address and port, 23000. Both receivers are running.
+                 * Player 1 selects a colour and transmit it to Player 2 (i.e. "White" and "Black")
+                 * Player 2 receives the colour and is given the other colour. 
+                 * Maybe transmit data from Player 2 to Player 1 to inform Player 1 to start their game. At the same time Player 2 starts their game (done using GeneralDataReception() and GeneralDataTransmission())
+                 * Game starts. 
+                 * Player 1 makes a move. Transmit the map.
+                 * Player 2 receives the map, updates their map and chess pieces and makes their move.
+                 * Player 2 transmit their map and Player 1 receives etc.
+                 * ???
+                 * Game ends and last map transmission is done. 
+                 * Both player's tranmitters shuts down and the recievers do the same.
+                 * Display, now or before shutting down, who won or if it is a draw. 
+                 * Goes back to the main menu.
+                 * 
+                 * Depending on which Player is white, they go first. 
+                 * 
+                 * Anything else that needs to be done, before the game starts?
+                 * 
+                 * How to handle errors? Like wrong IP address has been entered for the transmitsetup
+                 * Also, currently it only allows local play, NAT is not active. 
+                 * do you need otherPlayer.Client.LocalEndPoint or otherPlayer.Client.RemoteEndPoint to get the IP address of the client, otherPlayer, that is connected to the TcpListener? Could just transmit it, but if a write and read is 
+                 * not needed, it would be prefered not to do that.
+                 * If done using otherPlayer.Clinet... transmitter transmit data to to the receiver and receiver transmit data back to the transmitter, both player do this, to ensure the connections are working. 
+                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.localendpoint?view=netcore-3.1#System_Net_Sockets_Socket_LocalEndPoint
+                 * https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket.remoteendpoint?view=netcore-3.1#System_Net_Sockets_Socket_RemoteEndPoint
+                 * 
+                 * For Player 1, the receiver needs to start the moment they host, so ReceiveData(object team) needs to check if the receiver is started. Maybe just move the .Start() out of that function and into a new function, 
+                 *  since both receivers needs to run all the time and first need to close down when the game is over or an error occur.
+                 * 
+                 */
+
+                 Start multi-computer test on Monday the 11/5-20. Go through code and find anything that be problematic beforehand.
+
+                
+                Currently, if the player whoes turn it is disconnect, nothing happens on the other player side. They will just wait forever. 
+                    A solution could be to try and contact the current player' receiver in a specific interval. So in ReceiveMapData() have a if-statement after the while (!receiver.Pending()) loop.
+                    The transmitter will transmit data like every 2 seconds or like that and in the ReceiveMapData(). 
+                    If the data value is 0 it knows the data is for receiving the map or 1 it should not do anything, it is just the other player ensuring there still is a connection.
+                        Maybe just have a bool, in the if-statement, instead of the transmitter transmitting data, e.g. NetworkSupport.CanMove
+                        After all, if the it is true the receiver should not expect map data as it is the player it belongs to that is making a move.
+                        If it is false, it means it is waiting on map data and thus it is that player whoes transmitter should contact the other player receiver. 
+                        Might have to write some data, like 4 bytes and then read those 4 bytes to ensure there is a connection. TcpClient.Connected(), from reading, depends on the last operation.
+                        Just dont like the idea of having a function that kind of do two things. Maybe move the pending() and that into another function that calls the ReceiveMapData() and a new function. 
+                        Not happy with the current attempt Receive.ReceiverWaiting() and Transmit.StillConnected(). Both require changes to other functions (map reception and transmission functions).
+                        Just calling TransmitSetup(ipAddress) will not work that well, since it will set Recieve.ReceiveMapData()' while (!receiver.Pending()) { } to be true.
+                            Maybe alter Reciever.RecieveMapData to first needing a transmission of data from TransmitMap. It should be a specific value so Reciever.RecieveMapData knows it is 
+                                1) the correct player that is connected as currently multiple sources could connect to the receiver and 2) to ensure it is map data it is about to receive. 
+                                This could work. It would only require a tiny bit of changes to both map reception and transmission and would allow the player whoes turn it is not to ensure there still is a connection
+                            Consider some other ways to solve this
+
+                ---bug---
+
+                White rock took black pawn. White rock did not update its visual. Under further testing it has not been possible to replicate. Bug is unsolved for now. Rarely happens. 
+                 Map is working regarding which pieces stand where. 
+                 The white pawns were updating correctly, both for moves and taken a black piece.
+                 If a white pawn takes a black pawn, the white pawn is painted black instead off. Not always, unsolved. 
+                 En Passant does not remove the taken pawn. Used too. Update: Pawn is removed as it should, nothing changed in the code.
+                 PawnPromotion code seems to lock the program. An out of bounds regarding an array and indexes could happen and it was caught, but the program did not see CanMove to true. An if-statement was placed before the code that could cause 
+                    the out of bounds. 
+                    Current problem with the PawnPromotion(): When a pawn is promoted, the colour is correct on the side it belongs too, but the other side shows the promoted piece in the wrong colour. Fixed. 
+
+                 White queen at D7 somehow treaten the white king, at its spawnlocation, and black could not move, since only two white pieces could save the king and the HoverOver() checks with a list of pieces that can save the king
+                 Seems to be fixed, at least regarding to preventing a player from moving. Not sure about the white piece threating the white king. 
+
+                 White knight, F3, threaten the black king, E1. The selected pawn (E2) to take the knight could not move to F3, it could only move to D3. Another pawn (G2) could not take the knight either, it could only move to H3. 
+                 The black king, E1, was threaten by a white knight, F3, and could move to D2 even though D2 was under threat from the white knight at F3. 
+                 The same bug happens in offline mode, the bug with the king can move to a knight treaten location. Indicates that King.IsInChecked().KnightCheck() is not working as it should. 
+                 The knight IDs are correct, at start.
+                 The pawn movement bug is happening in offline mode too. The king, however, does registrate the correct knight location. The pawn are able to move to the correct locations now.
+                 The king has not been fixed yet. Should be fixed now, found an error in the variable that stated which felt the king should look at. 
+                 New bug: A white pawn could move back and take a knight that threaten a king. Should be fixed now.
+
+                 When a piece takes a pawn, the piece is not displayed instead of the pawn. Everything else seem to display correctly when getting captured. Does not always happen, need testing.
+                 From a single test run: 
+                 When black knight took white pawn, on black side it was displayed correctly, on white side it was shown as a white pawn. 
+                 When White knight took black pawn, both sides displayed correctly.
+                 When black knight took white bishop, it was displayed correctly on both sides.
+                 When white queen took black pawn, on black side it was displayed as a black pawn. White side displayed it correctly.
+                 When white queen took black rock, both sides displayed it correctly. 
+                 When white knight took black pawn, both sides displayed it correctly. 
+                 Regarding the gameloop for netplay, both sides runs the same functions and code, will take time to test and find the error.
+                 
+                 When the joiner was white and a black knight took a white pawn. On the black player side everything was displayed correctly. On the white side the black knight was shown as a white pawn.
+                 When debugging through the part of the UpdateChessPiece function that removes the captured piece and display the piece that captured, the captured are removed as it should and the capture piece is displayed as it should.
+                 Does not always happen when debugging.
+                 It seems to be the:
+                 if (Network.NetworkSupport.CanMove) //only true when Network.Receive.ReceiveMapData has received map data from the other player' transmitter
+                {//figure out a better way to do this Network.NetworkSupport.CanMove. Maybe have it stored somewhere else, like in this class rather than the network class.
+                    gameEnded = PlayerControlNet(starter);
+                    Network.NetworkSupport.CanMove = false;
+                    //most likely will need to transmit data regarding if the game is over or not. Also, got to deal with the king, threats and writing those out. 
+                }
+                that might be a problem
+                Current status: Sometimes when a black knight takes a white pawn both sides show it correctly, other times white side shows a white pawn.
+                Also, one white pawn visual was not removed after the black knight moved away. The pawn was the first pawn, and thus the first in the white chess list, and when it was white player turn the first hovered over piece would be that one
+                    and it would be hight lighted
+                Map data is correct
+                Think I found the problem the SquareHighLight(true) in Player.HoverOver() will by default highlight the first piece in the currect player chesslist. This does not explain why, sometimes, moving a knight from the location does not remove the old pawn visuals
+                Moved the code that removed captured pieces that belong to the current player to before the player.Control(). This seems to have fixed the displaying when a piece capture a pawn. 
+                
+                If a player, who is waiting, presses keys, they will be stored and used when it is their turn. Need to flush the key buffer before allowing them move the cursor and selecting. Fixed
+
+                Pawn in the CheckmateChecker got a bug. Black queen was 3 to the left and 3 up from the white king with a direct path to the king. The white pawn at C7 could only double move, not single move as it should.
+                    The double move would place it next to the black queen, at C5, and not between king and queen at C6. Changed some code and it seems to be fixed now. "ownLocation[1] + maxRange * direction }" to "ownLocation[1] + (pos-1) * direction }"
+
+                The king under treat is not writting out to both players. Need to implement some code that find and check both kings
+
+                Castling bugs:
+                    Black king castled with the right rock: Everything worked as it should. 
+                    White king castled with the left rock: On the black player side, the right rock was moved to b8, king was moved to c8 and the left rock stayed at a8.
+                        On the white player side, the left rock moved to d8 and the king to c8. However, when hovering over a8 it highlights the left rock at d8. Trying to select the rock at d8 does nothing. Selecting a8 selects the rock and it could
+                            only move to e8. Moving the rock moved it do e1 on both sides. 
+                            Black pawn at a7 could not move to b8. White knight could move to b8.
+
+                    White king castled with the right rock: Everything worked as it should expect the right rock was highlighted and could only be selected with hovering over h8 (this was not tested for in the black case), yet it could move to the correct locations.
+                    Black king castled with the left rock: On the white player side, the right rock was moved to b1, king was moved to c1 and the left rock stayed at a1.
+                        On the black player side, the left rock moved to d1 and the king to c1. However, when hovering over a1 it highlights the left rock at d1. Trying to select the rock at d1 does nothing. Selecting a1 selects the rock and it could
+                            only move to e1. Moving the rock moved it do e1 on both sides. 
+                        After the map on black side: A1 contained -:5:1 (left rock). B1 contained nothing. C1 contained -:1:1. D1 contained nothing. E1 contained nothing. F1 contained -:3:2. G1 contained -:4:2. H1 contained -:5:2 (right rock).
+                        After the map on white side: A1 contained -:5:1 (left rock). B1 contained nothing. C1 contained -:1:1. D1 contained nothing. E1 contained nothing. F1 contained -:3:2. G1 contained -:4:2. H1 contained -:5:2 (right rock).
+                        So the bug consist of two erros: 1) visual of moving right rock when it was the left rock that should have moved. 2) Map IDs of one to both rocks did not move. Yet the mapLocations in the rock pieces would,
+                            out from the hovering over, be correct.
+
+                        When castling in offline with the left rock, the ID of the left rock was not moved. Same for the right rock when it was castled.
+                        Forgot about ChessPiece.UpdateMapMatrix(oldMapLocation), but for some reason none of the ChessPiece.Network are calling UpdateMapMatrix(oldMapLocation) and in all cases, but those above, the map is updated?
+                            Remember, the new map contains the correct ID locations already because of ChessPiece.UpdateMapMatrix() is called when moving the piece and ChessPiece.Network should always place the moved piece to the spot where its ID is at.
+                            Rock.Castling() does not call the ChessPiece.UpdateMapMatrix() which is why it' ID is not moved with it.
+                        The offline castling is working now. Need to test the online version. Oneline version tested and is working.
+                        
+
+
+
+               When a player surrender and the game is shutdown they get this message "System.IO.IOException: Unable to read data from the transport connection: A existing connection was force shutdown..." Code line 420.
+                    Transmit.TransmitMapData
+
+               GameStates need to be reset when the game has ended, else a new game ends immertially. Has been implemented
+                Map needs to be reset. Has been implemented 
+
+               The game does not end for the player who calls for a draw. They can still move. The player who accept the surrender have the game ended. 
+               In both cases of the online draw, the map and chess pieces are not redrawn. - Fixed

@@ -1,0 +1,10 @@
+﻿Bugs:
+At some point a pawn stated it could block a hostile piece from checking the king, even though the y difference was 3. The pawn had not moved. - Should be fixed
+At some point the king could not move. The only white piece that was not on its default location was the pawn above the king. It had been taken. The only hostile piece above the king was a pawn on its start location.
+	- So far not been replicated. 
+
+If a, non-moved, pawn tries to move and cannot, because something is in front of it, it cannot double move anymore. - Fixed
+
+Black king was under threat by a white knight. Black knight could not take it, even though it should, and black pawns would move up instead of down. - Fixed
+
+All the place that are using Rock should using Rook...
