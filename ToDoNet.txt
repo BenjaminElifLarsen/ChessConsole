@@ -159,6 +159,12 @@
                     Maybe have its own function and CheckmateChecker will check this list in if (isCheked){foreach (ChessPiece chePie in ChessList.GetList(team))...
                         if it is in the list, skip it
                     A piece should be able to move as long time it stay on being between the king and the hostile piece.
-                Current bug: the black knight was between the black queen and white king and yet it could still move.
+                        If a piece is found to be between, check its movements and see if it got one going in the direction of the hostile piece.
+                            if it got, find all squares between it and add those to a dictionary with its ID as key.
+                            If it does not, add it to the dictionary with null in the value part.
+                            In Player.Control() when selecting a piece that is in the list, check the dictionary to see if it can move or not.
+                                Maybe have multiple versions of ChessPiece.Move(), one for no list, one for protecting the king and one capturing hostile piece/get between.
+                                If they exist in any of the lists, give it to them as a augument. Might not need two versions for different lists.
+                Current bug: the black knight was between the black queen and white king and yet it could still move. - fixed
 
                 Need to set the values in GameStates.PieceAmount, but where?

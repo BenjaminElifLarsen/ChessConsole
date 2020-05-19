@@ -20,3 +20,5 @@ Fixed a bug in CheckmateChecker().QRBCheck() that did not allow a piece to stand
 						Fixed, it did not check in the straight directions.
                 Bug regarding the CheckmateChecker(). The white knight cannot jump to be between the white king and black queen. Other pieces could move to be between - fixed
 				Fixed a bug that meant a piece could not stand between the king and a threatning piece if there was only one square between them.
+
+In case of a draw from Draw(bool) the turn counter is 1 less than the actually amount. (Draw caused by 70 moves without pawn movement or capture)
