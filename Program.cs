@@ -143,6 +143,9 @@ namespace Chess
                 return null;
             }
         }
+        /// <summary>
+        /// Testning
+        /// </summary>
         public static Dictionary<string, List<int[,]>> ProtectingTheKing { get => cannotMovePiecesAndEndLocation; set => cannotMovePiecesAndEndLocation = value; }
         /// <summary>
         /// Will return a list of endlocations for a specific ID. If the ID is not a key, it will return null.
@@ -1828,7 +1831,7 @@ namespace Chess
                 else
                     player = black;
                 ProtectKing.ProtectEndLocations.Clear();
-
+                ProtectKing.ProtectingTheKing.Clear();
                 ProtectKing.CannotMove = ProtectingTheKing(team); //under testing
 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //removes it own, captured, pieces. Needs to be called before player.Control else the default hover overed piece might be one of the captured. 
@@ -1940,7 +1943,8 @@ namespace Chess
                 IsKingChecked(team);
                 //IsKingChecked(!team);
                 ProtectKing.ProtectEndLocations.Clear();
-                ProtectKing.CannotMove = ProtectingTheKing(!team);
+                ProtectKing.ProtectingTheKing.Clear();
+                //ProtectKing.CannotMove = ProtectingTheKing(!team);
                 checkmate = CheckmateChecker(!team, out List<string> saveKingList);
                 ProtectKing.Protect = saveKingList;
                 draw = Draw(!team); //maybe move this one out to the outer loop
@@ -2087,46 +2091,124 @@ namespace Chess
                         toCheckFor.Add("2");
                         toCheckFor.Add("5");
                     }
-                    int[] loc_ = new int[] { chepie.GetMapLocation[0], chepie.GetMapLocation[1] };
-                    bool foundHostile = false;
-                    bool shouldCheck = true;
-                    do
+                    //int[] loc_ = new int[] { chepie.GetMapLocation[0], chepie.GetMapLocation[1] };
+
+                    List<int[,]> endLocations = new List<int[,]>();
+                    bool needToCheckOtherDirection = CheckFelts(mov, toCheckFor); //true if it find a hostile pice
+                    bool clearPathToKing = false;
+                    if (needToCheckOtherDirection) //true if there is nothing between it and the king
+                        clearPathToKing = CheckFelts(new int[] { -mov[0], -mov[1] }, new List<string>() {"1" },  true);
+                    if (clearPathToKing) //need to ensure a piece can only be moved in its directions. Pawn can be slightly difficult.
                     {
-                        loc_[0] += mov[0];
-                        loc_[1] += mov[1];
-                        if ((loc_[0] <= 7 && loc_[0] >= 0) && (loc_[1] <= 7 && loc_[1] >= 0))
+                        foreach (int[] dir in chepie.GetDirection)
                         {
-                            string id = MapMatrix.Map[loc_[0], loc_[1]];
-                            if (id != "")
+                            if(dir[0] == mov[0] && dir[1] == mov[1])
                             {
-                                string[] IDparts = id.Split(':');
-                                if (IDparts[0] != chepie.GetID.Split(':')[0])
-                                {
-                                    foreach (string checkFor in toCheckFor)
-                                    {
-                                        if (checkFor == IDparts[1])
-                                        {
-                                            protectingPieces.Add(chepie.GetID);
-                                            foundHostile = true;
-                                            shouldCheck = false; //maybe add a bool foundHostile and later if try, go through a similar loop, but add each location  
-                                            break; //if the piece can move in that direction
-                                        }
-                                    }
-                                }
-                                else
-                                {
-                                    shouldCheck = false;
-                                    break;
-                                }
-                                
-                                //shouldCheck = true;
+
+                                CheckFelts(mov, toCheckFor, addLocationToDic: true);
+                                CheckFelts(new int[] { -mov[0], -mov[1] }, toCheckFor, addLocationToDic: true);
+                                ProtectKing.ProtectingTheKing.Add(chepie.GetID, endLocations);
+                                break;
                             }
                         }
-                        else
-                            shouldCheck = false;
-                    } while (shouldCheck);
+                    }
+                    //bool foundHostile = false;
+                    //bool shouldCheck = true;
+                    //do
+                    //{
+                    //    loc_[0] += mov[0];
+                    //    loc_[1] += mov[1];
+                    //    if ((loc_[0] <= 7 && loc_[0] >= 0) && (loc_[1] <= 7 && loc_[1] >= 0))
+                    //    {
+                    //        string id = MapMatrix.Map[loc_[0], loc_[1]];
+                    //        if (id != "")
+                    //        {
+                    //            string[] IDparts = id.Split(':');
+                    //            if (IDparts[0] != chepie.GetID.Split(':')[0])
+                    //            {
+                    //                foreach (string checkFor in toCheckFor)
+                    //                {
+                    //                    if (checkFor == IDparts[1])
+                    //                    {
+                    //                        protectingPieces.Add(chepie.GetID);
+                    //                        foundHostile = true;
+                    //                        shouldCheck = false; //maybe add a bool foundHostile and later if try, go through a similar loop, but add each location  
+                    //                        break; //if the piece can move in that direction //if foundHostile is true, check the other direction for any piece
+                    //                    }
+                    //                }
+                    //            }
+                    //            else
+                    //            {
+                    //                shouldCheck = false;
+                    //                break;
+                    //            }
+
+                    //            //shouldCheck = true;
+                    //        }
+                    //    }
+                    //    else
+                    //        shouldCheck = false;
+                    //} while (shouldCheck);
+                    bool CheckFelts(int[] mov_, List<string> lookFor, bool addToList = false, bool addLocationToDic = false)
+                    { //does not work with pawn movement
+                        int[] loc_ = new int[] { chepie.GetMapLocation[0], chepie.GetMapLocation[1] };
+                        bool foundPiece = false;
+                        bool shouldCheck = true;
+                        do
+                        {
+                            loc_[0] += mov_[0];
+                            loc_[1] += mov_[1];
+                            if ((loc_[0] <= 7 && loc_[0] >= 0) && (loc_[1] <= 7 && loc_[1] >= 0))
+                            {
+                                string id = MapMatrix.Map[loc_[0], loc_[1]];
+                                if (id != "")
+                                {
+                                    string[] IDparts = id.Split(':');
+                                    string teamSignToCheck = "";
+                                    if(addToList)
+                                        teamSignToCheck = team ? "+" : "-";
+                                    else
+                                        teamSignToCheck = team ? "-" : "+";
+                                    if (teamSignToCheck  == IDparts[0])
+                                    {
+
+                                        foreach (string checkFor in lookFor)
+                                        {
+
+                                            if (checkFor == IDparts[1])
+                                            {
+                                                if (addToList)
+                                                    protectingPieces.Add(chepie.GetID);
+                                                if(addLocationToDic)
+                                                    endLocations.Add(new int[,] { { loc_[0], loc_[1] } });
+                                                foundPiece = true;
+                                                shouldCheck = false; //maybe add a bool foundHostile and later if try, go through a similar loop, but add each location  
+                                                break; //if the piece can move in that direction //if foundHostile is true, check the other direction for any piece
+                                            }
+                                        }
+                                    }
+                                    else
+                                    {
+                                        shouldCheck = false;
+                                        break;
+                                    }
+
+                                    //shouldCheck = true;
+                                }
+                                else if (addLocationToDic && id == "")
+                                {
+                                    endLocations.Add(new int[,] { { loc_[0], loc_[1] } });
+                                }
+                            }
+                            else
+                                shouldCheck = false;
+                        } while (shouldCheck);
+                        return foundPiece;
+                    }
                 }
 
+
+                
             }
         }
 
@@ -2220,7 +2302,7 @@ namespace Chess
                     }
                     else if (chePie is Knight)
                     {
-                        if (KnightCheck(chePie.GetMapLocation, out List<int[,]> endLocation))
+                        if (KnightCheck(chePie.GetDirection,chePie.GetMapLocation, out List<int[,]> endLocation))
                         {
                             ProtectKing.ProtectEndLocations.Add(chePie.GetID, endLocation);
                             canProtectKing.Add(chePie.GetID);
@@ -2246,7 +2328,7 @@ namespace Chess
             }
             return false;
 
-            bool KnightCheck(int[] ownLocation, out List<int[,]> endLocations)
+            bool KnightCheck(int[][] directions, int[] ownLocation, out List<int[,]> endLocations)
             {
                 int[] kingHostileDifference = new int[] { kingLocation[0] - locations[0][0], kingLocation[1] - locations[0][1] };
                 endLocations = new List<int[,]>();
@@ -2292,15 +2374,7 @@ namespace Chess
                 void KnightCanReach(int[] standLocation, ref List<int[,]> endLoc)
                 {
                     int[] locationDifference = new int[] { standLocation[0] - locations[0][0], standLocation[1] - locations[0][1] };
-                    int[][] movement = new int[][] { 
-                        new int[] { 1, 2 }, 
-                        new int[] { 2, 1 }, 
-                        new int[] { -1, -2 }, 
-                        new int[] { -2, -1 }, 
-                        new int[] { 1, -2 }, 
-                        new int[] { 2, -1 }, 
-                        new int[] { -1, 2 },
-                        new int[] { -2, 1 } };
+                    int[][] movement = directions;
                     foreach (int[] mov in movement)
                     {
                         int[] movLocation = new int[] { ownLocation[0] + mov[0], ownLocation[1] + mov[1] };
@@ -2692,26 +2766,31 @@ namespace Chess
                                     }
                                     else
                                     {
-                                        if(ProtectKing.CannotMove.Count != 0) //if not zero it means there is a hostile piec that can check the king if 
-                                        { //one, or more pieces, is moved that is between the king and a hostile piece that can check the king. 
-                                            foreach (string protecterID in ProtectKing.CannotMove)
-                                            {
-                                                if (piece.GetID != protecterID)
-                                                {
-                                                    hasSelected = true;
-                                                    selectedChessPiece = posistion;
-                                                    ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
-                                                    break;
-                                                }
-                                            }
-                                        }
-                                        else
-                                        {
+                                        //if(ProtectKing.CannotMove.Count != 0) //if not zero it means there is a hostile piec that can check the king if 
+                                        //{ //one, or more pieces, is moved that is between the king and a hostile piece that can check the king. 
+                                        //    foreach (string protecterID in ProtectKing.CannotMove)
+                                        //    {
+                                        //        if (piece.GetID == protecterID)
+                                        //        {
+                                        //            if(ProtectKing.ProtectingTheKing[piece.GetID].Count != 0)
+                                        //            {
+
+                                        //                hasSelected = true;
+                                        //                selectedChessPiece = posistion;
+                                        //                ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                                        //            }
+                                        //            break;
+                                        //        }
+                                        //    }
+                                        //}
+                                        //else
+                                        //{
+             
                                             hasSelected = true;
                                             selectedChessPiece = posistion;
                                             ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
                                             break;
-                                        }
+                                        //}
 
                                     }
 
@@ -3715,7 +3794,7 @@ namespace Chess
             promotions.Add("Rock", 5);
             promotions.Add("Bishop", 3);
             promotions.Add("Queen", 2);
-            directions = new int[][] { new int[] { moveDirection } };
+            directions = new int[][] { new int[] {0, moveDirection } };
         }
 
         /// <summary>
@@ -4536,6 +4615,9 @@ namespace Chess
         /// </summary>
         public virtual bool SpecialBool { get => specialBool; set => specialBool = value; }
 
+        /// <summary>
+        /// Access the directions the chess pieces can move in. 
+        /// </summary>
         public int[][] GetDirection { get => directions; }
 
         /// <summary>
