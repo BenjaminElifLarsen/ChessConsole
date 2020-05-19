@@ -2047,17 +2047,138 @@ namespace Chess
             }
             foreach (ChessPiece chePie in ChessList.GetList(team))
             {
-                if(chePie.GetID.Split(':')[1] != "1")
+                if(chePie is Pawn pawn)
+                {
+                    PawnProtecting(pawn);
+                }
+                else if(chePie.GetID.Split(':')[1] != "1")
                 {
                     Protecting(chePie);
                 }
             }
             return protectingPieces;
 
-            void Protecting(ChessPiece chepie)
+            void PawnProtecting(Pawn pawn)
             {
 
-                int[] differences = new int[] {chepie.GetMapLocation[0] - kingLocation[0], chepie.GetMapLocation[1] - kingLocation[1] };
+                int[] differences = new int[] { pawn.GetMapLocation[0] - kingLocation[0], pawn.GetMapLocation[1] - kingLocation[1] };
+                if (differences[0] != 0 && (differences[0] == differences[1] || differences[0] == -differences[1]))
+                    differences[0] = differences[0] > 0 ? 1 : -1; //scales it to be 1 or -1
+                else if (differences[0] == 0)
+                    differences[1] = differences[1] > 0 ? 1 : -1;
+                if (differences[1] != 0 && (differences[0] == differences[1] || differences[0] == -differences[1]))
+                    differences[1] = differences[1] > 0 ? 1 : -1;
+                else if (differences[1] == 0)
+                    differences[0] = differences[0] > 0 ? 1 : -1;
+                bool canReachKing = false;
+                int[] mov = new int[2];
+                foreach (int[] move in directions)
+                {
+                    if (move[0] == differences[0] && move[1] == differences[1])
+                    {
+                        mov = move;
+                        canReachKing = true;
+                        break;
+                    }
+                }
+                if (canReachKing)
+                {
+
+                    List<string> toCheckFor = new List<string>();
+                    if (mov[0] != 0 && mov[1] != 0)
+                    {
+                        toCheckFor.Add("2");
+                        toCheckFor.Add("3");
+                    }
+                    else
+                    {
+                        toCheckFor.Add("2");
+                        toCheckFor.Add("5");
+                    }
+                    bool keepKingSafe = false;
+                    //check all squres in both directions of mov (-mov) 
+                    if (PawnFeltCheck(toCheckFor)) 
+                    {
+                        keepKingSafe = PawnFeltCheck(toCheckFor, true); //need to first check the other direction
+                        if(keepKingSafe)
+                            protectingPieces.Add(pawn.GetID);
+                        //if it is true, remove the (..., true) and just add it to the list in this if-statement.
+                    }
+
+                    if (mov[0] == 0 && keepKingSafe) //this means that the king is either above or below the pawn and thus can move. 
+                    {
+                        List<int[,]> canStandOn = new List<int[,]>();
+                        int dir = pawn.GetDirection[0][1];
+                        bool cantDouble = pawn.HasMoved; 
+                        byte maxRange = !cantDouble ? (byte)2 : (byte)1;
+                        byte pos = 0;
+                        do
+                        {
+                            pos++;
+                            if (MapMatrix.Map[pawn.GetMapLocation[0], pawn.GetMapLocation[1] + (dir * pos)] == "")
+                            {
+                                canStandOn.Add(new int[,] { { pawn.GetMapLocation[0], pawn.GetMapLocation[1] + (dir * pos) } });
+                            }
+                            else
+                                break;
+                        } while (pos < maxRange);
+                        if (canStandOn.Count != 0)
+                            ProtectKing.ProtectingTheKing.Add(pawn.GetID, canStandOn);
+                    }
+
+                }
+                bool PawnFeltCheck(List<string> toCheckFor, bool direction = false)
+                {
+                    int[] loc_ = new int[] { pawn.GetMapLocation[0], pawn.GetMapLocation[1] };
+                    bool foundPiece = false;
+                    bool shouldCheck = true;
+                    sbyte dir = direction ? (sbyte)-1 : (sbyte)1; 
+                    do
+                    {
+                        loc_[0] += mov[0];
+                        loc_[1] += mov[1] * dir;
+                        if ((loc_[0] <= 7 && loc_[0] >= 0) && (loc_[1] <= 7 && loc_[1] >= 0))
+                        {
+                            string id = MapMatrix.Map[loc_[0], loc_[1]];
+                            if (id != "")
+                            {
+                                string[] IDparts = id.Split(':');
+                                if (IDparts[0] != pawn.GetID.Split(':')[0])
+                                {
+                                    foreach (string checkFor in toCheckFor)
+                                    {
+                                        if (checkFor == IDparts[1])
+                                        {
+                                            foundPiece = true;
+                                            shouldCheck = false; 
+                                            break; 
+                                        }
+                                    }
+                                    shouldCheck = false;
+                                }
+                                else
+                                {
+                                    if (direction && (kingLocation[0] != loc_[0] && kingLocation[1] != loc_[1])) //need to check if the piece is the king. If it is it means the pawn is protecting the king.
+                                        foundPiece = true;
+                                    shouldCheck = false;
+                                    break;
+                                }
+
+                                //shouldCheck = true;
+                            }
+                        }
+                        else
+                            shouldCheck = false;
+                    } while (shouldCheck);
+                    return foundPiece;
+                }
+
+            }
+
+            void Protecting(ChessPiece pieces)
+            {
+
+                int[] differences = new int[] {pieces.GetMapLocation[0] - kingLocation[0], pieces.GetMapLocation[1] - kingLocation[1] };
                 if (differences[0] != 0 && (differences[0] == differences[1] || differences[0] == -differences[1]))
                     differences[0] = differences[0] > 0 ? 1 : -1; //scales it to be 1 or -1
                 else if (differences[0] == 0)
@@ -2100,14 +2221,14 @@ namespace Chess
                         clearPathToKing = CheckFelts(new int[] { -mov[0], -mov[1] }, new List<string>() {"1" },  true);
                     if (clearPathToKing) //need to ensure a piece can only be moved in its directions. Pawn can be slightly difficult.
                     {
-                        foreach (int[] dir in chepie.GetDirection)
+                        foreach (int[] dir in pieces.GetDirection)
                         {
                             if(dir[0] == mov[0] && dir[1] == mov[1])
                             {
 
                                 CheckFelts(mov, toCheckFor, addLocationToDic: true);
                                 CheckFelts(new int[] { -mov[0], -mov[1] }, toCheckFor, addLocationToDic: true);
-                                ProtectKing.ProtectingTheKing.Add(chepie.GetID, endLocations);
+                                ProtectKing.ProtectingTheKing.Add(pieces.GetID, endLocations);
                                 break;
                             }
                         }
@@ -2151,7 +2272,7 @@ namespace Chess
                     //} while (shouldCheck);
                     bool CheckFelts(int[] mov_, List<string> lookFor, bool addToList = false, bool addLocationToDic = false)
                     { //does not work with pawn movement
-                        int[] loc_ = new int[] { chepie.GetMapLocation[0], chepie.GetMapLocation[1] };
+                        int[] loc_ = new int[] { pieces.GetMapLocation[0], pieces.GetMapLocation[1] };
                         bool foundPiece = false;
                         bool shouldCheck = true;
                         do
@@ -2178,7 +2299,7 @@ namespace Chess
                                             if (checkFor == IDparts[1])
                                             {
                                                 if (addToList)
-                                                    protectingPieces.Add(chepie.GetID);
+                                                    protectingPieces.Add(pieces.GetID);
                                                 if(addLocationToDic)
                                                     endLocations.Add(new int[,] { { loc_[0], loc_[1] } });
                                                 foundPiece = true;
@@ -2186,6 +2307,7 @@ namespace Chess
                                                 break; //if the piece can move in that direction //if foundHostile is true, check the other direction for any piece
                                             }
                                         }
+                                        shouldCheck = false;
                                     }
                                     else
                                     {
@@ -2785,7 +2907,7 @@ namespace Chess
                                         //}
                                         //else
                                         //{
-             
+
                                             hasSelected = true;
                                             selectedChessPiece = posistion;
                                             ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
@@ -2995,6 +3117,13 @@ namespace Chess
             {
                 locations = ProtectKing.GetListFromProtectingKingDic(ChessList.GetList(white)[selectedChessPiece].GetID);
             }
+            if(locations == null)
+                foreach (string protectID in ProtectKing.CannotMove)
+                {
+                    if (ChessList.GetList(white)[selectedChessPiece].GetID == protectID)
+                        if (locations == null)
+                            locations = new List<int[,]>();
+                }
             ChessList.GetList(white)[selectedChessPiece].Control(locations);
         }
 
@@ -3585,7 +3714,8 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-
+            if (locations.Count != 0)
+            {
                 DisplayPossibleMove(locations);
                 int[] cursorLocation = GetMapLocation;
                 do
@@ -3618,9 +3748,13 @@ namespace Chess
                     }
                 } while (!hasSelected);
                 NoneDisplayPossibleMove();
+        }
+            else
+            {
+                couldMove = false;
+            }
 
-
-            bool FeltIDCheck(int[] loc_)
+    bool FeltIDCheck(int[] loc_)
             {
                 string[] feltIDParts = MapMatrix.Map[loc_[0], loc_[1]].Split(':');
                 if (feltIDParts[0] == teamIcon)
@@ -3809,17 +3943,17 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-            if (ProtectKing.GetListFromDic(ID) != null)
-            {
-                possibleEndLocations = ProtectKing.GetListFromDic(ID);
-                specialBool = false;
-                hasMoved = true;
-                couldMove = true;
-            }
-            else
-            {
+            //if (ProtectKing.GetListFromDic(ID) != null)
+            //{
+            //    possibleEndLocations = ProtectKing.GetListFromDic(ID);
+            //    specialBool = false;
+            //    hasMoved = true;
+            //    couldMove = true;
+            //}
+            //else
+            //{
                 EndLocations();
-            }
+            //}
             if (possibleEndLocations.Count != 0)
             {
                 firstTurn = false; //firstTurn ? false : false;
@@ -3878,7 +4012,8 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-
+            if (locations.Count != 0)
+            {
                 firstTurn = false; //firstTurn ? false : false;
                 DisplayPossibleMove(locations);
                 int[] cursorLocation = GetMapLocation;
@@ -3920,9 +4055,13 @@ namespace Chess
                 NoneDisplayPossibleMove();
                 possibleEndLocations.Clear();
                 hasMoved = true;
-
-
         }
+            else
+            {
+                couldMove = false;
+            }
+
+}
 
         /// <summary>
         /// Used by the online play and used to update a piece that has been changed by the other player that is not on this computer. 
@@ -4724,8 +4863,12 @@ namespace Chess
         /// <param name="movements">List of locations the piece can move to.</param>
         protected virtual void Move(List<int[,]> movements)
         {
-            bool hasSelected = false;
-            DisplayPossibleMove(movements);
+            if (movements.Count != 0)
+            {
+
+            
+                bool hasSelected = false;
+                DisplayPossibleMove(movements);
                 int[] cursorLocation = GetMapLocation;
                 do
                 {
@@ -4749,7 +4892,11 @@ namespace Chess
                 } while (!hasSelected);
                 NoneDisplayPossibleMove();
                 possibleEndLocations.Clear();
-
+            }
+            else
+            {
+                couldMove = false;
+            }
         }
 
         /// <summary>
