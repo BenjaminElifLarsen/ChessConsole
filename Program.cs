@@ -185,13 +185,13 @@ namespace Chess
         private static byte[] menuOffset = new byte[] { 2, 2 };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
-        private static byte extraSpacing = 1; //if changes, numbers and letters do not move down, edges moves the correct amount and the squares moves to very much wrong locations
-        private static byte edgeSize = (byte)(extraSpacing + 1); //does not affect top and left side numbers and letters in the correct way
+        private static byte extraSpacing = 1; //works as it should
+        private static byte edgeSize = (byte)(1); //does not affect the letters and numbers in the correct way
         private static byte[] windowSizeModifer = new byte[] { 20, 4 }; //not a setting that should be access too.
         private static byte[] colourWhite = { 255, 255, 255 };
         private static byte[] colourBlack = { 0, 0, 0 };
         private static int[] windowSize = new int[] { squareSize * 8 + 9 + 2 * edgeSize + offset[0] * 2 + windowSizeModifer[0], squareSize * 8 + 9 + 2 * edgeSize + offset[1] * 2 + windowSizeModifer[1] };
-        private static int[,] writeLocationCheckHeader = new int[,] { { windowSize[0] - windowSizeModifer[0], 10 }, { windowSize[0] - windowSizeModifer[0] + 8, 10 } };
+        private static int[,] writeLocationCheckHeader = new int[,] { { extraSpacing + windowSize[0] - windowSizeModifer[0], 10 + extraSpacing }, { extraSpacing + windowSize[0] - windowSizeModifer[0] + 8, 10 + extraSpacing } };
         private static int[,] writeLocationCheck = new int[,] { { writeLocationCheckHeader[0, 0], writeLocationCheckHeader[0, 1] + 2 }, { writeLocationCheckHeader[1, 0], writeLocationCheckHeader[1, 1] + 2 } }; //x,y //each line should contain two symbols, e.g. D5, A2 etc..
         //Black    White
         //king     king
@@ -245,11 +245,11 @@ namespace Chess
         /// </summary>
         public static char GetLineY { get => lineY; }
         /// <summary>
-        /// Get the spacing...
+        /// Get the spacing that is added to OffSet
         /// </summary>
         public static byte Spacing { get => extraSpacing; } //not all paint functions are used this one properly. 
         /// <summary>
-        /// Get the edge size...
+        /// Get the edge size of the board
         /// </summary>
         public static byte EdgeSpacing { get => edgeSize; }
         /// <summary>
@@ -1522,33 +1522,33 @@ namespace Chess
             for (int k = 0; k < distance; k++)
                 for (int i = 0; i < distance; i += 1 + Settings.SquareSize)
                 {
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m ");
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineY);
                 }
             for (int k = 0; k < distance; k += 1 + Settings.SquareSize)
                 for (int i = 1; i < distance - 1; i++)
                 {
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m ");
-                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing, k + Settings.Offset[1] + Settings.EdgeSpacing);
+                    Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineX);
                 }
 
             for (int k = 0; k < numbers.Length; k++)
-            {
-                Console.SetCursorPosition(Settings.Offset[0], k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k));
+            { //the 1s in this and below for loop should be a setting, it is the amount of empty squares between the numbers/letters and the board edge
+                Console.SetCursorPosition(Settings.Offset[0] - Settings.EdgeSpacing - 1 + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Spacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)-1);
                 Console.Write(numbers[7-k]);
-                Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k));
+                Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.Spacing + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)-1);
                 Console.Write(numbers[7-k]);
             }
 
             for (int k = 0; k < letters.Length; k++)
             {
-                Console.SetCursorPosition(k + Settings.EdgeSpacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1]);
+                Console.SetCursorPosition(k + Settings.Spacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + Settings.Spacing - Settings.EdgeSpacing - 1);
                 Console.Write(letters[k]);
-                Console.SetCursorPosition(k + Settings.EdgeSpacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + distance + Settings.Spacing + Settings.EdgeSpacing);
+                Console.SetCursorPosition(k + Settings.Spacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + distance + Settings.Spacing + Settings.EdgeSpacing);
                 Console.Write(letters[k]);
             }
 
@@ -2611,7 +2611,6 @@ namespace Chess
                      * 
                      * To intercept: 
                      * Find every square between the king and the hostile piece. Check if any square can be "taken" as above. 
-                     * 
                      */
 
                     if (CanReach(dir, ownLocation, locations[0], ref endLocations))
@@ -3117,14 +3116,16 @@ namespace Chess
             {
                 locations = ProtectKing.GetListFromProtectingKingDic(ChessList.GetList(white)[selectedChessPiece].GetID);
             }
-            if(locations == null)
-                foreach (string protectID in ProtectKing.CannotMove)
-                {
-                    if (ChessList.GetList(white)[selectedChessPiece].GetID == protectID)
-                        if (locations == null)
-                            locations = new List<int[,]>();
-                }
-            ChessList.GetList(white)[selectedChessPiece].Control(locations);
+            //if(locations == null)
+            //    foreach (string protectID in ProtectKing.CannotMove)
+            //    {
+            //        if (ChessList.GetList(white)[selectedChessPiece].GetID == protectID)
+            //            if (locations == null)
+            //                locations = new List<int[,]>();
+            //    }
+            if (locations != null)
+                ChessList.GetList(white)[selectedChessPiece].SetEndLocations = locations;
+            ChessList.GetList(white)[selectedChessPiece].Control();
         }
 
     }
@@ -3207,12 +3208,9 @@ namespace Chess
         /// <summary>
         /// Contains the code needed to move the king. 
         /// </summary>
-        public override void Control(List<int[,]> moves = null)
+        public override void Control()
         {
-            if (moves == null)
-                Move();
-            else
-                Move(moves);
+            Move();
             RemoveDraw(oldMapLocation);
             LocationUpdate();
             Draw();
@@ -3653,7 +3651,8 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-            EndLocations();
+            if(possibleEndLocations.Count == 0)
+                EndLocations();
             if (possibleEndLocations.Count != 0)
             {
                 DisplayPossibleMove();
@@ -3707,64 +3706,64 @@ namespace Chess
             }
         }
 
-        /// <summary>
-        /// Allows the chesspiece to move. Any square under treat cannot be selected 
-        /// </summary>
-        protected override void Move(List<int[,]> locations)
-        {
-            oldMapLocation = null;
-            bool hasSelected = false;
-            if (locations.Count != 0)
-            {
-                DisplayPossibleMove(locations);
-                int[] cursorLocation = GetMapLocation;
-                do
-                {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
-                    {
-                        foreach (int[,] loc in locations)
-                        {
-                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-                            {
-                                couldMove = true;
-                                bool castling = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                castling = FeltIDCheck(cursorLocation);
-                                if (castling) //this if-statement and the code above could be written better. Took some time to figure out how castling was done after not looked at the code for a while. 
-                                {
-                                    Castling(cursorLocation);
-                                    hasSelected = true;
-                                    break;
-                                }
-                                else if (!castling)
-                                    TakeEnemyPiece(cursorLocation);
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
-                                break;
-                            }
-                        }
-                    }
-                } while (!hasSelected);
-                NoneDisplayPossibleMove();
-        }
-            else
-            {
-                couldMove = false;
-            }
+    //    /// <summary>
+    //    /// Allows the chesspiece to move. Any square under treat cannot be selected 
+    //    /// </summary>
+    //    protected override void SetEndLocations(List<int[,]> locations)
+    //    {
+    //        oldMapLocation = null;
+    //        bool hasSelected = false;
+    //        if (locations.Count != 0)
+    //        {
+    //            DisplayPossibleMove(locations);
+    //            int[] cursorLocation = GetMapLocation;
+    //            do
+    //            {
+    //                bool selected = FeltMove(cursorLocation);
+    //                if (selected)
+    //                {
+    //                    foreach (int[,] loc in locations)
+    //                    {
+    //                        int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
+    //                        if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+    //                        {
+    //                            couldMove = true;
+    //                            bool castling = true;
+    //                            oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+    //                            castling = FeltIDCheck(cursorLocation);
+    //                            if (castling) //this if-statement and the code above could be written better. Took some time to figure out how castling was done after not looked at the code for a while. 
+    //                            {
+    //                                Castling(cursorLocation);
+    //                                hasSelected = true;
+    //                                break;
+    //                            }
+    //                            else if (!castling)
+    //                                TakeEnemyPiece(cursorLocation);
+    //                            mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+    //                            hasSelected = true;
+    //                            break;
+    //                        }
+    //                    }
+    //                }
+    //            } while (!hasSelected);
+    //            NoneDisplayPossibleMove();
+    //    }
+    //        else
+    //        {
+    //            couldMove = false;
+    //        }
 
-    bool FeltIDCheck(int[] loc_)
-            {
-                string[] feltIDParts = MapMatrix.Map[loc_[0], loc_[1]].Split(':');
-                if (feltIDParts[0] == teamIcon)
-                    if (feltIDParts[1] == "5")
-                    {
-                        return true;
-                    }
-                return false;
-            }
-        }
+    //bool FeltIDCheck(int[] loc_)
+    //        {
+    //            string[] feltIDParts = MapMatrix.Map[loc_[0], loc_[1]].Split(':');
+    //            if (feltIDParts[0] == teamIcon)
+    //                if (feltIDParts[1] == "5")
+    //                {
+    //                    return true;
+    //                }
+    //            return false;
+    //        }
+    //    }
 
         /// <summary>
         /// Selects a rook using the map location.
@@ -3952,6 +3951,7 @@ namespace Chess
             //}
             //else
             //{
+            if(possibleEndLocations.Count == 0)
                 EndLocations();
             //}
             if (possibleEndLocations.Count != 0)
@@ -4005,63 +4005,63 @@ namespace Chess
 
         }
 
-        /// <summary>
-        /// A modified version of the base Move function. Designed to check if the player uses a double move. 
-        /// </summary>
-        protected override void Move(List<int[,]> locations)
-        {
-            oldMapLocation = null;
-            bool hasSelected = false;
-            if (locations.Count != 0)
-            {
-                firstTurn = false; //firstTurn ? false : false;
-                DisplayPossibleMove(locations);
-                int[] cursorLocation = GetMapLocation;
-                do
-                {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
-                    {
-                        foreach (int[,] loc in locations)
-                        {
-                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-                            {
+//        /// <summary>
+//        /// A modified version of the base Move function. Designed to check if the player uses a double move. 
+//        /// </summary>
+//        protected override void SetEndLocations(List<int[,]> locations)
+//        {
+//            oldMapLocation = null;
+//            bool hasSelected = false;
+//            if (locations.Count != 0)
+//            {
+//                firstTurn = false; //firstTurn ? false : false;
+//                DisplayPossibleMove(locations);
+//                int[] cursorLocation = GetMapLocation;
+//                do
+//                {
+//                    bool selected = FeltMove(cursorLocation);
+//                    if (selected)
+//                    {
+//                        foreach (int[,] loc in locations)
+//                        {
+//                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
+//                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
+//                            {
 
-                                couldMove = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
-                                if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
-                                {
-                                    SpecialBool = true;
-                                }
-                                else
-                                {
-                                    SpecialBool = false;
-                                    if (oldMapLocation[0] != cursorLocation[0])
-                                    {
-                                        if (MapMatrix.Map[cursorLocation[0], cursorLocation[1]] == "")
-                                            TakeEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
-                                        else
-                                            TakeEnemyPiece(cursorLocation);
-                                    }
-                                }
-                                break;
-                            }
-                        }
-                    }
-                } while (!hasSelected);
-                NoneDisplayPossibleMove();
-                possibleEndLocations.Clear();
-                hasMoved = true;
-        }
-            else
-            {
-                couldMove = false;
-            }
+//                                couldMove = true;
+//                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+//                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+//                                hasSelected = true;
+//                                if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
+//                                {
+//                                    SpecialBool = true;
+//                                }
+//                                else
+//                                {
+//                                    SpecialBool = false;
+//                                    if (oldMapLocation[0] != cursorLocation[0])
+//                                    {
+//                                        if (MapMatrix.Map[cursorLocation[0], cursorLocation[1]] == "")
+//                                            TakeEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
+//                                        else
+//                                            TakeEnemyPiece(cursorLocation);
+//                                    }
+//                                }
+//                                break;
+//                            }
+//                        }
+//                    }
+//                } while (!hasSelected);
+//                NoneDisplayPossibleMove();
+//                possibleEndLocations.Clear();
+//                hasMoved = true;
+//        }
+//            else
+//            {
+//                couldMove = false;
+//            }
 
-}
+//}
 
         /// <summary>
         /// Used by the online play and used to update a piece that has been changed by the other player that is not on this computer. 
@@ -4092,12 +4092,9 @@ namespace Chess
         /// <summary>
         /// Overriden control function of the base class. Checks if the chess piece is ready for a promotion. 
         /// </summary>
-        public override void Control(List<int[,]> moves = null)
+        public override void Control()
         {
-            if (moves == null)
-                Move();
-            else
-                Move(moves);
+            Move();
             RemoveDraw(oldMapLocation);
             LocationUpdate();
             Draw();
@@ -4763,12 +4760,9 @@ namespace Chess
         /// Function that "controls" a piece. What to explain and how to..
         /// </summary>
         /// <param name="moves">If not null, the piece can only move to locations in the list. If null, the piece will calculate all legal end locations.</param>
-        public virtual void Control(List<int[,]> moves = null)
+        public virtual void Control()
         {
-            if (moves == null)
-                Move();
-            else
-                Move(moves);
+            Move();
             RemoveDraw(oldMapLocation);
             LocationUpdate();
             Draw();
@@ -4821,8 +4815,8 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-
-            EndLocations();
+            if(possibleEndLocations.Count == 0)
+                EndLocations();
             
             if (possibleEndLocations.Count != 0)
             {
@@ -4861,43 +4855,11 @@ namespace Chess
         /// Allows the chesspiece to move to locations in <paramref name="movements"/>. 
         /// </summary>
         /// <param name="movements">List of locations the piece can move to.</param>
-        protected virtual void Move(List<int[,]> movements)
-        {
-            if (movements.Count != 0)
-            {
-
-            
-                bool hasSelected = false;
-                DisplayPossibleMove(movements);
-                int[] cursorLocation = GetMapLocation;
-                do
-                {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
-                    {
-                        foreach (int[,] loc in movements)
-                        {
-                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-                            {
-                                couldMove = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                TakeEnemyPiece(cursorLocation);
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
-                                break;
-                            }
-                        }
-                    }
-                } while (!hasSelected);
-                NoneDisplayPossibleMove();
-                possibleEndLocations.Clear();
-            }
-            else
-            {
-                couldMove = false;
-            }
-        }
+        public virtual List<int[,]> SetEndLocations { set => possibleEndLocations = value; }
+        //public virtual void SetEndLocations(List<int[,]> movements)
+        //{
+        //    possibleEndLocations = movements;
+        //}
 
         /// <summary>
         /// Checks if <paramref name="locationToCheck"/> contain an ID and if the ID is hostile, the function will call that ID's chesspiece's Taken function.
