@@ -181,12 +181,14 @@ namespace Chess
         private static byte[] chessPieceHoverOver = new byte[] { 31, 135, 113 };
         private static byte[] menuColour = new byte[] { 0, 255, 0 };
         private static byte[] menuColourHovered = new byte[] { 255, 0, 0 };
+        private static byte[] menuColourTitle = new byte[] {255,0,255 };
         private static byte[] offset = new byte[] { 4, 2 }; //works as it should
         private static byte[] menuOffset = new byte[] { 2, 2 };
+        private static byte[] menuTitleOffset = new byte[] { (byte)(menuOffset[0]-1),menuOffset[1] };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
         private static byte extraSpacing = 1; //works as it should
-        private static byte edgeSize = (byte)(1); //does not affect the letters and numbers in the correct way
+        private static byte edgeSize = (byte)(1); //does not affect the letters and numbers in the correct way. 
         private static byte[] windowSizeModifer = new byte[] { 20, 4 }; //not a setting that should be access too.
         private static byte[] colourWhite = { 255, 255, 255 };
         private static byte[] colourBlack = { 0, 0, 0 };
@@ -278,9 +280,17 @@ namespace Chess
         /// </summary>
         public static byte[] MenuColourHovered { get => menuColourHovered; }
         /// <summary>
+        /// The colour of the title of the menu.
+        /// </summary>
+        public static byte[] MenuColourTitle { get => menuColourTitle; }
+        /// <summary>
         /// The offset of the menu. 
         /// </summary>
         public static byte[] MenuOffset { get => menuOffset; }
+        /// <summary>
+        /// The offset of the title of the menu.
+        /// </summary>
+        public static byte[] MenuTitleOffset { get => menuTitleOffset; }
         /// <summary>
         /// The colour for the white chess pieces.
         /// </summary>
@@ -290,6 +300,83 @@ namespace Chess
         /// </summary>
         public static byte[] BlackColour { get => colourBlack; }
 
+        /// <summary>
+        /// Console Virtual Terminal Sequences
+        /// </summary>
+        public class CVTS //Console Virtual Terminal Sequences
+        {
+            private static string whiteBrightForColour = "\x1b[97m";
+            private static string cyanBrightForColour = "\x1b[96m";
+            private static string underscore = "\x1b[4m";
+            private static string underscore_off = "\x1b[24m";
+            private static string reset = "\x1b[0m";
+            private static string redBrightForColour = "\x1b[91m";
+            private static string DECActive = "\x1b(0";
+            private static string DECDeactive = "\x1b(B";
+            private static string DECVerticalLine = "x";
+            private static string DECHorizontalLine = "q";
+            private static string DECFullIntersection = "n";
+            private static string DECUpIntersection = "v";
+            private static string DECDownIntersection = "w";
+            private static string DECRightIntersection = "t";
+            private static string DECLeftIntersection = "u";
+            private static string DECBottomRightCorner = "j";
+            private static string DECTopRightCorner = "k";
+            private static string DECTopLeftCorner = "l";
+            private static string DECBottomLeftCorner = "m";
+            private static string foregroundColouring = "\x1b[38;2;";
+            private static string backgroundColouring = "\x1b[48;2;";
+
+            /// <summary>
+            /// Sets the foreground colour. Does not need ExtendedForegroundColour_RGB to work
+            /// </summary>
+            public static string BrightWhiteForeground { get => whiteBrightForColour; }
+            /// <summary>
+            /// Sets the foreground colour. Does not need ExtendedForegroundColour_RGB to work
+            /// </summary>
+            public static string BrightCyanForeground { get => cyanBrightForColour; }
+            /// <summary>
+            /// Sets the foreground colour. Does not need ExtendedForegroundColour_RGB to work
+            /// </summary>
+            public static string BrightRedForeground { get => redBrightForColour; }
+            /// <summary>
+            /// Allows the use of rgb values for the foregrund. Values given right after the call. The values need to be given as "<r> ; <g> ; <b> m"
+            /// </summary>
+            public static string ExtendedForegroundColour_RGB { get =>foregroundColouring; }
+            /// <summary>
+            /// Allows the use of rgb values for the background. Values given right after the call. The values need to be given as "<r> ; <g> ; <b> m"
+            /// </summary>
+            public static string ExtendedBackgroundColour_RGB { get => backgroundColouring; }
+            /// <summary>
+            /// Puts underscore on all text after this call. <c>Underscore_Off</c> to turn underscore off. 
+            /// </summary>
+            public static string Underscore { get => underscore; }
+            /// <summary>
+            /// Ensures that there no underscore on the text after this call.
+            /// </summary>
+            public static string Underscore_Off { get => underscore_off; }
+            /// <summary>
+            /// Resets all text called after to be displayed with default values.
+            /// </summary>
+            public static string Reset { get => reset; }
+            /// <summary>
+            /// Activates DEC and all texts after this call will be displayed as DEC rather than ASCII. Use <c>DEC_Deactive</c> to deactive DEC character set mapping
+            /// </summary>
+            public static string DEC_Active { get => DECActive; }
+            /// <summary>
+            /// Deactivates DEC and all texts after this call will be displayed as ASCII. 
+            /// </summary>
+            public static string DEC_Deactive { get => DECDeactive; }
+            /// <summary>
+            /// Get the symbol used to display a vertical line in DEC.
+            /// </summary>
+            public static string DEC_Vertical_Line { get => DECVerticalLine; }
+            /// <summary>
+            /// Gets the symbol used to display a horizontal line in DEC. 
+            /// </summary>
+            public static string DEC_Horizontal_Line { get => DECHorizontalLine; }
+
+        }
     }
 
     public class GameStates
@@ -802,7 +889,8 @@ namespace Chess
                         else if (type == 3) //being asked for a draw
                         {
                             string[] drawOptions = { "Accept Draw", "Decline Draw" };
-                            string answer = Menu.MenuAccess(drawOptions);
+                            string title = "Other play ask for draw";
+                            string answer = Menu.MenuAccess(drawOptions, title);
                             switch (answer)
                             { //the transmitter answer will need to be transmitted by the GeneralValueTransmission since the ReceiveGameLoop will receive the data
                                 case "Accept Draw":
@@ -1167,6 +1255,7 @@ namespace Chess
         private void MainMenu()
         {
             string option;
+            string title = "Main Menu";
             string[] options =
             {
                 "Local Play",
@@ -1178,7 +1267,7 @@ namespace Chess
             do
             {
                 Console.Clear();
-                option = Interact(options);
+                option = Interact(options, title);
 
                 switch (option)
                 {
@@ -1208,14 +1297,14 @@ namespace Chess
         /// </summary>
         private void NetMenu()
         {
-
+            string title = "Net Menu";
             string[] options = { "Host", "Join", "Back" };
             string option;
 
             do
             {
                 Console.Clear();
-                option = Interact(options);
+                option = Interact(options,title);
 
                 switch (option)
                 {
@@ -1358,9 +1447,9 @@ namespace Chess
         /// </summary>
         /// <param name="options">String array of options.</param>
         /// <returns>Returns the selected option.</returns>
-        public static string MenuAccess(string[] options)
+        public static string MenuAccess(string[] options, string title = null)
         {
-            return Interact(options);
+            return Interact(options,title);
         }
 
         /// <summary>
@@ -1368,7 +1457,7 @@ namespace Chess
         /// </summary>
         /// <param name="options">String array of options.</param>
         /// <returns>Returns the selected option.</returns>
-        private static string Interact(string[] options)
+        private static string Interact(string[] options, string title = null)
         { //used to move around in the displayed options. All it should do is being a function that checks if up/down key arrows are pressed and then 
             //increase or decrease a variable used for the hoveredOverOption in Display().
             bool selected = false;
@@ -1377,7 +1466,7 @@ namespace Chess
 
             do
             {
-                Display(options, currentLocation, Settings.MenuColour, Settings.MenuColourHovered, Settings.MenuOffset);
+                Display(options, currentLocation, Settings.MenuColour, Settings.MenuColourHovered, Settings.MenuOffset, title, Settings.MenuColourTitle, Settings.MenuTitleOffset);
                 if (Move())
                 {
                     answer = options[currentLocation];
@@ -1394,7 +1483,7 @@ namespace Chess
                 {
                     currentLocation--;
                 }
-                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation < options.Length)
+                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation < options.Length - 1)
                 {
                     currentLocation++;
                 }
@@ -1414,11 +1503,24 @@ namespace Chess
         /// <param name="optionColours">The default colour of the options.</param>
         /// <param name="hoveredColour">The colour of the hovered over option.</param>
         /// <param name="offset">Offset to the top left corner.</param>
-        private static void Display(string[] options, byte hoveredOverOption, byte[] optionColours, byte[] hoveredColour, byte[] offset)
+        private static void Display(string[] options, byte hoveredOverOption, byte[] optionColours, byte[] hoveredColour, byte[] offset, string title = null, byte[] titleColour = null, byte[] titleOffset = null)
         {   
+            //consider programming it such that if there is no title the options are not moved down with one. 
+            if(title != null)
+            {
+                if(titleOffset == null)
+                    Console.SetCursorPosition(offset[0], offset[1]);
+                else
+                    Console.SetCursorPosition(titleOffset[0], titleOffset[1]);
+                if (titleColour == null)
+                    Paint(title, optionColours);
+                else
+                    Paint(title, titleColour);
+            }
+
             for (int i = 0; i < options.Length; i++)
             {
-                Console.SetCursorPosition(offset[0], offset[1] + i);
+                Console.SetCursorPosition(offset[0], offset[1] + i + 1);
                 if (i == hoveredOverOption)
                 {
                     Paint(options[i], hoveredColour);
@@ -1431,7 +1533,7 @@ namespace Chess
 
             void Paint(string option, byte[] colour)
             {
-                Console.Write("\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}", option);
+                Console.Write("\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}\x1b[0m", option);
             }
         }
 
@@ -1523,23 +1625,23 @@ namespace Chess
                 for (int i = 0; i < distance; i += 1 + Settings.SquareSize)
                 {
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m ");
+                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineY);
+                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Vertical_Line + Settings.CVTS.DEC_Deactive}");
                 }
             for (int k = 0; k < distance; k += 1 + Settings.SquareSize)
                 for (int i = 1; i < distance - 1; i++)
                 {
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m ");
+                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", Settings.GetLineX);
+                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Horizontal_Line + Settings.CVTS.DEC_Deactive}");
                 }
 
             for (int k = 0; k < numbers.Length; k++)
             { //the 1s in this and below for loop should be a setting, it is the amount of empty squares between the numbers/letters and the board edge
                 Console.SetCursorPosition(Settings.Offset[0] - Settings.EdgeSpacing - 1 + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Spacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)-1);
-                Console.Write(numbers[7-k]);
+                Console.Write(numbers[7-k]); //- Settings.EdgeSpacing should not be used in the calculation above.
                 Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.Spacing + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)-1);
                 Console.Write(numbers[7-k]);
             }
@@ -2941,7 +3043,8 @@ namespace Chess
                 "Surrender"
             };
             Console.Clear();
-            string answer = Menu.MenuAccess(playerOptions);
+            string title = "Options";
+            string answer = Menu.MenuAccess(playerOptions, title);
 
             //if they surrender send a victory data to the other player (if they are playing online).
             //"Stay Playing" should recreate the board and pieces (visually).
@@ -2971,8 +3074,9 @@ namespace Chess
                     else
                     {
                         Console.Clear();
+                        string drawTitle = "Other player wants to draw";
                         string[] drawOptions = {"Accept Draw", "Decline Draw" }; //need an option in the Menu draw function that allows for a "title" e.g. what to do "Will you accept the draw?"
-                        string drawAnswer = Menu.MenuAccess(drawOptions);
+                        string drawAnswer = Menu.MenuAccess(drawOptions, drawTitle);
                         switch (drawAnswer)
                         {
                             case "Accept Draw":
@@ -3009,13 +3113,22 @@ namespace Chess
         /// </summary>
         private void GameStatsDisplay()
         {
+            string mainColour = Settings.CVTS.BrightWhiteForeground;
+            string highLightColour = Settings.CVTS.BrightCyanForeground;
+            string underscore = Settings.CVTS.Underscore;
+            string underscore_off = Settings.CVTS.Underscore_Off;
+            string reset = Settings.CVTS.Reset;
+            string enterColour = Settings.CVTS.BrightRedForeground;
+
             Console.Clear();
-            Console.WriteLine($"" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}Amount of white pieces left: {ChessList.GetList(true).Count}.\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}Amount of black pieces left: {ChessList.GetList(false).Count}.\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}Amount of turns: {GameStates.TurnCounter}.\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}Turns since last capture or pawn move: {GameStates.TurnDrawCounter}.\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}Enter to return.");
+            Console.CursorTop = Settings.MenuOffset[1];
+            Console.WriteLine($"\x1b]2;Chess: Game Stats\x07" + //sets the title
+                $"{"".PadLeft(Settings.MenuTitleOffset[0])}{mainColour}{underscore}Stats:{reset}\n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of white pieces left: {highLightColour}{underscore}{ChessList.GetList(true).Count}{underscore_off}{mainColour}.{reset}\n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of black pieces left: {highLightColour}{underscore}{ChessList.GetList(false).Count}{underscore_off}{mainColour}.{reset}\n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of turns: {highLightColour}{underscore}{GameStates.TurnCounter}{underscore_off}{mainColour}.{reset}\n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Turns since last capture or pawn move: {highLightColour}{underscore}{GameStates.TurnDrawCounter}{underscore_off}{mainColour}.{reset}\n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{enterColour}Enter {mainColour}to return.{reset}"); //"\x1b(0 x \x1b(B"
             Console.ReadLine();
             Console.Clear();
         }
