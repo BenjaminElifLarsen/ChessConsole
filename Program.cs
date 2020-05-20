@@ -304,7 +304,7 @@ namespace Chess
         /// Console Virtual Terminal Sequences
         /// </summary>
         public class CVTS //Console Virtual Terminal Sequences
-        {
+        { //have a function to turn on CVTS 
             private static string whiteBrightForColour = "\x1b[97m";
             private static string cyanBrightForColour = "\x1b[96m";
             private static string underscore = "\x1b[4m";
@@ -1533,7 +1533,7 @@ namespace Chess
 
             void Paint(string option, byte[] colour)
             {
-                Console.Write("\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}\x1b[0m", option);
+                Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}" + Settings.CVTS.Reset, option);
             }
         }
 
@@ -1625,17 +1625,17 @@ namespace Chess
                 for (int i = 0; i < distance; i += 1 + Settings.SquareSize)
                 {
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Vertical_Line + Settings.CVTS.DEC_Deactive}");
+                    Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Vertical_Line + Settings.CVTS.DEC_Deactive}");
                 }
             for (int k = 0; k < distance; k += 1 + Settings.SquareSize)
                 for (int i = 1; i < distance - 1; i++)
                 {
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[48;2;" + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write("\x1b[38;2;" + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + "\x1b[0m", $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Horizontal_Line + Settings.CVTS.DEC_Deactive}");
+                    Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Horizontal_Line + Settings.CVTS.DEC_Deactive}");
                 }
 
             for (int k = 0; k < numbers.Length; k++)
@@ -1675,9 +1675,9 @@ namespace Chess
                         {
                             Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing + n, k + Settings.Offset[1] + Settings.Spacing + Settings.EdgeSpacing + m);
                             if (location % 2 == 1)
-                                Console.Write("\x1b[48;2;" + Settings.SquareColour1[0] + ";" + Settings.SquareColour1[1] + ";" + Settings.SquareColour1[2] + "m " + "\x1b[0m");
+                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.SquareColour1[0] + ";" + Settings.SquareColour1[1] + ";" + Settings.SquareColour1[2] + "m " + Settings.CVTS.Reset);
                             else if (location % 2 == 0)
-                                Console.Write("\x1b[48;2;" + Settings.SquareColour2[0] + ";" + Settings.SquareColour2[1] + ";" + Settings.SquareColour2[2] + "m " + "\x1b[0m");
+                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.SquareColour2[0] + ";" + Settings.SquareColour2[1] + ";" + Settings.SquareColour2[2] + "m " + Settings.CVTS.Reset);
                         }
                     }
                     location++;
@@ -1834,10 +1834,10 @@ namespace Chess
                 endMessage = $"{firstPart} Player Won";
             }
             Console.CursorTop = Settings.MenuOffset[1];
-            Console.WriteLine($"" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{endMessage} \n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}Amount of Moves: {amountOfMoves} \n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}Enter to continue.");
+            Console.WriteLine($"{"".PadLeft(Settings.MenuTitleOffset[0])}{Settings.CVTS.BrightWhiteForeground}{Settings.CVTS.Underscore}Game Finished{Settings.CVTS.Underscore_Off}\n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}{endMessage} {Settings.CVTS.Reset}\n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Amount of Moves: {Settings.CVTS.BrightCyanForeground}{Settings.CVTS.Underscore}{amountOfMoves}{Settings.CVTS.Reset} \n" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightRedForeground}Enter{Settings.CVTS.BrightWhiteForeground} to continue. {Settings.CVTS.Reset}");
             Console.Read();
             Console.Clear();
         }
@@ -3204,16 +3204,16 @@ namespace Chess
                 for (int n = startLocationX; n < startLocationX + squareSize; n++)
                 {
                     Console.SetCursorPosition((int)n, (int)startLocationY);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                     Console.SetCursorPosition((int)n, (int)startLocationY + squareSize - 1);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                 }
                 for (int n = startLocationY; n < startLocationY + squareSize; n++)
                 {
                     Console.SetCursorPosition((int)startLocationX, (int)n);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                     Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                 }
             }
         }
@@ -5064,16 +5064,16 @@ namespace Chess
                 for (int n = startLocationX; n < startLocationX + squareSize; n++)
                 {
                     Console.SetCursorPosition((int)n, (int)startLocationY);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                     Console.SetCursorPosition((int)n, (int)startLocationY + squareSize - 1);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                 }
                 for (int n = startLocationY; n < startLocationY + squareSize; n++)
                 {
                     Console.SetCursorPosition((int)startLocationX, (int)n);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                     Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
-                    Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                 }
             }
         }
@@ -5135,7 +5135,7 @@ namespace Chess
             for (int i = 0; i < design[0].Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
             { //To fix, the background colour is overwritten with the default colour, black, rather than keeping the current background colour.
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m\x1b[38;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}\x1b[0m", design[i], colours);
+                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m" + Settings.CVTS.ExtendedForegroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}" + Settings.CVTS.Reset, design[i], colours);
             }
         }
 
@@ -5149,7 +5149,7 @@ namespace Chess
             for (int i = 0; i < design[0].Length; i++)
             {
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                Console.Write("\x1b[48;2;" + backColours[0] + ";" + backColours[1] + ";" + backColours[2] + "m\x1b[38;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}\x1b[0m", design[i]);
+                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + backColours[0] + ";" + backColours[1] + ";" + backColours[2] + "m" + Settings.CVTS.ExtendedForegroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}" + Settings.CVTS.Reset, design[i]);
             }
         }
 
@@ -5165,7 +5165,7 @@ namespace Chess
                 for (int i = 0; i < design[0].Length; i++)
                 {
                     Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                    Console.Write("\x1b[48;2;" + colours[0] + ";" + colours[1] + ";" + colours[2] + "m".PadRight(design[0].Length + 1, ' ') + "\x1b[0m");
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m".PadRight(design[0].Length + 1, ' ') + Settings.CVTS.Reset);
                 }
             }
         }
@@ -5252,16 +5252,16 @@ namespace Chess
             for (int n = startLocationX; n < startLocationX + squareSize; n++)
             {
                 Console.SetCursorPosition((int)n, (int)startLocationY);
-                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                 Console.SetCursorPosition((int)n, (int)startLocationY + squareSize - 1);
-                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
             }
             for (int n = startLocationY; n < startLocationY + squareSize; n++)
             {
                 Console.SetCursorPosition((int)startLocationX, (int)n);
-                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                 Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
-                Console.Write("\x1b[48;2;" + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + "\x1b[0m");
+                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
             }
         }
 
