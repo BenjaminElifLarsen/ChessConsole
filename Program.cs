@@ -439,6 +439,24 @@ namespace Chess
             gameEnded = false;
             won = null;
             canMove = false;
+            NetSearch.Abort = false;
+            NetSearch.Searching = false;
+        }
+
+        public class NetSearch
+        {
+
+            private static bool searchingForPlayer;
+            private static bool abort;
+
+            /// <summary>
+            /// True if searching for a player, otherwise false.
+            /// </summary>
+            public static bool Searching { get => searchingForPlayer; set => searchingForPlayer = value; }
+            /// <summary>
+            /// True if the search for other players should be aborted, else false. 
+            /// </summary>
+            public static bool Abort { get => abort; set => abort = value; }
         }
     }
 
@@ -700,7 +718,9 @@ namespace Chess
             /// </summary>
             public static void Start()
             {
+                Debug.WriteLine("Receiver starting up");
                 receiver.Start();
+                Debug.WriteLine("Receiver hsa started up");
             }
 
             /// <summary>
@@ -708,23 +728,31 @@ namespace Chess
             /// </summary>
             public static void Stop()
             {
+                Debug.WriteLine("Receiver stopping");
                 receiver.Stop();
+                Debug.WriteLine("Receiver stopped");
             }
 
             /// <summary>
-            /// Waits on a client connection to the listiner and returns the IP address of the client.
+            /// Waits on a client connection to the listiner and returns the IP address of the client. 
+            /// If the search for a player is aborted, it will return null.
             /// </summary>
-            /// <returns>Returns the IP address of the client.</returns>
+            /// <returns>Returns the IP address of the client. If the search for a player is aborted, returns null.</returns>
             public static string GetConnectionIpAddress() 
             {
-                while (!receiver.Pending())
+                while (!receiver.Pending() && !GameStates.NetSearch.Abort)
                 {
 
                 }
-                TcpClient client = receiver.AcceptTcpClient();
-                string endPoint = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
-                client.Close();
-                return endPoint;
+                if (!GameStates.NetSearch.Abort)
+                {
+                    TcpClient client = receiver.AcceptTcpClient();
+                    string endPoint = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                    client.Close();
+                    GameStates.NetSearch.Searching = false;
+                    return endPoint;
+                }
+                return null;
             }
 
             /// <summary>
@@ -1298,7 +1326,7 @@ namespace Chess
         private void NetMenu()
         {
             string title = "Net Menu";
-            string[] options = { "Host", "Join", "Back" };
+            string[] options = { "Host", "Join", "Back"};
             string option;
 
             do
@@ -1318,6 +1346,11 @@ namespace Chess
 
                     case "Back":
                         break;
+
+                    case "Test":
+                        Console.Clear();
+                        Abort(); //testning
+                        break;
                 }
             } while (option != options[2]);
 
@@ -1327,41 +1360,57 @@ namespace Chess
                 //gets and displays the IP address the joiner needs
                 string ipAddress = Network.NetworkSupport.LocalAddress;
                 Console.Clear();
-                Console.WriteLine(ipAddress); //make it look better later. 
-                Console.WriteLine("Waiting on player"); //might want an ability to leave in case of not wanting to play anyway or if something goes wrong, but how to do it? 
+                Console.CursorTop = Settings.MenuOffset[1];
+                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}IP Address: {Settings.CVTS.BrightCyanForeground}{ipAddress}{Settings.CVTS.Reset}"); //make it look better later. 
+                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Waiting on player{Settings.CVTS.Reset}"); //might want an ability to leave in case of not wanting to play anyway or if something goes wrong, but how to do it? 
 
                 //starts up the reciver. 
                 Network.Receive.ReceiveSetup(ipAddress);
                 Network.Receive.Start();
+                GameStates.NetSearch.Searching = true;
 
-                //waits on the joiner to connect to the receiver so their IP-address, needed to know their receiver, is arquired.  
-                //Network.Receive.WaitingOnConnection() loops until Network.Transmit.TransmitSetup(ipAddress) in Join() has ran.
+                //gives the player the options to abort searching for a player. 
+                Thread abortThread = new Thread(Abort);
+                abortThread.Start();
+
+                //waits on the joiner to connect to the receiver so their IP-address is arquired so data can be transmitted to their receiver.  
+                //Network.Receive.GetConnectionIpAddress() loops until Network.Transmit.TransmitSetup(ipAddress) in Join() has ran or GameStates.NetSeach.Abort is true.
                 string ipAddressJoiner = Network.Receive.GetConnectionIpAddress();
-                Network.Transmit.OtherPlayerIpAddress = ipAddressJoiner; //transmitter now got the ip address needed to contact the receiver of the host
 
-                //select colour
-                string[] colourOptions = { "White", "Black" };
-                string colour = null;
-                colour = Interact(colourOptions);
-                Console.WriteLine("Conneting");
-
-                //transmit the colour
-                Network.Transmit.GeneralDataTransmission(colour, ipAddressJoiner);
-
-                //wait on response from the player joined to ensure they are ready.
-                string response = Network.Receive.GeneralDataReception();
-
-                //starts game, string colour parameters that decide whoes get the first turn.
-                if (response == "ready")
-                { //what if the response is not "ready"? It would mean there is some unalignment in the transmission and reception of data. So, firstly bugfixing. Else, return to the main menu
-                    bool firstMove = colour == "White" ? true : false;
-                    Console.WriteLine("Game Starting");
-                    Start(firstMove);
-                }
-                else
+                //if not aborted, run the rest of the set-up.
+                if (!GameStates.NetSearch.Abort)
                 {
-                    Console.WriteLine(response);
-                    Console.ReadKey();
+                    Network.Transmit.OtherPlayerIpAddress = ipAddressJoiner; //transmitter now got the ip address needed to contact the receiver of the joiner
+
+                    //select colour
+                    string[] colourOptions = { "White", "Black" };
+                    string colour = null;
+                    colour = Interact(colourOptions);
+                    Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Conneting{Settings.CVTS.Reset}");
+
+                    //transmit the colour
+                    Network.Transmit.GeneralDataTransmission(colour, ipAddressJoiner);
+
+                    //wait on response from the player joined to ensure they are ready.
+                    string response = Network.Receive.GeneralDataReception();
+
+                    //starts game, string colour parameters that decide whoes get the first turn.
+                    if (response == "ready")
+                    { //what if the response is not "ready"? It would mean there is some unalignment in the transmission and reception of data. So, firstly bugfixing. Else, return to the main menu
+                        bool firstMove = colour == "White" ? true : false;
+                        Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
+                        Start(firstMove);
+                    }
+                    else
+                    {
+                        Console.WriteLine(response);
+                        Console.ReadKey();
+                    }
+                }//if aborted, skip the rest
+                else
+                { 
+                    Network.Receive.Stop();
+                    GameStates.Reset();
                 }
             }
 
@@ -1373,29 +1422,46 @@ namespace Chess
                 string ownIpAddress = Network.NetworkSupport.LocalAddress;
                 Network.Receive.ReceiveSetup(ownIpAddress);
                 Network.Receive.Start();
-
+                GameStates.NetSearch.Searching = true;
                 do
                 {
                     Console.Clear();
-                    Console.WriteLine("Enter host IP address");
+                    Console.CursorTop = Settings.MenuOffset[1];
+                    Console.Write($"" +
+                        $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Enter {Settings.CVTS.BrightCyanForeground}host IP address{Settings.CVTS.BrightWhiteForeground}.\n" +
+                        $"{"".PadLeft(Settings.MenuOffset[0])}Press {Settings.CVTS.BrightRedForeground}Enter{Settings.CVTS.BrightWhiteForeground} to comfirm.\n" +
+                        $"{"".PadLeft(Settings.MenuOffset[0])}If {Settings.CVTS.BrightCyanForeground}empty{Settings.CVTS.BrightWhiteForeground}, return to menu.\n" +
+                        $"{"".PadLeft(Settings.MenuOffset[0])}Address:{Settings.CVTS.Reset} ");
+                    Console.CursorVisible = true;
                     ipAddress = Console.ReadLine();
+                    if (ipAddress == "")
+                        GameStates.NetSearch.Abort = true;
                     Network.Transmit.OtherPlayerIpAddress = ipAddress;
-                } while (!Network.Transmit.TransmitSetup(ipAddress)); //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
+                    Console.CursorVisible = false;
+                } while (!GameStates.NetSearch.Abort && !Network.Transmit.TransmitSetup(ipAddress)); //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
 
-                //function is run to allows the host' transmitter to get the ip address of the client' receiver. Port is known in the code, just the IP-address that is missing... can be better explained...
-                Console.WriteLine("Connecting");
+                if (!GameStates.NetSearch.Abort)
+                {
+                    //function is run to allows the host' transmitter to get the ip address of the client' receiver. Port is known in the code, just the IP-address that is missing... can be better explained...
+                    Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Connecting{Settings.CVTS.Reset}");
 
-                //gets the colour the host is using and selects the other
-                string colourHost = Network.Receive.GeneralDataReception();
-                string colour = colourHost == "White" ? "Black" : "White";
+                    //gets the colour the host is using and selects the other
+                    string colourHost = Network.Receive.GeneralDataReception();
+                    string colour = colourHost == "White" ? "Black" : "White";
 
-                //send ready data.
-                Network.Transmit.GeneralDataTransmission("ready", ipAddress);
+                    //send ready data.
+                    Network.Transmit.GeneralDataTransmission("ready", ipAddress);
 
-                //starts game, string colour parameters that decide whoes get the first turn.
-                bool firstMove = colour == "White" ? true : false;
-                Console.WriteLine("Game Starting");
-                Start(firstMove);
+                    //starts game, string colour parameters that decide whoes get the first turn.
+                    bool firstMove = colour == "White" ? true : false;
+                    Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
+                    Start(firstMove);
+                }
+                else
+                {
+                    Network.Receive.Stop();
+                    GameStates.Reset();
+                }
 
             }
 
@@ -1404,6 +1470,32 @@ namespace Chess
                 Console.Clear();
                 ChessTable chess = new ChessTable();
                 chess.NetPlay(playerStarter);
+            }
+
+            void Abort()
+            { //threated. Maybe not needed to be threaten, Network.Receive.GetConnectionIpAddress() should be threaten then
+                GameStates.NetSearch.Searching = true; //just here for testning
+                int[] cursorPosistion = new int[] { Console.CursorLeft, Console.CursorTop };
+                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Abort?{Settings.CVTS.Reset}");
+                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightRedForeground}{Settings.CVTS.Underscore}Y{Settings.CVTS.BrightWhiteForeground}{Settings.CVTS.Underscore_Off}es{Settings.CVTS.Reset}");
+                while (GameStates.NetSearch.Searching) //bool, true if searching for a player. False if a player is found. Store it in GameStates?
+                { 
+                    if(Console.KeyAvailable == true)
+                    {
+                        ConsoleKeyInfo key = Console.ReadKey(true); //how to use this to abort the search?
+                        if(key.Key == ConsoleKey.Y)
+                        {
+                            GameStates.NetSearch.Searching = false;
+                            GameStates.NetSearch.Abort = true;
+                        }
+                        //else if (key.Key == ConsoleKey.N)
+                        //{
+                        //    Console.WriteLine(key.Key);
+                            
+                        //}
+                    }
+                }
+
             }
 
         }
