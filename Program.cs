@@ -105,7 +105,7 @@ namespace Chess
     }
 
     /// <summary>
-    /// Class that contain information about pieces that can protect the king, if the king is checked. 
+    /// Class that contain information about pieces that can protect ore are the king. 
     /// </summary>
     public class ProtectKing
     {
@@ -305,6 +305,15 @@ namespace Chess
         /// </summary>
         public class CVTS //Console Virtual Terminal Sequences
         { //have a function to turn on CVTS 
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
+            [DllImport("kernel32.dll", SetLastError = true)]
+            public static extern bool GetConsoleMode(IntPtr handle, out int mode);
+
+            [DllImport("kernel32.dll", SetLastError = true)]
+            private static extern IntPtr GetStdHandle(int handle);
+
             private static string whiteBrightForColour = "\x1b[97m";
             private static string cyanBrightForColour = "\x1b[96m";
             private static string underscore = "\x1b[4m";
@@ -340,11 +349,11 @@ namespace Chess
             /// </summary>
             public static string BrightRedForeground { get => redBrightForColour; }
             /// <summary>
-            /// Allows the use of rgb values for the foregrund. Values given right after the call. The values need to be given as "<r> ; <g> ; <b> m"
+            /// Allows the use of rgb values for the foregrund. Values given right after the call. The values need to be given as "r;g;b m"
             /// </summary>
             public static string ExtendedForegroundColour_RGB { get =>foregroundColouring; }
             /// <summary>
-            /// Allows the use of rgb values for the background. Values given right after the call. The values need to be given as "<r> ; <g> ; <b> m"
+            /// Allows the use of rgb values for the background. Values given right after the call. The values need to be given as "r;g;b m". 
             /// </summary>
             public static string ExtendedBackgroundColour_RGB { get => backgroundColouring; }
             /// <summary>
@@ -356,7 +365,7 @@ namespace Chess
             /// </summary>
             public static string Underscore_Off { get => underscore_off; }
             /// <summary>
-            /// Resets all text called after to be displayed with default values.
+            /// All text called after this will be displayed with default values.
             /// </summary>
             public static string Reset { get => reset; }
             /// <summary>
@@ -375,6 +384,14 @@ namespace Chess
             /// Gets the symbol used to display a horizontal line in DEC. 
             /// </summary>
             public static string DEC_Horizontal_Line { get => DECHorizontalLine; }
+
+            public static void ActivateCVTS()
+            {
+                var handle = GetStdHandle(-11);
+                int mode;
+                GetConsoleMode(handle, out mode);
+                SetConsoleMode(handle, mode | 0x4);
+            }
 
         }
     }
@@ -1254,20 +1271,21 @@ namespace Chess
         /// </summary>
         public Menu()
         {
-            var handle = GetStdHandle(-11);
-            int mode;
-            GetConsoleMode(handle, out mode);
-            SetConsoleMode(handle, mode | 0x4);
+            //var handle = GetStdHandle(-11);
+            //int mode;
+            //GetConsoleMode(handle, out mode);
+            //SetConsoleMode(handle, mode | 0x4);
+            Settings.CVTS.ActivateCVTS();
             Console.CursorVisible = false;
         }
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool GetConsoleMode(IntPtr handle, out int mode);
+        //[DllImport("kernel32.dll", SetLastError = true)]
+        //public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
+        //[DllImport("kernel32.dll", SetLastError = true)]
+        //public static extern bool GetConsoleMode(IntPtr handle, out int mode);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr GetStdHandle(int handle);
+        //[DllImport("kernel32.dll", SetLastError = true)]
+        //public static extern IntPtr GetStdHandle(int handle);
 
         /// <summary>
         /// Runs the menu.
@@ -1277,11 +1295,20 @@ namespace Chess
             MainMenu();
         }
 
+        private void WindowSize()
+        {
+            int[] windowsSize = new int[2];
+            windowsSize[0] = Settings.WindowSize[0] > Console.LargestWindowWidth ? Console.LargestWindowWidth : Settings.WindowSize[0];
+            windowsSize[1] = 30 > Console.LargestWindowHeight ? Console.LargestWindowHeight : 30;
+            Console.SetWindowSize(windowsSize[0], windowsSize[1]);
+        }
+
         /// <summary>
         /// The main menu. 
         /// </summary>
         private void MainMenu()
         {
+            WindowSize();
             string option;
             string title = "Main Menu";
             string[] options =
@@ -1289,6 +1316,7 @@ namespace Chess
                 "Local Play",
                 "Net Play",
                 "Rules",
+                "Interaction",
                 "Exit"
             };
 
@@ -1305,6 +1333,10 @@ namespace Chess
 
                     case "Rules":
                         RulesMenu();
+                        break;
+
+                    case "Interaction":
+                        InteractionMenu();
                         break;
 
                     case "Exit":
@@ -1373,7 +1405,7 @@ namespace Chess
                 Thread abortThread = new Thread(Abort);
                 abortThread.Start();
 
-                //waits on the joiner to connect to the receiver so their IP-address is arquired so data can be transmitted to their receiver.  
+                //waits on the joiner to connect to the receiver so their IP-address is arquired to ensure data can be transmitted to their receiver.  
                 //Network.Receive.GetConnectionIpAddress() loops until Network.Transmit.TransmitSetup(ipAddress) in Join() has ran or GameStates.NetSeach.Abort is true.
                 string ipAddressJoiner = Network.Receive.GetConnectionIpAddress();
 
@@ -1501,27 +1533,150 @@ namespace Chess
         }
 
         /// <summary>
+        /// Writes out all text stored in the Interaction.txt file.
+        /// </summary>
+        private void InteractionMenu()
+        {
+            try
+            {
+                string[] interaction = File.ReadAllLines("Interaction.txt");
+                string[] keywords = { "arrowkeys", "move", "location", "option", "options", "menu", "gameplay" };
+                string[] exitWords = { "----interaction----", "enter", "esc" };
+                PrintOut(interaction, keywords, exitWords);
+            }
+            catch (Exception e)
+            {
+                Debug.WriteLine(e);
+                Console.WriteLine("Interaction.txt could not be found.");
+                Console.WriteLine("\nEnter to return.");
+            }
+            //ConsoleKeyInfo key = new ConsoleKeyInfo();
+            //while (Console.KeyAvailable) //this should flush the keys
+            //{
+            //    Console.ReadKey(false);
+            //    Thread.Sleep(1000);
+            //}
+            //string bugFinding = Console.ReadLine() + "-Pressed";
+            //Debug.WriteLine(bugFinding);
+            while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
+            //Console.ReadLine();
+
+        }
+
+        /// <summary>
         /// Writes out all text stored in the Rules.txt file.
         /// </summary>
         private void RulesMenu()
         {
-            Console.Clear();
             try
             {
                 string[] about = File.ReadAllLines("Rules.txt");
-                foreach (string str in about)
-                { //if a line is longer than the console is wide, the program should split the line into minor pieces and display each of them.
-                    Console.WriteLine(str);
-                }
+                string[] keywords = {"castling", "check", "selected", "moved", "kingmove", "draw", "return", "70" };
+                string[] exitWords = { "----rules----", "enter" };
+                PrintOut(about, keywords, exitWords);
+                
             }
             catch
             {
                 Console.WriteLine("Rules.txt could not be found.");
+                Console.WriteLine("\nEnter to return.");
             }
-            Console.WriteLine("\nEnter to return.");
-            Console.ReadLine();
+            while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
 
+        }
 
+        /// <summary>
+        /// Writes out every string in <paramref name="writeOut"/> to the console.
+        /// Any words that appears in either <paramref name="keywords"/> or <paramref name="exitwords"/> will be coloured differently.
+        /// </summary>
+        /// <param name="writeOut">String array to write out to the console.</param>
+        /// <param name="keywords">String array of words to be coloured differently.</param>
+        /// <param name="exitwords">String array of words to be coloured differently.</param>
+        /// <param name="keyColour">Can be any foreground colour, except of the extented type, from Settings.CVTS</param>
+        /// <param name="exitColour">Can be any foreground colour, except of the extented type, from Settings.CVTS</param>
+        private void PrintOut(string[] writeOut, string[] keywords = null, string[] exitwords = null, string keyColour = null, string exitColour = null)
+        {
+            Console.Clear();
+
+            keyColour = keyColour == null ? Settings.CVTS.BrightCyanForeground : keyColour;
+            exitColour = exitColour == null ? Settings.CVTS.BrightRedForeground : exitColour;
+            sbyte lineNumber = -1;
+            Debug.WriteLine("Console Width: " + Console.WindowWidth);
+            foreach (string str in writeOut)
+            {
+                lineNumber++;
+                string[] words = str.Split(' ');
+                string newStr = "";
+                int stringLength = 0;
+                int wordNumber = 0;
+
+                Debug.WriteLine("Line number: {0}", lineNumber);
+                foreach (string word in words)
+                {
+                    wordNumber++;
+                    bool isKeyword = false;
+                    bool isExitWord = false;
+                    if (word != "")
+                    {
+                        bool comma = word.EndsWith(',');
+                        bool dot = word.EndsWith('.');
+                        bool semicolon = word.EndsWith(';');
+                        bool colon = word.EndsWith(':');
+                        if(keywords != null)
+                            foreach (string keyword in keywords)
+                            {
+                                string key = "";
+                                key = comma ? keyword + "," : keyword;
+                                key = dot ? key + "." : key;
+                                key = semicolon ? key + ";" : key;
+                                key = colon ? key + ":" : key;
+                                if (key == word.ToLower())
+                                {
+                                    isKeyword = true;
+                                    break;
+                                }
+                            }
+                        if(exitwords != null)
+                            if (!isKeyword)
+                                foreach (string exitWord in exitwords)
+                                {
+                                    string exit = "";
+                                    exit = comma ? exitWord + "," : exitWord;
+                                    exit = dot ? exit + "." : exit;
+                                    exit = semicolon ? exit + ";" : exit;
+                                    exit = colon ? exit + ":" : exit;
+                                    if (exit == word.ToLower())
+                                    {
+                                        isExitWord = true;
+                                        break;
+                                    }
+                                }
+
+                    }
+
+                    Debug.WriteLine("String Width: " + stringLength);
+                    if (stringLength + word.Length + 1 >= Console.WindowWidth && wordNumber != words.Length)
+                    {
+                        stringLength = 0;
+                        newStr += "\n";
+                        lineNumber++;
+                        Debug.WriteLine("New Line: {0}", lineNumber);
+                        Debug.WriteLine(word);
+                    }
+
+                    if (!isKeyword && !isExitWord)
+                        newStr += Settings.CVTS.BrightWhiteForeground + word + Settings.CVTS.Reset + " ";
+                    else if (isKeyword)
+                        newStr += keyColour + word + Settings.CVTS.Reset + " ";
+                    else if (isExitWord)
+                        newStr += exitColour + word + Settings.CVTS.Reset + " ";
+                    
+                    stringLength += word.Length + 1;
+                    Debug.WriteLine("String Width: " + stringLength);
+                }
+                Console.CursorTop = lineNumber + Settings.MenuTitleOffset[1];
+                Console.WriteLine(newStr);
+            }
         }
 
         /// <summary>
@@ -1636,13 +1791,13 @@ namespace Chess
     /// </summary>
     class ChessTable
     {
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern bool GetConsoleMode(IntPtr handle, out int mode);
+        //[DllImport("kernel32.dll", SetLastError = true)]
+        //public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
+        //[DllImport("kernel32.dll", SetLastError = true)]
+        //public static extern bool GetConsoleMode(IntPtr handle, out int mode);
 
-        [DllImport("kernel32.dll", SetLastError = true)]
-        public static extern IntPtr GetStdHandle(int handle);
+        //[DllImport("kernel32.dll", SetLastError = true)]
+        //public static extern IntPtr GetStdHandle(int handle);
 
         private Player white; 
         private Player black; 
@@ -1657,17 +1812,20 @@ namespace Chess
         public ChessTable()
         {
             MapMatrix.PrepareMap();
-            var handle = GetStdHandle(-11);
-            int mode;
-            GetConsoleMode(handle, out mode);
-            SetConsoleMode(handle, mode | 0x4);
+            //var handle = GetStdHandle(-11);
+            //int mode;
+            //GetConsoleMode(handle, out mode);
+            //SetConsoleMode(handle, mode | 0x4);
 
-            windowsSize[0] = Settings.WindowSize[0];
-            windowsSize[1] = Settings.WindowSize[1];
-            if (windowsSize[0] < Console.LargestWindowWidth && windowsSize[1] < Console.LargestWindowHeight)
-                Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            else
-                Console.SetWindowSize(Console.LargestWindowWidth/2, Console.LargestWindowHeight);
+            //windowsSize[0] = Settings.WindowSize[0];
+            //windowsSize[1] = Settings.WindowSize[1];
+            windowsSize[0] = Settings.WindowSize[0] > Console.LargestWindowWidth ? Console.LargestWindowWidth : Settings.WindowSize[0];
+            windowsSize[1] = Settings.WindowSize[1] > Console.LargestWindowHeight ? Console.LargestWindowHeight : Settings.WindowSize[1];
+            Console.SetWindowSize(windowsSize[0], windowsSize[1]);
+            //if (windowsSize[0] < Console.LargestWindowWidth && windowsSize[1] < Console.LargestWindowHeight)
+            //    Console.SetWindowSize(windowsSize[0], windowsSize[1]);
+            //else
+            //    Console.SetWindowSize(Console.LargestWindowWidth/2, Console.LargestWindowHeight);
             blackSpawnLocation = new int[,] {
                 { 0, 1 }, { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 }, { 7, 1 },
                 { 0, 0 }, { 1, 0 }, { 2, 0 }, { 3, 0 }, { 4, 0 }, { 5, 0 }, { 6, 0 }, { 7, 0 }
@@ -1912,11 +2070,7 @@ namespace Chess
         }
 
         private void EndScreen()
-        { //get "skipped" sometimes
-            while (Console.KeyAvailable) //flush the keys
-            {
-                Console.ReadKey(true);
-            }
+        { 
             string endMessage = null;
             if (GameStates.Won == null)
                 endMessage = "The Game Ended in a Draw";
@@ -1930,7 +2084,7 @@ namespace Chess
                 $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}{endMessage} {Settings.CVTS.Reset}\n" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Amount of Moves: {Settings.CVTS.BrightCyanForeground}{Settings.CVTS.Underscore}{amountOfMoves}{Settings.CVTS.Reset} \n" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightRedForeground}Enter{Settings.CVTS.BrightWhiteForeground} to continue. {Settings.CVTS.Reset}");
-            Console.Read();
+            while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
             Console.Clear();
         }
 
@@ -2149,14 +2303,18 @@ namespace Chess
                     GameStates.Won = true;
                     return true;
                 }
-                    
 
-                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //somewhere in the player, have a function to surrender. 
+                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //ensures any promoted pawns are removed from the list.
+                {
+                    if (ChessList.GetList(team)[i].BeenTaken)
+                        ChessList.GetList(team).RemoveAt(i);
+                }
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes any cpatured hostile pieces. 
                 {
                     if (ChessList.GetList(!team)[i].BeenTaken)
                         ChessList.GetList(!team).RemoveAt(i);
                 }
-                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--)
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //ensures that en passant is set to false, if it is true.
                 {
                     if (ChessList.GetList(!team)[i] is Pawn && ChessList.GetList(!team)[i].SpecialBool == true)
                         ChessList.GetList(!team)[i].SpecialBool = false;
@@ -2951,10 +3109,10 @@ namespace Chess
             string ID;
             int[] spawn;
             List<ChessPiece> chessPieces = new List<ChessPiece>();
-            for (int i = 1; i < 9; i++)
+            for (int i = 0; i < 8; i++)
             {
-                ID = String.Format("{0}:6:{1}", team, i);
-                spawn = new int[] { spawnLocations[i-1, 0], spawnLocations[i-1, 1] };
+                ID = String.Format("{0}:6:{1}", team, i + 1);
+                spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
                 chessPieces.Add(new Pawn(colour, white, spawn, ID));
             }
             ID = String.Format("{0}:5:{1}", team, 1);
@@ -3036,7 +3194,7 @@ namespace Chess
             do
             {
                 bool? selected = FeltMove(location);
-                if (lastPiece != null) //if a previous chess piece has been hovered over, remove the highlight. 
+                if (lastPiece != null && !GameStates.GameEnded) //if a previous chess piece has been hovered over, remove the highlight. 
                 {
                     ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
                     lastPiece = null;

@@ -1,0 +1,12 @@
+﻿----Interaction----
+
+Menu:
+  Arrowkeys to move to different options.
+  Enter to select an option.
+
+Gameplay:
+  Move to a location using arrowkeys. 
+  Enter to select the location.
+  Esc to open a menu.
+
+Press enter to return.

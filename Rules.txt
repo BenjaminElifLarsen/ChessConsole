@@ -2,8 +2,12 @@
 
 When a chesspiece has been selected, it must be moved. If it cannot be moved, another chesspiece is allowed. 
 
-King:
+King specific rule(s):
   Castling is a kingmove.
 
 If the king is check, only pieces that can prevent the check can be moved. 
 Pieces that are keeping the king safe from hostile pieces cannot be moved in such a way that the king comes under check.
+
+The game will draw automatically if no piece has been captured and no pawn has been moved the last 70 turns. 
+
+Press enter to return.
