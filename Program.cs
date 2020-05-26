@@ -2322,7 +2322,7 @@ namespace Chess
                         GameStates.Won = false;
                     else if (otherPlayerCheckMate == true)
                         GameStates.Won = true;
-
+                    
                     return true;
                 }
 
