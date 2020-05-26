@@ -1465,6 +1465,7 @@ namespace Chess
                     string[] colourOptions = { "White", "Black" };
                     string colour = null;
                     colour = Interact(colourOptions);
+                    Console.CursorTop = Console.CursorTop + 1;
                     Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Conneting{Settings.CVTS.Reset}");
 
                     //transmit the colour
@@ -2265,6 +2266,7 @@ namespace Chess
             ChessList.RemoveAllPieces();
             //GameStates.Reset();
             Network.Receive.Stop();
+            Console.Clear();
             EndScreen();
             //Console.ReadLine();
             GameStates.Reset();
@@ -2314,7 +2316,8 @@ namespace Chess
                     amountOfMoves++;
                     GameStates.TurnCounter = amountOfMoves;
                 }
-                draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
+                if(!GameStates.GameEnded)
+                    draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
@@ -2476,7 +2479,7 @@ namespace Chess
                     return chePie.SpecialBool;
                 }
             }
-            return null; //if this is reached, it would mean that is no king and something has gone very wrong. 
+            return null; //if this is reached, it would mean there is no king and something has gone very wrong. 
         }
 
         /// <summary>
