@@ -1456,6 +1456,8 @@ namespace Chess
                 //if not aborted, run the rest of the set-up.
                 if (!GameStates.NetSearch.Abort)
                 {
+                    Console.Clear();
+
                     Network.Transmit.OtherPlayerIpAddress = ipAddressJoiner; //transmitter now got the ip address needed to contact the receiver of the joiner
 
                     //select colour
@@ -2276,8 +2278,9 @@ namespace Chess
                     amountOfMoves++;
                     GameStates.TurnCounter = amountOfMoves;
                 }
-                if (Draw(team)) //If the other player causes a draw, this ensures this player gets informed immediately and does not get to make a move
-                    return true;
+                if(GameStates.TurnCounter != 0)
+                    if (Draw(team)) //If the other player causes a draw, this ensures this player gets informed immediately and does not get to make a move
+                        return true;
                 Player player;
                 if (team)
                     player = white;
@@ -2303,13 +2306,14 @@ namespace Chess
                 
                 otherPlayerCheckMate = CheckmateChecker(!team); //these two updates the write locations
                 checkmate = IsKingChecked(team); //these two updates the write locations
-                draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
+                
                 if (!team) //ensures that black updates the amount of moves that has gone after they turn.
                 {
                     MapMatrix.UpdateOldMap();
                     amountOfMoves++;
                     GameStates.TurnCounter = amountOfMoves;
                 }
+                draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
