@@ -2077,24 +2077,24 @@ namespace Chess
             {
                 bool noCapture = false;
                 bool pawnChange = false;
-                for (int n = 0; n < 8; n++)
-                {
+                if(MapMatrix.LastMoveMap != null)
+                    for (int n = 0; n < 8; n++)
+                    {
 
-                    for (int m = 0; m < 8; m++)
-                    { //check if any pawns has been changed. 
-                        string newFelt = MapMatrix.Map[m, n];
-                        string oldFelt = MapMatrix.LastMoveMap[m, n];
-                        if(newFelt != oldFelt)
-                        {
-                            if(oldFelt != "")
-                                if (oldFelt.Split(':')[1] == "6")
-                                {
-                                    pawnChange = true;
-                                }
+                        for (int m = 0; m < 8; m++)
+                        { //check if any pawns has been changed. 
+                            string newFelt = MapMatrix.Map[m, n];
+                            string oldFelt = MapMatrix.LastMoveMap[m, n];
+                            if(newFelt != oldFelt)
+                            {
+                                if(oldFelt != "")
+                                    if (oldFelt.Split(':')[1] == "6")
+                                    {
+                                        pawnChange = true;
+                                    }
+                            }
                         }
                     }
-
-                }
                 if (GameStates.PieceAmount[0, 0] == GameStates.PieceAmount[0, 1] && GameStates.PieceAmount[1, 0] == GameStates.PieceAmount[1, 1])
                 { //where to set those values?
                     noCapture = true;
