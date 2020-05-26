@@ -2077,7 +2077,7 @@ namespace Chess
             {
                 bool noCapture = false;
                 bool pawnChange = false;
-                if(MapMatrix.LastMoveMap != null)
+                if(MapMatrix.LastMoveMap[0, 0] != null)
                     for (int n = 0; n < 8; n++)
                     {
 
@@ -2300,7 +2300,8 @@ namespace Chess
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
                 //why did it registrate a white piecs as being a treat?
                 ProtectKing.Protect = saveKingList;
-
+                if (MapMatrix.LastMoveMap[0,0] == null)
+                    MapMatrix.UpdateOldMap();
                 if(checkmate != null)
                     if(!(bool)checkmate) //if the king is not checkmate, play
                         player.Control();
