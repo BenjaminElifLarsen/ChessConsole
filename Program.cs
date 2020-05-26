@@ -587,8 +587,9 @@ namespace Chess
                     transmitter = new TcpClient(IPaddress, port);
                     return true;
                 }
-                catch
+                catch (Exception e)
                 { //write anything out?
+                    Debug.WriteLine(e);
                     return false;
                 }
 
