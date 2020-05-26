@@ -1341,7 +1341,7 @@ namespace Chess
         {
             int[] windowsSize = new int[2];
             windowsSize[0] = Settings.WindowSize[0] > Console.LargestWindowWidth ? Console.LargestWindowWidth : Settings.WindowSize[0];
-            windowsSize[1] = 30 > Console.LargestWindowHeight ? Console.LargestWindowHeight : 30;
+            windowsSize[1] = 20 > Console.LargestWindowHeight ? Console.LargestWindowHeight : 20;
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
         }
 
@@ -1350,8 +1350,6 @@ namespace Chess
         /// </summary>
         private void MainMenu()
         {
-            
-            WindowSize();
             string option;
             string title = "Main Menu";
             string[] options =
@@ -1365,10 +1363,10 @@ namespace Chess
 
             do
             {
+                WindowSize();
                 Console.Title = Settings.GetTitle + ": Main Menu";
                 Console.Clear();
                 option = Interact(options, title);
-
                 switch (option)
                 {
                     case "Local Play":
@@ -1767,6 +1765,8 @@ namespace Chess
             do
             {
                 Display(options, currentLocation, Settings.MenuColour, Settings.MenuColourHovered, Settings.MenuOffset, title, Settings.MenuColourTitle, Settings.MenuTitleOffset);
+                Console.CursorTop = 0;
+                Console.CursorLeft = 0;
                 if (Move())
                 {
                     answer = options[currentLocation];
@@ -2113,13 +2113,7 @@ namespace Chess
                 if (drawAmountOfMoves == 70)
                     return true;
             }
-            //check for the amount of turns gone without a piece been taken.
-            //need to ensure no pawn has moved either the last 50 turns
-            //so each player needs to make 50 moves with no capture or pawn move.
-            //the game does not end automatically after 50 moves, it is only when a player calls draw on their turn and can be after 50 moves... It is first at 70 it ends
-            //more reason for surrender and draw functions in the player. E.g. if they press ESC a "menu" appear on the console with the ability to draw, surrender and stay playing 
-            
-            
+           
             return false;
 
             /* Idea:
@@ -2277,13 +2271,14 @@ namespace Chess
                 bool? checkmate = false; bool draw = false; bool? otherPlayerCheckMate = false;
                 if (team) //ensures white updates the amount of turns that has gone before it is they turn.
                 {
-                    MapMatrix.UpdateOldMap();
+                    //MapMatrix.UpdateOldMap();
                     amountOfMoves++;
                     GameStates.TurnCounter = amountOfMoves;
                 }
-                if(GameStates.TurnCounter != 0)
-                    if (Draw(team)) //If the other player causes a draw, this ensures this player gets informed immediately and does not get to make a move
-                        return true;
+                //if(GameStates.TurnCounter != 0)
+                //    if (Draw(team)) //If the other player causes a draw, this ensures this player gets informed immediately and does not get to make a move
+                //        return true;
+                MapMatrix.UpdateOldMap();
                 Player player;
                 if (team)
                     player = white;
@@ -2312,7 +2307,7 @@ namespace Chess
                 
                 if (!team) //ensures that black updates the amount of moves that has gone after they turn.
                 {
-                    MapMatrix.UpdateOldMap();
+                    //MapMatrix.UpdateOldMap();
                     amountOfMoves++;
                     GameStates.TurnCounter = amountOfMoves;
                 }
@@ -4167,7 +4162,7 @@ namespace Chess
                         }
                     }
                 } while (!hasSelected);
-                NoneDisplayPossibleMove();
+                RemoveDisplayPossibleMove();
                 possibleEndLocations.Clear();
             }
             else
@@ -4475,7 +4470,7 @@ namespace Chess
                         }
                     }
                 } while (!hasSelected);
-                NoneDisplayPossibleMove();
+                RemoveDisplayPossibleMove();
                 possibleEndLocations.Clear();
                 hasMoved = true;
             }
@@ -5286,7 +5281,6 @@ namespace Chess
                     Draw();
                 }
             }
-
         }
 
         /// <summary>
@@ -5323,7 +5317,7 @@ namespace Chess
                         }
                     }
                 } while (!hasSelected);
-                NoneDisplayPossibleMove();
+                RemoveDisplayPossibleMove();
                 possibleEndLocations.Clear();
             }
             else
@@ -5573,7 +5567,7 @@ namespace Chess
         /// <summary>
         /// Removes all displayed possible moves. 
         /// </summary>
-        protected void NoneDisplayPossibleMove()
+        protected void RemoveDisplayPossibleMove()
         {
             foreach (int[,] end in possibleEndLocations)
             {
@@ -5604,7 +5598,6 @@ namespace Chess
             {
                 PaintBackground(Settings.SelectMoveSquareColour, end);
             }
-
         }
 
         /// <summary>
