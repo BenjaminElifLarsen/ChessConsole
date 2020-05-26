@@ -1151,6 +1151,8 @@ namespace Chess
                     for (int y = 0; y < 8; y++)
                         oldMap[x, y] = MapMatrix.Map[x, y];
 
+                MapMatrix.UpdateOldMap(); //test location 
+
                 for (int x = 0; x < 8; x++)
                     for (int y = 0; y < 8; y++)
                     {
@@ -2269,16 +2271,16 @@ namespace Chess
             bool PlayerControlNet(bool team)
             {
                 bool? checkmate = false; bool draw = false; bool? otherPlayerCheckMate = false;
-                if (team) //ensures white updates the amount of turns that has gone before it is they turn.
-                {
+                //if (team) //ensures white updates the amount of turns that has gone before it is they turn.
+                //{
                     //MapMatrix.UpdateOldMap();
                     amountOfMoves++;
                     GameStates.TurnCounter = amountOfMoves;
-                }
+                //}
                 //if(GameStates.TurnCounter != 0)
                 //    if (Draw(team)) //If the other player causes a draw, this ensures this player gets informed immediately and does not get to make a move
                 //        return true;
-                MapMatrix.UpdateOldMap();
+                //MapMatrix.UpdateOldMap();
                 Player player;
                 if (team)
                     player = white;
@@ -2298,19 +2300,22 @@ namespace Chess
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
                 //why did it registrate a white piecs as being a treat?
                 ProtectKing.Protect = saveKingList;
+
                 if(checkmate != null)
                     if(!(bool)checkmate) //if the king is not checkmate, play
                         player.Control();
                 
+                //MapMatrix.UpdateOldMap();
+
                 otherPlayerCheckMate = CheckmateChecker(!team); //these two updates the write locations
                 checkmate = IsKingChecked(team); //these two updates the write locations
                 
-                if (!team) //ensures that black updates the amount of moves that has gone after they turn.
-                {
-                    //MapMatrix.UpdateOldMap();
-                    amountOfMoves++;
-                    GameStates.TurnCounter = amountOfMoves;
-                }
+                //if (!team) //ensures that black updates the amount of moves that has gone after they turn.
+                //{
+                //    //MapMatrix.UpdateOldMap();
+                //    amountOfMoves++;
+                //    GameStates.TurnCounter = amountOfMoves;
+                //}
                 if(!GameStates.GameEnded)
                     draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
@@ -2321,7 +2326,6 @@ namespace Chess
                         GameStates.Won = false;
                     else if (otherPlayerCheckMate == true)
                         GameStates.Won = true;
-                    
                     return true;
                 }
 
