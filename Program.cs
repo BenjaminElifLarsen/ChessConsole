@@ -187,6 +187,7 @@ namespace Chess
         private static byte[] menuTitleOffset = new byte[] { (byte)(menuOffset[0]-1),menuOffset[1] };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
+        private static string title = "Chess";
         private static byte extraSpacing = 1; //works as it should
         private static byte edgeSize = (byte)(1); //does not affect the letters and numbers in the correct way. 
         private static byte[] windowSizeModifer = new byte[] { 20, 4 }; //not a setting that should be access too.
@@ -246,6 +247,10 @@ namespace Chess
         /// Gets the char used for the y line on the board.
         /// </summary>
         public static char GetLineY { get => lineY; }
+        /// <summary>
+        /// Gets the title of the program.
+        /// </summary>
+        public static string GetTitle { get => title; }
         /// <summary>
         /// Get the spacing that is added to OffSet
         /// </summary>
@@ -384,6 +389,42 @@ namespace Chess
             /// Gets the symbol used to display a horizontal line in DEC. 
             /// </summary>
             public static string DEC_Horizontal_Line { get => DECHorizontalLine; }
+            /// <summary>
+            /// Gets the symbol used to display a full intersection in DEC.
+            /// </summary>
+            public static string DEC_Intersection_Full { get => DECFullIntersection; }
+            /// <summary>
+            /// Gets the symbol used to display an intersection of the left in DEC.
+            /// </summary>
+            public static string DEC_Intersection_Right { get => DECLeftIntersection; }
+            /// <summary>
+            /// Gets the symbol used to display an intersection of the right in DEC.
+            /// </summary>
+            public static string DEC_Intersection_Left { get => DECRightIntersection; }
+            /// <summary>
+            /// Gets the symbol used to display an intersection of the top in DEC.
+            /// </summary>
+            public static string DEC_Intersection_Top { get => DECDownIntersection; }
+            /// <summary>
+            /// Gets the symbol used to display an intersection of the bottom in DEC.
+            /// </summary>
+            public static string DEC_Intersection_Bottom { get => DECUpIntersection; }
+            /// <summary>
+            /// Gets the symbol used to display a top right corner in DEC.
+            /// </summary>
+            public static string DEC_Corner_TopRight { get => DECTopRightCorner; }
+            /// <summary>
+            /// Gets the symbol used to display a top left corner in DEC.
+            /// </summary>
+            public static string DEC_Corner_TopLeft { get => DECTopLeftCorner; }
+            /// <summary>
+            /// Gets the symbol used to display a bottom right corner in DEC.
+            /// </summary>
+            public static string DEC_Corner_BottomRight { get => DECBottomRightCorner; }
+            /// <summary>
+            /// Gets the symbol used to display a bottom left corner in DEC.
+            /// </summary>
+            public static string DEC_Corner_BottomLeft { get => DECBottomLeftCorner; }
 
             public static void ActivateCVTS()
             {
@@ -1308,6 +1349,7 @@ namespace Chess
         /// </summary>
         private void MainMenu()
         {
+            
             WindowSize();
             string option;
             string title = "Main Menu";
@@ -1322,6 +1364,7 @@ namespace Chess
 
             do
             {
+                Console.Title = Settings.GetTitle + ": Main Menu";
                 Console.Clear();
                 option = Interact(options, title);
 
@@ -1357,6 +1400,7 @@ namespace Chess
         /// </summary>
         private void NetMenu()
         {
+            Console.Title = Settings.GetTitle + ": Net Menu";
             string title = "Net Menu";
             string[] options = { "Host", "Join", "Back"};
             string option;
@@ -1537,6 +1581,7 @@ namespace Chess
         /// </summary>
         private void InteractionMenu()
         {
+            Console.Title = Settings.GetTitle + ": Interaction";
             try
             {
                 string[] interaction = File.ReadAllLines("Interaction.txt");
@@ -1568,6 +1613,7 @@ namespace Chess
         /// </summary>
         private void RulesMenu()
         {
+            Console.Title = Settings.GetTitle + ": Rules";
             try
             {
                 string[] about = File.ReadAllLines("Rules.txt");
@@ -1874,24 +1920,70 @@ namespace Chess
             string[] letters = { "a", "b", "c", "d", "e", "f", "g", "h" };
             string[] numbers = { "1", "2", "3", "4", "5", "6", "7", "8" };
             byte alignment = (byte)Math.Ceiling(Settings.SquareSize / 2f);
-            for (int k = 0; k < distance; k++)
+
+            //top left corner
+            Console.SetCursorPosition(Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m" 
+                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_TopLeft + Settings.CVTS.DEC_Deactive}");
+            
+            //top right corner 
+            Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m"
+                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_TopRight + Settings.CVTS.DEC_Deactive}");
+            
+            //bottom left corner
+            Console.SetCursorPosition(Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m"
+                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_BottomLeft + Settings.CVTS.DEC_Deactive}");
+            
+            //bottom right corner 
+            Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m"
+                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_BottomRight + Settings.CVTS.DEC_Deactive}");
+
+
+            for (int k = 1; k < distance-1; k++) //vertical lines
                 for (int i = 0; i < distance; i += 1 + Settings.SquareSize)
                 {
+
+                    float intersectX = (float)Math.Floor(i / 6d);
+                    float intersectY = k % 6;
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Vertical_Line + Settings.CVTS.DEC_Deactive}");
+                    if(intersectY != 0) //no intersection at all
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Vertical_Line + Settings.CVTS.DEC_Deactive}");
+                    else if (intersectY == 0 && intersectX == 0) //intersection on the left side
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Left + Settings.CVTS.DEC_Deactive}");
+                    else //intersection at the right side. 
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Right + Settings.CVTS.DEC_Deactive}");
+
                 }
-            for (int k = 0; k < distance; k += 1 + Settings.SquareSize)
+            for (int k = 0; k < distance; k += 1 + Settings.SquareSize) //horizontal lines
                 for (int i = 1; i < distance - 1; i++)
                 {
+                    float intersectX = i % 6;
+                    float intersectY = (float)Math.Floor(k / 6d);
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
-                    Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Horizontal_Line + Settings.CVTS.DEC_Deactive}");
+                    if(intersectX != 0) //no intersection at all
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Horizontal_Line + Settings.CVTS.DEC_Deactive}");
+                    else if (intersectX == 0 && intersectY == 0) //intersection at the top
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Top + Settings.CVTS.DEC_Deactive}");
+                    else if (intersectX == 0 && intersectY == 8) //intersection at the bottom
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Bottom + Settings.CVTS.DEC_Deactive}");
+                    else //intersection all other places.
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Full + Settings.CVTS.DEC_Deactive}");
+
+
                 }
 
-            for (int k = 0; k < numbers.Length; k++)
+            for (int k = 0; k < numbers.Length; k++) //numbers
             { //the 1s in this and below for loop should be a setting, it is the amount of empty squares between the numbers/letters and the board edge
                 Console.SetCursorPosition(Settings.Offset[0] - Settings.EdgeSpacing - 1 + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Spacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k)-1);
                 Console.Write(numbers[7-k]); //- Settings.EdgeSpacing should not be used in the calculation above.
@@ -1899,7 +1991,7 @@ namespace Chess
                 Console.Write(numbers[7-k]);
             }
 
-            for (int k = 0; k < letters.Length; k++)
+            for (int k = 0; k < letters.Length; k++) //letters
             {
                 Console.SetCursorPosition(k + Settings.Spacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + Settings.Spacing - Settings.EdgeSpacing - 1);
                 Console.Write(letters[k]);
@@ -2073,7 +2165,8 @@ namespace Chess
         }
 
         private void EndScreen()
-        { 
+        {
+            Console.Title = Settings.GetTitle + ": Game Ended";
             string endMessage = null;
             if (GameStates.Won == null)
                 endMessage = "The Game Ended in a Draw";
@@ -2092,11 +2185,20 @@ namespace Chess
         }
 
         /// <summary>
+        /// Sets the title of the program while a game is going on.
+        /// </summary>
+        static public void GameRunTitle()
+        {
+            Console.Title = Settings.GetTitle + ": Game";
+        }
+
+        /// <summary>
         /// Runs the online game loop. <paramref name="starter"/> decides if the player makes the first move or not.
         /// </summary>
         /// <param name="starter">True for first move, false for second move.</param>
         private void GameLoopNet(bool starter)
         {
+            GameRunTitle();
             bool gameEnded = false;
             Thread receiveThread = new Thread(Network.Receive.ReceiveGameLoop);
             receiveThread.Name = "Receiver Thread";
@@ -2248,6 +2350,7 @@ namespace Chess
         /// </summary>
         private void GameLoop()
         {
+            GameRunTitle();
             bool gameEnded = false; bool whiteWon = false;
             GameStates.IsOnline = false;
             GameStates.PieceAmount[0, 0] = (byte)ChessList.GetList(true).Count;
@@ -3288,6 +3391,7 @@ namespace Chess
         { //should allow the player to surrender, ask for a draw or return to play.
             //remember, you can call the board paint and chess paint functions to recreate the visual board and visual pieces.
             //Should people be allowed to use the menu while it is not their turn? If they are, have to deal with a menu appearing while they e.g. moving a piece and such.
+            Console.Title = Settings.GetTitle + ": Player Menu";
             string[] playerOptions =
             {
                 "Stay Playing",
@@ -3307,6 +3411,7 @@ namespace Chess
                 case "Stay Playing":
                     //call a function that repaint the board and pieces.
                     Console.Clear();
+                    ChessTable.GameRunTitle();
                     ChessTable.RepaintBoardAndPieces();
                     break;
 
@@ -3319,7 +3424,7 @@ namespace Chess
                         Network.Transmit.GeneralValueTransmission(3, Network.Transmit.OtherPlayerIpAddress);
                         GameStates.Pause = true;
                         while (GameStates.Pause) ;
-
+                        ChessTable.GameRunTitle();
                         //Network.Receive. have a function that is solo just a data pending loop
                         //need to wait on answer, so the other player should transmit an answer back before existing this if-statement.
                         //maybe have a GameStates for breaks? E.g. transmitting, setting GameStates.Break = true. While true, do nothing. At some point the other player transmit an answer back and GameStates.Break is set to false by the reciver. 
@@ -3340,6 +3445,7 @@ namespace Chess
                             case "Decline Draw":
                                 Console.Clear();
                                 ChessTable.RepaintBoardAndPieces();
+                                ChessTable.GameRunTitle();
                                 break;
 
                         }
@@ -3356,6 +3462,7 @@ namespace Chess
 
                 case "Game Stats":
                     GameStatsDisplay();
+                    ChessTable.GameRunTitle();
                     ChessTable.RepaintBoardAndPieces();
                     break;
             }
