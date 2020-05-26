@@ -1859,8 +1859,6 @@ namespace Chess
         private int[,] whiteSpawnLocation;
         private int[,] blackSpawnLocation;
         private int[] windowsSize = new int[2];
-        private byte movesWithoutCapture = 0;
-        private byte[] piecesLastTurn = new byte[2];
         private short amountOfMoves = -1;
         private short drawAmountOfMoves = 0;
 
@@ -2062,20 +2060,14 @@ namespace Chess
         /// </summary>
         /// <returns>Returns true if the game is in a draw, else false.</returns>
         private bool Draw(bool newMove = false)
-        { //maybe have an 2d string array with a size 2*3. Each time a piece is moved, the last index is overwritten by the second last index and second last index overwritten by the first.
-            /* Then the first index is overwritten by the new value.  
-             * The value should be a combination of the ID and the location. E.g. +:2:1-45. If at any moment the entire coloum is the same, the game id draw... or is it just lost for that player? 
-             * 
-             * Also need to check if no pawn or capture has happen in the last 50 turns. Also how to check for a stalemate, that is not enough pices to check the king. 
-             * Maybe also have a draw/stalemate function the in the player plus the surrender function.
-             */
+        { 
             if (ChessList.GetList(true).Count == 1 && ChessList.GetList(false).Count == 1)
             {
                 return true;
             }
             else if (newMove) 
             {
-                bool noCapture = false;
+                bool noCapture;
                 bool pawnChange = false;
                 if(MapMatrix.LastMoveMap[0, 0] != null)
                     for (int n = 0; n < 8; n++)
@@ -2199,7 +2191,6 @@ namespace Chess
         private void GameLoopNet(bool starter)
         {
             GameRunTitle();
-            bool gameEnded = false;
             Thread receiveThread = new Thread(Network.Receive.ReceiveGameLoop);
             receiveThread.Name = "Receiver Thread";
             bool whiteTeam = starter;
@@ -2278,6 +2269,7 @@ namespace Chess
                     GameStates.TurnCounter = amountOfMoves;
                 //}
                 //if(GameStates.TurnCounter != 0)
+                Draw(true);
                 //    if (Draw(team)) //If the other player causes a draw, this ensures this player gets informed immediately and does not get to make a move
                 //        return true;
                 //MapMatrix.UpdateOldMap();
@@ -2359,7 +2351,7 @@ namespace Chess
         private void GameLoop()
         {
             GameRunTitle();
-            bool gameEnded = false; bool whiteWon = false;
+            bool gameEnded = false;
             GameStates.IsOnline = false;
             GameStates.PieceAmount[0, 0] = (byte)ChessList.GetList(true).Count;
             GameStates.PieceAmount[0, 1] = (byte)ChessList.GetList(true).Count;
