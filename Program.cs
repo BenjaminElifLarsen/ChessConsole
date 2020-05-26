@@ -1460,9 +1460,9 @@ namespace Chess
                     Console.Clear();
                     Console.CursorTop = Settings.MenuOffset[1];
                     Console.Write($"" +
-                        $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Enter {Settings.CVTS.BrightCyanForeground}host IP address{Settings.CVTS.BrightWhiteForeground}.\n" +
-                        $"{"".PadLeft(Settings.MenuOffset[0])}Press {Settings.CVTS.BrightRedForeground}Enter{Settings.CVTS.BrightWhiteForeground} to comfirm.\n" +
-                        $"{"".PadLeft(Settings.MenuOffset[0])}If {Settings.CVTS.BrightCyanForeground}empty{Settings.CVTS.BrightWhiteForeground}, return to menu.\n" +
+                        $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Enter {Settings.CVTS.BrightCyanForeground}host IP address{Settings.CVTS.BrightWhiteForeground}.{Environment.NewLine}" +
+                        $"{"".PadLeft(Settings.MenuOffset[0])}Press {Settings.CVTS.BrightRedForeground}Enter{Settings.CVTS.BrightWhiteForeground} to comfirm.{Environment.NewLine}" +
+                        $"{"".PadLeft(Settings.MenuOffset[0])}If {Settings.CVTS.BrightCyanForeground}empty{Settings.CVTS.BrightWhiteForeground}, return to menu.{Environment.NewLine}" +
                         $"{"".PadLeft(Settings.MenuOffset[0])}Address:{Settings.CVTS.Reset} ");
                     Console.CursorVisible = true;
                     ipAddress = Console.ReadLine();
@@ -1548,7 +1548,7 @@ namespace Chess
             {
                 Debug.WriteLine(e);
                 Console.WriteLine("Interaction.txt could not be found.");
-                Console.WriteLine("\nEnter to return.");
+                Console.WriteLine("{0}Enter to return.", Environment.NewLine);
             }
             //ConsoleKeyInfo key = new ConsoleKeyInfo();
             //while (Console.KeyAvailable) //this should flush the keys
@@ -1579,7 +1579,7 @@ namespace Chess
             catch
             {
                 Console.WriteLine("Rules.txt could not be found.");
-                Console.WriteLine("\nEnter to return.");
+                Console.WriteLine("{0}Enter to return.",Environment.NewLine);
             }
             while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
 
@@ -1605,6 +1605,7 @@ namespace Chess
             foreach (string str in writeOut)
             {
                 lineNumber++;
+                byte extraLines = 0;
                 string[] words = str.Split(' ');
                 string newStr = "";
                 int stringLength = 0;
@@ -1654,12 +1655,13 @@ namespace Chess
 
                     }
 
-                    Debug.WriteLine("String Width: " + stringLength);
+                    Debug.WriteLine("String Width (new line check): " + stringLength);
                     if (stringLength + word.Length + 1 >= Console.WindowWidth && wordNumber != words.Length)
                     {
                         stringLength = 0;
-                        newStr += "\n";
+                        newStr += Environment.NewLine;
                         lineNumber++;
+                        extraLines++;
                         Debug.WriteLine("New Line: {0}", lineNumber);
                         Debug.WriteLine(word);
                     }
@@ -1672,9 +1674,10 @@ namespace Chess
                         newStr += exitColour + word + Settings.CVTS.Reset + " ";
                     
                     stringLength += word.Length + 1;
-                    Debug.WriteLine("String Width: " + stringLength);
+                    Debug.WriteLine("String Width (word added): " + stringLength);
                 }
-                Console.CursorTop = lineNumber + Settings.MenuTitleOffset[1];
+                Console.CursorTop = lineNumber + Settings.MenuTitleOffset[1] - extraLines;
+                Console.CursorLeft = 0;
                 Console.WriteLine(newStr);
             }
         }
@@ -2080,9 +2083,9 @@ namespace Chess
                 endMessage = $"{firstPart} Player Won";
             }
             Console.CursorTop = Settings.MenuOffset[1];
-            Console.WriteLine($"{"".PadLeft(Settings.MenuTitleOffset[0])}{Settings.CVTS.BrightWhiteForeground}{Settings.CVTS.Underscore}Game Finished{Settings.CVTS.Underscore_Off}\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}{endMessage} {Settings.CVTS.Reset}\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Amount of Moves: {Settings.CVTS.BrightCyanForeground}{Settings.CVTS.Underscore}{amountOfMoves}{Settings.CVTS.Reset} \n" +
+            Console.WriteLine($"{"".PadLeft(Settings.MenuTitleOffset[0])}{Settings.CVTS.BrightWhiteForeground}{Settings.CVTS.Underscore}Game Finished{Settings.CVTS.Underscore_Off}{Environment.NewLine}" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}{endMessage} {Settings.CVTS.Reset}{Environment.NewLine}" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Amount of Moves: {Settings.CVTS.BrightCyanForeground}{Settings.CVTS.Underscore}{amountOfMoves}{Settings.CVTS.Reset}{Environment.NewLine}" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightRedForeground}Enter{Settings.CVTS.BrightWhiteForeground} to continue. {Settings.CVTS.Reset}");
             while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
             Console.Clear();
@@ -3373,11 +3376,11 @@ namespace Chess
             Console.Clear();
             Console.CursorTop = Settings.MenuOffset[1];
             Console.WriteLine($"\x1b]2;Chess: Game Stats\x07" + //sets the title
-                $"{"".PadLeft(Settings.MenuTitleOffset[0])}{mainColour}{underscore}Stats:{reset}\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of white pieces left: {highLightColour}{underscore}{ChessList.GetList(true).Count}{underscore_off}{mainColour}.{reset}\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of black pieces left: {highLightColour}{underscore}{ChessList.GetList(false).Count}{underscore_off}{mainColour}.{reset}\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of turns: {highLightColour}{underscore}{GameStates.TurnCounter}{underscore_off}{mainColour}.{reset}\n" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Turns since last capture or pawn move: {highLightColour}{underscore}{GameStates.TurnDrawCounter}{underscore_off}{mainColour}.{reset}\n" +
+                $"{"".PadLeft(Settings.MenuTitleOffset[0])}{mainColour}{underscore}Stats:{reset}{Environment.NewLine}" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of white pieces left: {highLightColour}{underscore}{ChessList.GetList(true).Count}{underscore_off}{mainColour}.{reset}{Environment.NewLine}" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of black pieces left: {highLightColour}{underscore}{ChessList.GetList(false).Count}{underscore_off}{mainColour}.{reset}{Environment.NewLine}" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of turns: {highLightColour}{underscore}{GameStates.TurnCounter}{underscore_off}{mainColour}.{reset}{Environment.NewLine}" +
+                $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Turns since last capture or pawn move: {highLightColour}{underscore}{GameStates.TurnDrawCounter}{underscore_off}{mainColour}.{reset}{Environment.NewLine}" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{enterColour}Enter {mainColour}to return.{reset}"); //"\x1b(0 x \x1b(B"
             Console.ReadLine();
             Console.Clear();
