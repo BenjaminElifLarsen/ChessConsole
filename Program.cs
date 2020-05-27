@@ -5269,15 +5269,24 @@ namespace Chess
         public virtual void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
+            {
                 Taken();
+                Debug.WriteLine("{0}: Captured", ID);
+            }
+                //Taken();
             else
             { //for king, rock and pawn it needs more code. 
                 if (newLocation != null)
                 {
+                    Debug.WriteLine("Old Location: {0} {1}", mapLocation[0],mapLocation[1]);
                     RemoveDraw(mapLocation);
+                    Debug.WriteLine("Visuals Removed");
                     mapLocation = newLocation;
+                    Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     LocationUpdate();
+                    Debug.WriteLine("Location Updated");
                     Draw();
+                    Debug.WriteLine("Visuals Repainted");
                 }
             }
         }
