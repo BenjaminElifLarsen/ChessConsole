@@ -325,19 +325,6 @@ namespace Chess
             private static string underscore_off = "\x1b[24m";
             private static string reset = "\x1b[0m";
             private static string redBrightForColour = "\x1b[91m";
-            private static string DECActive = "\x1b(0";
-            private static string DECDeactive = "\x1b(B";
-            private static string DECVerticalLine = "x";
-            private static string DECHorizontalLine = "q";
-            private static string DECFullIntersection = "n";
-            private static string DECUpIntersection = "v";
-            private static string DECDownIntersection = "w";
-            private static string DECRightIntersection = "t";
-            private static string DECLeftIntersection = "u";
-            private static string DECBottomRightCorner = "j";
-            private static string DECTopRightCorner = "k";
-            private static string DECTopLeftCorner = "l";
-            private static string DECBottomLeftCorner = "m";
             private static string foregroundColouring = "\x1b[38;2;";
             private static string backgroundColouring = "\x1b[48;2;";
 
@@ -373,61 +360,9 @@ namespace Chess
             /// All text called after this will be displayed with default values.
             /// </summary>
             public static string Reset { get => reset; }
-            /// <summary>
-            /// Activates DEC and all texts after this call will be displayed as DEC rather than ASCII. Use <c>DEC_Deactive</c> to deactive DEC character set mapping
-            /// </summary>
-            public static string DEC_Active { get => DECActive; } //all of these DEC have nothing to do with CVTS and should be moved to their own class.
-            /// <summary>
-            /// Deactivates DEC and all texts after this call will be displayed as ASCII. 
-            /// </summary>
-            public static string DEC_Deactive { get => DECDeactive; }
-            /// <summary>
-            /// Get the symbol used to display a vertical line in DEC.
-            /// </summary>
-            public static string DEC_Vertical_Line { get => DECVerticalLine; }
-            /// <summary>
-            /// Gets the symbol used to display a horizontal line in DEC. 
-            /// </summary>
-            public static string DEC_Horizontal_Line { get => DECHorizontalLine; }
-            /// <summary>
-            /// Gets the symbol used to display a full intersection in DEC.
-            /// </summary>
-            public static string DEC_Intersection_Full { get => DECFullIntersection; }
-            /// <summary>
-            /// Gets the symbol used to display an intersection of the left in DEC.
-            /// </summary>
-            public static string DEC_Intersection_Right { get => DECLeftIntersection; }
-            /// <summary>
-            /// Gets the symbol used to display an intersection of the right in DEC.
-            /// </summary>
-            public static string DEC_Intersection_Left { get => DECRightIntersection; }
-            /// <summary>
-            /// Gets the symbol used to display an intersection of the top in DEC.
-            /// </summary>
-            public static string DEC_Intersection_Top { get => DECDownIntersection; }
-            /// <summary>
-            /// Gets the symbol used to display an intersection of the bottom in DEC.
-            /// </summary>
-            public static string DEC_Intersection_Bottom { get => DECUpIntersection; }
-            /// <summary>
-            /// Gets the symbol used to display a top right corner in DEC.
-            /// </summary>
-            public static string DEC_Corner_TopRight { get => DECTopRightCorner; }
-            /// <summary>
-            /// Gets the symbol used to display a top left corner in DEC.
-            /// </summary>
-            public static string DEC_Corner_TopLeft { get => DECTopLeftCorner; }
-            /// <summary>
-            /// Gets the symbol used to display a bottom right corner in DEC.
-            /// </summary>
-            public static string DEC_Corner_BottomRight { get => DECBottomRightCorner; }
-            /// <summary>
-            /// Gets the symbol used to display a bottom left corner in DEC.
-            /// </summary>
-            public static string DEC_Corner_BottomLeft { get => DECBottomLeftCorner; }
 
             /// <summary>
-            /// Allows the use of CVTS. Needs to be called before any of the non-DEC will work.
+            /// Allows the use of CVTS and DEC.
             /// </summary>
             public static void ActivateCVTS()
             {
@@ -437,7 +372,86 @@ namespace Chess
                 SetConsoleMode(handle, mode | 0x4);
             }
 
+
+            /// <summary>
+            ///  Digital Equipment Corporation Special Graphics Character Set class. Requires <c>Settings.CVTS.ActivateCVTS()</c> to be called first to work
+            /// </summary>
+            public class DEC
+            {
+                private static string DECActive = "\x1b(0";
+                private static string DECDeactive = "\x1b(B";
+                private static string DECVerticalLine = "x";
+                private static string DECHorizontalLine = "q";
+                private static string DECFullIntersection = "n";
+                private static string DECUpIntersection = "v";
+                private static string DECDownIntersection = "w";
+                private static string DECRightIntersection = "t";
+                private static string DECLeftIntersection = "u";
+                private static string DECBottomRightCorner = "j";
+                private static string DECTopRightCorner = "k";
+                private static string DECTopLeftCorner = "l";
+                private static string DECBottomLeftCorner = "m";
+                private static string DECPlusMinus = "g";
+
+                /// <summary>
+                /// Activates DEC and all texts after this call will be displayed as DEC rather than ASCII. Use <c>DEC_Deactive</c> to deactive DEC character set mapping
+                /// </summary>
+                public static string DEC_Active { get => DECActive; } //all of these DEC have nothing to do with CVTS and should be moved to their own class.
+                /// <summary>
+                /// Deactivates DEC and all texts after this call will be displayed as ASCII. 
+                /// </summary>
+                public static string DEC_Deactive { get => DECDeactive; }
+                /// <summary>
+                /// Get the symbol used to display a vertical line in DEC.
+                /// </summary>
+                public static string DEC_Vertical_Line { get => DECVerticalLine; }
+                /// <summary>
+                /// Gets the symbol used to display a horizontal line in DEC. 
+                /// </summary>
+                public static string DEC_Horizontal_Line { get => DECHorizontalLine; }
+                /// <summary>
+                /// Gets the symbol used to display a full intersection in DEC.
+                /// </summary>
+                public static string DEC_Intersection_Full { get => DECFullIntersection; }
+                /// <summary>
+                /// Gets the symbol used to display an intersection of the left in DEC.
+                /// </summary>
+                public static string DEC_Intersection_Right { get => DECLeftIntersection; }
+                /// <summary>
+                /// Gets the symbol used to display an intersection of the right in DEC.
+                /// </summary>
+                public static string DEC_Intersection_Left { get => DECRightIntersection; }
+                /// <summary>
+                /// Gets the symbol used to display an intersection of the top in DEC.
+                /// </summary>
+                public static string DEC_Intersection_Top { get => DECDownIntersection; }
+                /// <summary>
+                /// Gets the symbol used to display an intersection of the bottom in DEC.
+                /// </summary>
+                public static string DEC_Intersection_Bottom { get => DECUpIntersection; }
+                /// <summary>
+                /// Gets the symbol used to display a top right corner in DEC.
+                /// </summary>
+                public static string DEC_Corner_TopRight { get => DECTopRightCorner; }
+                /// <summary>
+                /// Gets the symbol used to display a top left corner in DEC.
+                /// </summary>
+                public static string DEC_Corner_TopLeft { get => DECTopLeftCorner; }
+                /// <summary>
+                /// Gets the symbol used to display a bottom right corner in DEC.
+                /// </summary>
+                public static string DEC_Corner_BottomRight { get => DECBottomRightCorner; }
+                /// <summary>
+                /// Gets the symbol used to display a bottom left corner in DEC.
+                /// </summary>
+                public static string DEC_Corner_BottomLeft { get => DECBottomLeftCorner; }
+                /// <summary>
+                /// Gets the symbol used to display a plus/minus in DEC.
+                /// </summary>
+                public static string DEC_Plus_Minus { get => DECPlusMinus; }
+            }
         }
+
     }
 
     public class GameStates
@@ -1934,60 +1948,60 @@ namespace Chess
             Console.SetCursorPosition(Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
             Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m" 
                 + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
-                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_TopLeft + Settings.CVTS.DEC_Deactive}");
+                $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Corner_TopLeft + Settings.CVTS.DEC.DEC_Deactive}");
             
             //top right corner 
             Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
             Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m"
                 + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
-                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_TopRight + Settings.CVTS.DEC_Deactive}");
+                $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Corner_TopRight + Settings.CVTS.DEC.DEC_Deactive}");
             
             //bottom left corner
             Console.SetCursorPosition(Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
             Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m"
                 + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
-                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_BottomLeft + Settings.CVTS.DEC_Deactive}");
+                $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Corner_BottomLeft + Settings.CVTS.DEC.DEC_Deactive}");
             
             //bottom right corner 
             Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
             Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m"
                 + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
-                $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Corner_BottomRight + Settings.CVTS.DEC_Deactive}");
+                $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Corner_BottomRight + Settings.CVTS.DEC.DEC_Deactive}");
 
 
             for (int k = 1; k < distance-1; k++) //vertical lines
                 for (int i = 0; i < distance; i += 1 + Settings.SquareSize)
                 {
 
-                    float intersectX = (float)Math.Floor(i / 6d);
-                    float intersectY = k % 6;
+                    float intersectX = (float)Math.Floor(i / (double)(Settings.SquareSize+Settings.Spacing));
+                    float intersectY = k % (float)(Settings.SquareSize + Settings.Spacing);
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     if(intersectY != 0) //no intersection at all
-                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Vertical_Line + Settings.CVTS.DEC_Deactive}");
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Vertical_Line + Settings.CVTS.DEC.DEC_Deactive}");
                     else if (intersectY == 0 && intersectX == 0) //intersection on the left side
-                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Left + Settings.CVTS.DEC_Deactive}");
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Left + Settings.CVTS.DEC.DEC_Deactive}");
                     else //intersection at the right side. 
-                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Right + Settings.CVTS.DEC_Deactive}");
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Right + Settings.CVTS.DEC.DEC_Deactive}");
 
                 }
             for (int k = 0; k < distance; k += 1 + Settings.SquareSize) //horizontal lines
                 for (int i = 1; i < distance - 1; i++)
                 {
-                    float intersectX = i % 6;
-                    float intersectY = (float)Math.Floor(k / 6d);
+                    float intersectX = i % (float)(Settings.SquareSize + Settings.Spacing);
+                    float intersectY = (float)Math.Floor(k / (double)(Settings.SquareSize + Settings.Spacing));
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.LineColourBase[0] + ";" + Settings.LineColourBase[1] + ";" + Settings.LineColourBase[2] + "m "); //background colour
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
                     if(intersectX != 0) //no intersection at all
-                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Horizontal_Line + Settings.CVTS.DEC_Deactive}");
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Horizontal_Line + Settings.CVTS.DEC.DEC_Deactive}");
                     else if (intersectX == 0 && intersectY == 0) //intersection at the top
-                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Top + Settings.CVTS.DEC_Deactive}");
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Top + Settings.CVTS.DEC.DEC_Deactive}");
                     else if (intersectX == 0 && intersectY == 8) //intersection at the bottom
-                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Bottom + Settings.CVTS.DEC_Deactive}");
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Bottom + Settings.CVTS.DEC.DEC_Deactive}");
                     else //intersection all other places.
-                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC_Active + Settings.CVTS.DEC_Intersection_Full + Settings.CVTS.DEC_Deactive}");
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Full + Settings.CVTS.DEC.DEC_Deactive}");
 
 
                 }
@@ -2582,7 +2596,7 @@ namespace Chess
                             else
                                 break;
                         } while (pos < maxRange);
-                        if (canStandOn.Count != 0)
+                        //if (canStandOn.Count != 0)
                             ProtectKing.ProtectingTheKing.Add(pawn.GetID, canStandOn);
                     }
 
@@ -2688,10 +2702,11 @@ namespace Chess
 
                                 CheckFelts(mov, toCheckFor, addLocationToDic: true);
                                 CheckFelts(new int[] { -mov[0], -mov[1] }, toCheckFor, addLocationToDic: true);
-                                ProtectKing.ProtectingTheKing.Add(pieces.GetID, endLocations);
+                                //ProtectKing.ProtectingTheKing.Add(pieces.GetID, endLocations);
                                 break;
                             }
                         }
+                        ProtectKing.ProtectingTheKing.Add(pieces.GetID, endLocations);
                     }
                     //bool foundHostile = false;
                     //bool shouldCheck = true;
@@ -3586,11 +3601,21 @@ namespace Chess
         private void MovePiece()
         {
             List<int[,]> locations = null;
+            //bool protectingTheKing = false;
             locations = ProtectKing.GetListFromDic(ChessList.GetList(white)[selectedChessPiece].GetID);
             if(locations == null)
             {
                 locations = ProtectKing.GetListFromProtectingKingDic(ChessList.GetList(white)[selectedChessPiece].GetID);
             }
+            //foreach (string protectID in ProtectKing.CannotMove)
+            //{
+            //    if (ChessList.GetList(white)[selectedChessPiece].GetID == protectID)
+            //    {
+            //        protectingTheKing = true;
+            //        break;
+            //    }
+                    
+            //}
             //if(locations == null)
             //    foreach (string protectID in ProtectKing.CannotMove)
             //    {
@@ -3600,6 +3625,7 @@ namespace Chess
             //    }
             if (locations != null)
                 ChessList.GetList(white)[selectedChessPiece].SetEndLocations = locations;
+            
             ChessList.GetList(white)[selectedChessPiece].Control();
         }
 
@@ -3729,6 +3755,7 @@ namespace Chess
         /// </summary>
         protected override void EndLocations()
         {
+            possibleEndLocations = new List<int[,]>();
             FindCastlingOptions(possibleEndLocations);
 
             //sbyte[] position = new sbyte[2] { -1, 0 };
@@ -4135,7 +4162,7 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-            if(possibleEndLocations.Count == 0)
+            if(possibleEndLocations == null)
                 EndLocations();
             if (possibleEndLocations.Count != 0)
             {
@@ -4171,12 +4198,15 @@ namespace Chess
                     }
                 } while (!hasSelected);
                 RemoveDisplayPossibleMove();
-                possibleEndLocations.Clear();
+                possibleEndLocations = null;
             }
             else
             {
+                possibleEndLocations = null;
                 couldMove = false;
             }
+            //RemoveDisplayPossibleMove();
+            //possibleEndLocations = null;
 
             bool FeltIDCheck(int[] loc_)
             {
@@ -4316,6 +4346,7 @@ namespace Chess
         /// </summary>
         protected override void EndLocations()
         {
+            possibleEndLocations = new List<int[,]>();
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
 
@@ -4436,7 +4467,7 @@ namespace Chess
             //}
             //else
             //{
-            if(possibleEndLocations.Count == 0)
+            if(possibleEndLocations == null)
                 EndLocations();
             //}
             if (possibleEndLocations.Count != 0)
@@ -4480,13 +4511,16 @@ namespace Chess
                     }
                 } while (!hasSelected);
                 RemoveDisplayPossibleMove();
-                possibleEndLocations.Clear();
+                possibleEndLocations = null;
                 hasMoved = true;
             }
             else
             {
+                possibleEndLocations = null;
                 couldMove = false;
             }
+            //RemoveDisplayPossibleMove();
+            //possibleEndLocations = null;
 
         }
 
@@ -4601,6 +4635,7 @@ namespace Chess
         /// </summary>
         protected override void EndLocations()
         {
+            possibleEndLocations = new List<int[,]>();
             if ((!team && mapLocation[1] != 0) || (team && mapLocation[1] != 7))
                 if (MapMatrix.Map[mapLocation[0], mapLocation[1] + moveDirection] == "")
                 {
@@ -4792,7 +4827,8 @@ namespace Chess
         /// Calculates end locations and if legal add them to a list. 
         /// </summary>
         protected override void EndLocations()
-        { 
+        {
+            possibleEndLocations = new List<int[,]>();
             sbyte[] position = new sbyte[2] { -1, 0 };
             CheckPosistions(position); //left
 
@@ -4957,6 +4993,12 @@ namespace Chess
                 "|O|",
                 "-B-"
             };
+            //Design = new string[]
+            //{ //changes the length of the first string so code needs to be changed to either use the amount of strings in the array or something else. Also the code that control the paint location
+            //    $"_{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Plus_Minus}{Settings.CVTS.DEC.DEC_Deactive}_",
+            //    "|O|",
+            //    "-B-"
+            //};
             Draw();
             directions = new int[][]
                         {
@@ -4972,6 +5014,7 @@ namespace Chess
         /// </summary>
         protected override void EndLocations()
         {
+            possibleEndLocations = new List<int[,]>();
             sbyte[] position = new sbyte[2] { -1, -1 };
             CheckPosistions(position); //left, up
 
@@ -5062,6 +5105,7 @@ namespace Chess
         /// </summary>
         protected override void EndLocations()
         { //there must be a better way to do this...
+            possibleEndLocations = new List<int[,]>();
             sbyte[] potenieltLocation = { -2, -1 }; //2 down left
             if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] >= 0)
             {
@@ -5154,7 +5198,7 @@ namespace Chess
         protected string id;
         protected bool hasBeenTaken = false;
         protected byte squareSize = Settings.SquareSize;
-        protected List<int[,]> possibleEndLocations = new List<int[,]>();
+        protected List<int[,]> possibleEndLocations = null;
         protected string teamIcon; //come up with a better name
         protected bool couldMove;
         protected bool specialBool;
@@ -5332,7 +5376,7 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-            if(possibleEndLocations.Count == 0)
+            if(possibleEndLocations == null)
                 EndLocations();
             
             if (possibleEndLocations.Count != 0)
@@ -5360,12 +5404,15 @@ namespace Chess
                     }
                 } while (!hasSelected);
                 RemoveDisplayPossibleMove();
-                possibleEndLocations.Clear();
+                possibleEndLocations = null;
             }
             else
             {
+                possibleEndLocations = null;
                 couldMove = false;
             }
+            //RemoveDisplayPossibleMove();
+            //possibleEndLocations = null;
         }
 
         /// <summary>
