@@ -1285,7 +1285,7 @@ namespace Chess
                         {
                             foreach (ChessPiece chePie in ChessList.GetList(!team))
                             {
-                                if (chePie.GetID.Split(':')[2] + "P" == feltIDNew.Split(':')[2])
+                                if (chePie.GetID.Split(':')[2] + "P" == feltIDNew.Split(':')[2] && chePie.CanBePromoted)
                                 {//checks the last two parts to see if there is a pawn promotion
 
                                     byte[] colour = team ? Settings.BlackColour : Settings.WhiteColour; 
@@ -4412,6 +4412,7 @@ namespace Chess
             promotions.Add("Bishop", 3);
             promotions.Add("Queen", 2);
             directions = new int[][] { new int[] {0, moveDirection } };
+            canPromoted = true;
         }
 
         /// <summary>
@@ -5157,6 +5158,7 @@ namespace Chess
         protected string teamIcon; //come up with a better name
         protected bool couldMove;
         protected bool specialBool;
+        protected bool canPromoted; 
         protected int[][] directions;
         //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
@@ -5257,6 +5259,11 @@ namespace Chess
         /// Access the directions the chess pieces can move in. 
         /// </summary>
         public int[][] GetDirection { get => directions; }
+        
+        /// <summary>
+        /// If true the piece can promoted, else it is not allowed to be promoted
+        /// </summary>
+        public bool CanBePromoted { get => canPromoted; }
 
         /// <summary>
         /// Function that "controls" a piece. What to explain and how to..
