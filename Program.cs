@@ -2286,8 +2286,13 @@ namespace Chess
                 
                 GameStates.TurnCounter++;
 
-                Draw(updatePieces: !team);
-                
+
+                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //removes it own, captured, pieces. Needs to be called before player.Control else the default hover overed piece might be one of the captured. 
+                {
+                    if (ChessList.GetList(team)[i].BeenTaken)
+                        ChessList.GetList(team).RemoveAt(i);
+                }
+
                 Player player;
                 if (team)
                     player = white;
@@ -2298,17 +2303,13 @@ namespace Chess
                 ProtectKing.CannotMove = ProtectingTheKing(team); //under testing
 
 
-                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //removes it own, captured, pieces. Needs to be called before player.Control else the default hover overed piece might be one of the captured. 
-                {
-                    if (ChessList.GetList(team)[i].BeenTaken)
-                        ChessList.GetList(team).RemoveAt(i);
-                }
-
                 byte teamIndex = team ? (byte)0 : (byte)1;
                 GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
                 GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
                 GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
                 GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+
+                Draw(team, updatePieces: team);
 
                 otherPlayerCheckMate = IsKingChecked(!team); //updates whether the other player' king is under threat.
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
@@ -2348,12 +2349,12 @@ namespace Chess
                 GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
                 if (!GameStates.GameEnded)
-                    draw = Draw(true, true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
+                    draw = Draw(!team, !team); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
                         GameStates.Won = null;
-                    else if (checkmate == true) //this one would never be true as otherPlayerCheckMate will be true for this one can be true. 
+                    else if (checkmate == true) //this one would never be true as otherPlayerCheckMate will be true before this one can be true. 
                         GameStates.Won = false;
                     else if (otherPlayerCheckMate == true)
                         GameStates.Won = true;
