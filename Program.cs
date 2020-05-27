@@ -2399,6 +2399,7 @@ namespace Chess
                     MapMatrix.UpdateOldMap();
                     //amountOfMoves++;
                     //GameStates.TurnCounter = amountOfMoves;
+                    GameStates.TurnCounter++;
                 }
                 bool checkmate = false; bool draw = false;
                 Player player;
@@ -2534,21 +2535,23 @@ namespace Chess
 
             void PawnProtecting(Pawn pawn)
             {
-
+                int[] hostileLocation = new int[2];
+                int[] scaledDifferences = new int[2];
+                int[] hostileDiffernece = new int[2];
                 int[] differences = new int[] { pawn.GetMapLocation[0] - kingLocation[0], pawn.GetMapLocation[1] - kingLocation[1] };
                 if (differences[0] != 0 && (differences[0] == differences[1] || differences[0] == -differences[1]))
-                    differences[0] = differences[0] > 0 ? 1 : -1; //scales it to be 1 or -1
+                    scaledDifferences[0] = differences[0] > 0 ? 1 : -1; //scales it to be 1 or -1
                 else if (differences[0] == 0)
-                    differences[1] = differences[1] > 0 ? 1 : -1;
+                    scaledDifferences[1] = differences[1] > 0 ? 1 : -1;
                 if (differences[1] != 0 && (differences[0] == differences[1] || differences[0] == -differences[1]))
-                    differences[1] = differences[1] > 0 ? 1 : -1;
+                    scaledDifferences[1] = differences[1] > 0 ? 1 : -1;
                 else if (differences[1] == 0)
-                    differences[0] = differences[0] > 0 ? 1 : -1;
+                    scaledDifferences[0] = differences[0] > 0 ? 1 : -1;
                 bool canReachKing = false;
                 int[] mov = new int[2];
                 foreach (int[] move in directions)
                 {
-                    if (move[0] == differences[0] && move[1] == differences[1])
+                    if (move[0] == scaledDifferences[0] && move[1] == scaledDifferences[1])
                     {
                         mov = move;
                         canReachKing = true;
@@ -2573,7 +2576,8 @@ namespace Chess
                     //check all squres in both directions of mov (-mov) 
                     if (PawnFeltCheck(toCheckFor)) 
                     {
-                        keepKingSafe = PawnFeltCheck(toCheckFor, true); //need to first check the other direction
+                        keepKingSafe = PawnFeltCheck(new List<string>() {"1"}, true); //need to first check the other direction
+                        hostileDiffernece = new int[] { hostileLocation[0] - pawn.GetMapLocation[0], hostileLocation[1] - pawn.GetMapLocation[1]};
                         if(keepKingSafe)
                             protectingPieces.Add(pawn.GetID);
                         //if it is true, remove the (..., true) and just add it to the list in this if-statement.
@@ -2599,6 +2603,12 @@ namespace Chess
                         //if (canStandOn.Count != 0)
                             ProtectKing.ProtectingTheKing.Add(pawn.GetID, canStandOn);
                     }
+                    else if (keepKingSafe && mov[0] == hostileDiffernece[0] && mov[1] == hostileDiffernece[1])
+                    {
+                        ProtectKing.ProtectingTheKing.Add(pawn.GetID, new List<int[,]>() { new int[,] { { hostileLocation[0], hostileLocation[1] } } });
+                    }
+                    else if (keepKingSafe)
+                        ProtectKing.ProtectingTheKing.Add(pawn.GetID, new List<int[,]>());
 
                 }
                 bool PawnFeltCheck(List<string> toCheckFor, bool direction = false)
@@ -2606,10 +2616,15 @@ namespace Chess
                     int[] loc_ = new int[] { pawn.GetMapLocation[0], pawn.GetMapLocation[1] };
                     bool foundPiece = false;
                     bool shouldCheck = true;
+                    string teamSignToCheck;
                     sbyte dir = direction ? (sbyte)-1 : (sbyte)1; 
                     do
                     {
-                        loc_[0] += mov[0];
+                        if (direction)
+                            teamSignToCheck = team ? "+" : "-";
+                        else
+                            teamSignToCheck = team ? "-" : "+";
+                        loc_[0] += mov[0] * dir;
                         loc_[1] += mov[1] * dir;
                         if ((loc_[0] <= 7 && loc_[0] >= 0) && (loc_[1] <= 7 && loc_[1] >= 0))
                         {
@@ -2617,14 +2632,19 @@ namespace Chess
                             if (id != "")
                             {
                                 string[] IDparts = id.Split(':');
-                                if (IDparts[0] != pawn.GetID.Split(':')[0])
+                                if (IDparts[0] == teamSignToCheck)
                                 {
                                     foreach (string checkFor in toCheckFor)
                                     {
                                         if (checkFor == IDparts[1])
                                         {
                                             foundPiece = true;
-                                            shouldCheck = false; 
+                                            shouldCheck = false;
+                                            if (!direction)
+                                            {
+                                                hostileLocation[0] = loc_[0];
+                                                hostileLocation[1] = loc_[1];
+                                            }
                                             break; 
                                         }
                                     }
@@ -2651,22 +2671,22 @@ namespace Chess
 
             void Protecting(ChessPiece pieces)
             {
-
+                int[] scaledDifferences = new int[2];
                 int[] differences = new int[] {pieces.GetMapLocation[0] - kingLocation[0], pieces.GetMapLocation[1] - kingLocation[1] };
                 if (differences[0] != 0 && (differences[0] == differences[1] || differences[0] == -differences[1]))
-                    differences[0] = differences[0] > 0 ? 1 : -1; //scales it to be 1 or -1
+                    scaledDifferences[0] = differences[0] > 0 ? 1 : -1; //scales it to be 1 or -1
                 else if (differences[0] == 0)
-                    differences[1] = differences[1] > 0 ? 1 : -1;
+                    scaledDifferences[1] = differences[1] > 0 ? 1 : -1;
                 if (differences[1] != 0 && (differences[0] == differences[1] || differences[0] == -differences[1]))
-                    differences[1] = differences[1] > 0 ? 1 : -1;
+                    scaledDifferences[1] = differences[1] > 0 ? 1 : -1;
                 else if (differences[1] == 0)
-                    differences[0] = differences[0] > 0 ? 1 : -1;
+                    scaledDifferences[0] = differences[0] > 0 ? 1 : -1;
                 bool canReachKing = false;
 
                 int[] mov = new int[2];
                 foreach (int[] move in directions)
                 {
-                    if(move[0] == differences[0] && move[1] == differences[1])
+                    if(move[0] == scaledDifferences[0] && move[1] == scaledDifferences[1])
                     {
                         mov = move;
                         canReachKing = true;
