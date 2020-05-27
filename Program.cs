@@ -3686,7 +3686,7 @@ namespace Chess
             {
                 EndLocations();
                 bool canMove = possibleEndLocations.Count != 0;
-                possibleEndLocations.Clear();
+                possibleEndLocations = null;
                 return canMove;
             }
         }
