@@ -2232,11 +2232,10 @@ namespace Chess
                 {
                     GameStates.GameEnded = PlayerControlNet(starter);
                     GameStates.IsTurn = false;
-                    if (GameStates.GameEnded) //have conditions with whether the player has drawen, lost or won
+                    if (GameStates.GameEnded) 
                     { //transmit a signal to the other player' receiver to let them know the game has ended. 
                         if (GameStates.Won == null)
                             Network.Transmit.GeneralValueTransmission(6, Network.Transmit.OtherPlayerIpAddress); //Draw  //5 is loss for the other player, 4 is victory for the other player. 
-                        //receiveThread.Abort(); //figure out a better way.
                         else if (GameStates.Won == true)
                             Network.Transmit.GeneralValueTransmission(5, Network.Transmit.OtherPlayerIpAddress); //other player lost
                         else if (GameStates.Won == false)
@@ -2272,11 +2271,9 @@ namespace Chess
 
             } while (!GameStates.GameEnded);
             ChessList.RemoveAllPieces();
-            //GameStates.Reset();
             Network.Receive.Stop();
             Console.Clear();
             EndScreen();
-            //Console.ReadLine();
             GameStates.Reset();
             MapMatrix.AllowForMapPreparation();
 
@@ -2285,7 +2282,6 @@ namespace Chess
                 bool? checkmate = false; bool draw = false; bool? otherPlayerCheckMate = false;
                 
                 GameStates.TurnCounter++;
-
 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //removes it own, captured, pieces. Needs to be called before player.Control else the default hover overed piece might be one of the captured. 
                 {
@@ -2298,22 +2294,22 @@ namespace Chess
                     player = white;
                 else
                     player = black;
+
                 ProtectKing.ProtectEndLocations.Clear();
                 ProtectKing.ProtectingTheKing.Clear();
                 ProtectKing.CannotMove = ProtectingTheKing(team); //under testing
-
-
+                
                 byte teamIndex = team ? (byte)0 : (byte)1;
                 GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
                 GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
                 GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
                 GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
-                Draw(team, updatePieces: team);
+                Draw(true, updatePieces: team);
 
                 otherPlayerCheckMate = IsKingChecked(!team); //updates whether the other player' king is under threat.
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
-                //why did it registrate a white piecs as being a treat?
+
                 ProtectKing.Protect = saveKingList;
                 if (MapMatrix.LastMoveMap[0,0] == null)
                     MapMatrix.UpdateOldMap();
@@ -2323,7 +2319,6 @@ namespace Chess
 
                 otherPlayerCheckMate = CheckmateChecker(!team); //these two updates the write locations
                 checkmate = IsKingChecked(team); //these two updates the write locations
-
 
                 for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes captured pieces.
                 {
@@ -2349,7 +2344,7 @@ namespace Chess
                 GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
                 if (!GameStates.GameEnded)
-                    draw = Draw(!team, !team); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
+                    draw = Draw(false, !team); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
