@@ -1033,24 +1033,24 @@ namespace Chess
                         }
                         else if (type == 4) //this player is victory
                         {
-                            networkStream.Close(); //maybe just have a finally.
-                            otherPlayer.Close();
-                            //GameStates.GameEnded = true;
-                            //GameStates.Won = true;
+                            //networkStream.Close(); //maybe just have a finally.
+                            //otherPlayer.Close();
+                            GameStates.GameEnded = true;
+                            GameStates.Won = true;
                         }
                         else if (type == 5) //this player is defeated
                         {
-                            networkStream.Close(); //maybe just have a finally.
-                            otherPlayer.Close();
-                            //GameStates.GameEnded = true;
-                            //GameStates.Won = false;
+                            //networkStream.Close(); //maybe just have a finally.
+                            //otherPlayer.Close();
+                            GameStates.GameEnded = true;
+                            GameStates.Won = false;
                         }
                         else if (type == 6) //draw by gamerules.
                         {
-                            networkStream.Close(); //maybe just have a finally.
-                            otherPlayer.Close();
-                            //GameStates.Won = null;
-                            //GameStates.GameEnded = true;
+                            //networkStream.Close(); //maybe just have a finally.
+                            //otherPlayer.Close();
+                            GameStates.Won = null;
+                            GameStates.GameEnded = true;
                         }
                         else if (type == 10) //contacted to ensure there is a connection
                         {
