@@ -4012,16 +4012,25 @@ namespace Chess
         public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
-                Taken();
-            else
             {
+                Taken();
+                Debug.WriteLine("{0} Captured", ID);
+            }
+            //Taken();
+            else
+            { 
                 if (newLocation != null)
                 {
-                    HasMoved = true;
+                    hasMoved = true;
+                    Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     RemoveDraw(mapLocation);
+                    Debug.WriteLine("Visuals Removed");
                     mapLocation = newLocation;
+                    Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     LocationUpdate();
+                    Debug.WriteLine("Location Updated");
                     Draw();
+                    Debug.WriteLine("Visuals Repainted");
                 }
             }
 
@@ -4546,23 +4555,32 @@ namespace Chess
         public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
+            {
                 Taken();
+                Debug.WriteLine("{0} Captured", ID);
+            }
             else
-            { //for king, rock and pawn it needs more code. 
+            { 
                 if (newLocation != null)
                 {
+                    Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     if (Math.Abs(newLocation[1] - mapLocation[1]) == 2)
                     {
                         specialBool = true;
                     }
                     RemoveDraw(mapLocation);
+                    Debug.WriteLine("Visuals Removed");
                     mapLocation = newLocation;
+                    Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     LocationUpdate();
+                    Debug.WriteLine("Location Updated");
                     Draw();
+                    Debug.WriteLine("Visuals Repainted");
                 }
             }
-
         }
+
+
 
         /// <summary>
         /// Overriden control function of the base class. Checks if the chess piece is ready for a promotion. 
@@ -4874,16 +4892,25 @@ namespace Chess
         public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
         {
             if (captured)
+            {
                 Taken();
+                Debug.WriteLine("{0} Captured", ID);
+            }
+            //Taken();
             else
-            { //for king, rook and pawn it needs more code. 
+            { //for king, rock and pawn it needs more code. 
                 if (newLocation != null)
                 {
-                    HasMoved = true;
+                    hasMoved = true;
+                    Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     RemoveDraw(mapLocation);
+                    Debug.WriteLine("Visuals Removed");
                     mapLocation = newLocation;
+                    Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     LocationUpdate();
+                    Debug.WriteLine("Location Updated");
                     Draw();
+                    Debug.WriteLine("Visuals Repainted");
                 }
             }
 
@@ -5271,7 +5298,7 @@ namespace Chess
             if (captured)
             {
                 Taken();
-                Debug.WriteLine("{0}: Captured", ID);
+                Debug.WriteLine("{0} Captured", ID);
             }
                 //Taken();
             else
