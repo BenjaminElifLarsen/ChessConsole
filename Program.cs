@@ -2325,18 +2325,7 @@ namespace Chess
                 //    amountOfMoves++;
                 //    GameStates.TurnCounter = amountOfMoves;
                 //}
-                if(!GameStates.GameEnded)
-                    draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
-                if (checkmate == true || draw || otherPlayerCheckMate == true)
-                {
-                    if (draw)
-                        GameStates.Won = null;
-                    else if (checkmate == true) //this one would never be true as otherPlayerCheckMate will be true for this one can be true. 
-                        GameStates.Won = false;
-                    else if (otherPlayerCheckMate == true)
-                        GameStates.Won = true;
-                    return true;
-                }
+
 
                 for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes captured pieces.
                 {
@@ -2355,6 +2344,24 @@ namespace Chess
                         break;
                     }
                 }
+                byte teamIndex = team ? (byte)0 : (byte)1;
+                GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
+                GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+                GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
+                GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
+                if (!GameStates.GameEnded)
+                    draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
+                if (checkmate == true || draw || otherPlayerCheckMate == true)
+                {
+                    if (draw)
+                        GameStates.Won = null;
+                    else if (checkmate == true) //this one would never be true as otherPlayerCheckMate will be true for this one can be true. 
+                        GameStates.Won = false;
+                    else if (otherPlayerCheckMate == true)
+                        GameStates.Won = true;
+                    return true;
+                }
+
                 Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
 
                 return false;
@@ -2418,7 +2425,6 @@ namespace Chess
                 //ProtectKing.CannotMove = ProtectingTheKing(!team);
                 checkmate = CheckmateChecker(!team, out List<string> saveKingList);
                 ProtectKing.Protect = saveKingList;
-                draw = Draw(!team); //maybe move this one out to the outer loop
 
                 if (checkmate ) //checkmate seems to work as it should. 
                 {
@@ -2447,6 +2453,8 @@ namespace Chess
                 GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
                 GameStates.PieceAmount[1-teamIndex, 1] = GameStates.PieceAmount[1-teamIndex, 0];
                 GameStates.PieceAmount[1-teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
+
+                draw = Draw(!team); //maybe move this one out to the outer loop
                 if (draw)
                 {
                     GameStates.Won = null;
