@@ -1447,7 +1447,7 @@ namespace Chess
 
                     case "Test":
                         Console.Clear();
-                        Abort(); //testning
+                        Abort(); //testing
                         break;
                 }
             } while (option != options[2]);
@@ -1459,8 +1459,8 @@ namespace Chess
                 string ipAddress = Network.NetworkSupport.LocalAddress;
                 Console.Clear();
                 Console.CursorTop = Settings.MenuOffset[1];
-                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}IP Address: {Settings.CVTS.BrightCyanForeground}{ipAddress}{Settings.CVTS.Reset}"); //make it look better later. 
-                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Waiting on player{Settings.CVTS.Reset}"); //might want an ability to leave in case of not wanting to play anyway or if something goes wrong, but how to do it? 
+                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}IP Address: {Settings.CVTS.BrightCyanForeground}{ipAddress}{Settings.CVTS.Reset}"); 
+                Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Waiting on player{Settings.CVTS.Reset}");
 
                 //starts up the reciver. 
                 Network.Receive.ReceiveSetup(ipAddress); //need to catch if it fails
@@ -2078,7 +2078,7 @@ namespace Chess
         /// Function that checks if the game has reached a draw.
         /// </summary>
         /// <returns>Returns true if the game is in a draw, else false.</returns>
-        private bool Draw(bool newMove = false)
+        private bool Draw(bool newMove = false, bool updatePieces = false)
         { 
             if (ChessList.GetList(true).Count == 1 && ChessList.GetList(false).Count == 1)
             {
@@ -2106,23 +2106,27 @@ namespace Chess
                             }
                         }
                     }
-                if (GameStates.PieceAmount[0, 0] == GameStates.PieceAmount[0, 1] && GameStates.PieceAmount[1, 0] == GameStates.PieceAmount[1, 1])
-                { //where to set those values?
-                    noCapture = true;
-                }
-                else
-                    noCapture = false;
+                if (updatePieces)
+                {
+                    if (GameStates.PieceAmount[0, 0] == GameStates.PieceAmount[0, 1] && GameStates.PieceAmount[1, 0] == GameStates.PieceAmount[1, 1])
+                    { //where to set those values?
+                        noCapture = true;
+                    }
+                    else
+                        noCapture = false;
 
-                if (noCapture && !pawnChange)
-                {
-                    GameStates.TurnDrawCounter++;
+                    if (noCapture && !pawnChange)
+                    {
+                        GameStates.TurnDrawCounter++;
+                    }
+                    else
+                    {
+                        GameStates.TurnDrawCounter = 0;
+                    }
+                    if (GameStates.TurnDrawCounter == 70)
+                        return true;
                 }
-                else
-                {
-                    GameStates.TurnDrawCounter = 0;
-                }
-                if (GameStates.TurnDrawCounter == 70)
-                    return true;
+
             }
            
             return false;
@@ -2279,16 +2283,11 @@ namespace Chess
             bool PlayerControlNet(bool team)
             {
                 bool? checkmate = false; bool draw = false; bool? otherPlayerCheckMate = false;
-                //if (team) //ensures white updates the amount of turns that has gone before it is they turn.
-                //{
-                    //MapMatrix.UpdateOldMap();
-                    GameStates.TurnCounter++;
-                //}
-                //if(GameStates.TurnCounter != 0)
-                //Draw(true);
-                //    if (Draw(team)) //If the other player causes a draw, this ensures this player gets informed immediately and does not get to make a move
-                //        return true;
-                //MapMatrix.UpdateOldMap();
+                
+                GameStates.TurnCounter++;
+
+                Draw(updatePieces: !team);
+                
                 Player player;
                 if (team)
                     player = white;
@@ -2298,11 +2297,18 @@ namespace Chess
                 ProtectKing.ProtectingTheKing.Clear();
                 ProtectKing.CannotMove = ProtectingTheKing(team); //under testing
 
+
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //removes it own, captured, pieces. Needs to be called before player.Control else the default hover overed piece might be one of the captured. 
                 {
                     if (ChessList.GetList(team)[i].BeenTaken)
                         ChessList.GetList(team).RemoveAt(i);
                 }
+
+                byte teamIndex = team ? (byte)0 : (byte)1;
+                GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
+                GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
+                GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
+                GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
                 otherPlayerCheckMate = IsKingChecked(!team); //updates whether the other player' king is under threat.
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
@@ -2313,18 +2319,9 @@ namespace Chess
                 if(checkmate != null)
                     if(!(bool)checkmate) //if the king is not checkmate, play
                         player.Control();
-                
-                //MapMatrix.UpdateOldMap();
 
                 otherPlayerCheckMate = CheckmateChecker(!team); //these two updates the write locations
                 checkmate = IsKingChecked(team); //these two updates the write locations
-                
-                //if (!team) //ensures that black updates the amount of moves that has gone after they turn.
-                //{
-                //    //MapMatrix.UpdateOldMap();
-                //    amountOfMoves++;
-                //    GameStates.TurnCounter = amountOfMoves;
-                //}
 
 
                 for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes captured pieces.
@@ -2344,13 +2341,14 @@ namespace Chess
                         break;
                     }
                 }
-                byte teamIndex = team ? (byte)0 : (byte)1;
-                GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
-                GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+
                 GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
                 GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
+                GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
+                GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+
                 if (!GameStates.GameEnded)
-                    draw = Draw(true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
+                    draw = Draw(true, true); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
@@ -2454,7 +2452,7 @@ namespace Chess
                 GameStates.PieceAmount[1-teamIndex, 1] = GameStates.PieceAmount[1-teamIndex, 0];
                 GameStates.PieceAmount[1-teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
 
-                draw = Draw(!team); //maybe move this one out to the outer loop
+                draw = Draw(!team, !team); //maybe move this one out to the outer loop
                 if (draw)
                 {
                     GameStates.Won = null;
