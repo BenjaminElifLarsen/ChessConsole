@@ -1,6 +1,6 @@
 ﻿----Rules----
 
-When a chesspiece has been selected, it must be moved. If it cannot be moved, another chesspiece is allowed. 
+When a chesspiece has been selected it can be deselected by selecting the piece again and another piece can be selected. If it cannot be moved, another chesspiece is allowed. 
 
 King specific rule(s):
   Castling is a kingmove.

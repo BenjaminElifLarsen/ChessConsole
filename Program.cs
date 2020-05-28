@@ -1667,7 +1667,7 @@ namespace Chess
             try
             {
                 string[] about = File.ReadAllLines("Rules.txt");
-                string[] keywords = {"castling", "check", "selected", "moved", "kingmove", "draw", "return", "70" };
+                string[] keywords = {"castling", "check", "selected", "moved", "kingmove", "draw", "return", "70", "deselected" };
                 string[] exitWords = { "----rules----", "enter" };
                 PrintOut(about, keywords, exitWords);
                 
@@ -1675,7 +1675,7 @@ namespace Chess
             catch
             {
                 Console.WriteLine("Rules.txt could not be found.");
-                Console.WriteLine("{0}Enter to return.",Environment.NewLine);
+                Console.WriteLine("Enter to return.");
             }
             while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
 
@@ -3565,7 +3565,7 @@ namespace Chess
                 $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of black pieces left: {highLightColour}{underscore}{ChessList.GetList(false).Count}{underscore_off}{mainColour}.{reset}{Environment.NewLine}" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Amount of turns: {highLightColour}{underscore}{GameStates.TurnCounter}{underscore_off}{mainColour}.{reset}{Environment.NewLine}" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{mainColour}Turns since last capture or pawn move: {highLightColour}{underscore}{GameStates.TurnDrawCounter}{underscore_off}{mainColour}.{reset}{Environment.NewLine}" +
-                $"{"".PadLeft(Settings.MenuOffset[0])}{enterColour}Enter {mainColour}to return.{reset}"); //"\x1b(0 x \x1b(B"
+                $"{"".PadLeft(Settings.MenuOffset[0])}{enterColour}Enter {mainColour}to return.{reset}"); 
             Console.ReadLine();
             Console.Clear();
         }
@@ -3574,7 +3574,7 @@ namespace Chess
         /// Allows the player to either move to a connecting square to <paramref name="currentLocation"/> or select the <paramref name="currentLocation"/>.
         /// </summary>
         /// <param name="currentLocation">The current location on the board.</param>
-        /// <returns></returns>
+        /// <returns>Returns true if enter is pressed, null if escape is pressed, else false.</returns>
         private bool? FeltMove(int[] currentLocation)
         {
             ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
@@ -3854,10 +3854,10 @@ namespace Chess
                 CheckPosistions(pos);
             }
 
-            if (possibleEndLocations.Count != 0)
-            {
-                hasMoved = true;
-            }
+            //if (possibleEndLocations.Count != 0)
+            //{
+            //    hasMoved = true;
+            //}
 
             void CheckPosistions(int[] currentPosition)
             {
@@ -4234,35 +4234,51 @@ namespace Chess
                 EndLocations();
             if (possibleEndLocations.Count != 0)
             {
+                possibleEndLocations.Add(new int[,] { { mapLocation[0], mapLocation[1] } });
                 DisplayPossibleMove();
                 int[] cursorLocation = GetMapLocation;
                 do
                 {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
+                    bool? selected = FeltMove(cursorLocation);
+                    if (selected == true)
                     {
                         foreach (int[,] loc in possibleEndLocations)
                         {
                             int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
                             if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
                             {
-                                couldMove = true;
-                                bool castling = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                castling = FeltIDCheck(cursorLocation);
-                                if (castling) //this if-statement and the code above could be written better. Took some time to figure out how castling was done after not looked at the code for a while. 
+                                if(endloc_[0] == mapLocation[0] && endloc_[1] == mapLocation[1])
                                 {
-                                    Castling(cursorLocation);
+                                    couldMove = false;
                                     hasSelected = true;
-                                    break;
                                 }
-                                else if (!castling)
-                                    TakeEnemyPiece(cursorLocation);
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
+                                else
+                                {
+                                    hasMoved = true;
+                                    couldMove = true;
+                                    bool castling = true;
+                                    oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                    castling = FeltIDCheck(cursorLocation);
+                                    if (castling) //this if-statement and the code above could be written better. Took some time to figure out how castling was done after not looked at the code for a while. 
+                                    {
+                                        Castling(cursorLocation);
+                                        hasSelected = true;
+                                        break;
+                                    }
+                                    else if (!castling)
+                                        TakeEnemyPiece(cursorLocation);
+                                    mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+                                    hasSelected = true;
+                                }
+
                                 break;
                             }
                         }
+                    }
+                    else if (selected == null)
+                    {
+                        hasSelected = true;
+                        couldMove = false;
                     }
                 } while (!hasSelected);
                 RemoveDisplayPossibleMove();
@@ -4532,42 +4548,56 @@ namespace Chess
 
             if (possibleEndLocations.Count != 0)
             {
-                firstTurn = false; //firstTurn ? false : false;
+                possibleEndLocations.Add(new int[,] { { mapLocation[0], mapLocation[1] } });
                 DisplayPossibleMove();
                 int[] cursorLocation = GetMapLocation;
                 do
                 {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
+                    bool? selected = FeltMove(cursorLocation);
+                    if (selected == true)
                     {
                         foreach (int[,] loc in possibleEndLocations)
                         {
                             int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
                             if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
                             {
-
-                                couldMove = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
-                                if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
+                                if(endloc_[0] == mapLocation[0] && endloc_[1] == mapLocation[1])
                                 {
-                                    SpecialBool = true;
+                                    couldMove = false;
+                                    hasSelected = true;
                                 }
                                 else
                                 {
-                                    SpecialBool = false;
-                                    if (oldMapLocation[0] != cursorLocation[0])
+                                    firstTurn = false; //firstTurn ? false : false;
+                                    couldMove = true;
+                                    oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                    mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+                                    hasSelected = true;
+                                    if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
                                     {
-                                        if (MapMatrix.Map[cursorLocation[0], cursorLocation[1]] == "")
-                                            TakeEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
-                                        else
-                                            TakeEnemyPiece(cursorLocation);
+                                        SpecialBool = true;
+                                    }
+                                    else
+                                    {
+                                        SpecialBool = false;
+                                        if (oldMapLocation[0] != cursorLocation[0])
+                                        {
+                                            if (MapMatrix.Map[cursorLocation[0], cursorLocation[1]] == "")
+                                                TakeEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
+                                            else
+                                                TakeEnemyPiece(cursorLocation);
+                                        }
                                     }
                                 }
+                                
                                 break;
                             }
                         }
+                    }
+                    else if (selected == null)
+                    {
+                        hasSelected = true;
+                        couldMove = false;
                     }
                 } while (!hasSelected);
                 RemoveDisplayPossibleMove();
@@ -5355,7 +5385,7 @@ namespace Chess
             if (captured)
             {
                 Taken();
-                Debug.WriteLine("{0} Captured", ID);
+                Debug.WriteLine($"{ID} Captured");
             }
                 //Taken();
             else
@@ -5387,26 +5417,41 @@ namespace Chess
             
             if (possibleEndLocations.Count != 0)
             {
+                possibleEndLocations.Add(new int[,] { { mapLocation[0], mapLocation[1] } });
                 DisplayPossibleMove();
                 int[] cursorLocation = GetMapLocation;
                 do
                 {
-                    bool selected = FeltMove(cursorLocation);
-                    if (selected)
+                    bool? selected = FeltMove(cursorLocation);
+                    if (selected == true)
                     {
                         foreach (int[,] loc in possibleEndLocations)
                         {
                             int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
                             if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
                             {
-                                couldMove = true;
-                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                TakeEnemyPiece(cursorLocation);
-                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-                                hasSelected = true;
+                                if(endloc_[0] == mapLocation[0] && endloc_[1] == mapLocation[1])
+                                {
+                                    couldMove = false;
+                                    hasSelected = true;
+                                }
+                                else
+                                {
+                                    couldMove = true;
+                                    oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
+                                    TakeEnemyPiece(cursorLocation);
+                                    mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
+                                    hasSelected = true;
+                                }
+                                
                                 break;
                             }
                         }
+                    }
+                    else if (selected == null)
+                    {
+                        hasSelected = true;
+                        couldMove = false;
                     }
                 } while (!hasSelected);
                 RemoveDisplayPossibleMove();
@@ -5456,42 +5501,56 @@ namespace Chess
         /// </summary>
         /// <param name="currentLocation">The current location of hovered over square. </param>
         /// <returns>Returns true if enter is pressed, else false.</returns>
-        protected bool FeltMove(int[] currentLocation)
+        protected bool? FeltMove(int[] currentLocation)
         {
-            ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-            SquareHighLight(false, currentLocation);
-            foreach (int[,] loc in possibleEndLocations)
+            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
+            while (Console.KeyAvailable) //this should flush the keys
             {
-                int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-                if (endloc_[0] == currentLocation[0] && endloc_[1] == currentLocation[1])
-                {
-                    PaintBackground(Settings.SelectMoveSquareColour, loc);
-                    break;
-                }
+                Console.ReadKey(true);
             }
-            if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
-            {
-                currentLocation[1]--;
-            }
-            else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
-            {
-                currentLocation[1]++;
-            }
-            else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
-            {
-                currentLocation[0]--;
-            }
-            else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
-            {
-                currentLocation[0]++;
-            }
-            else if (keyInfo.Key == ConsoleKey.Enter)
-            {
-                return true;
-            }
-            SquareHighLight(true, currentLocation);
-            return false;
 
+            while (!Console.KeyAvailable && !GameStates.GameEnded) ;
+            if (!GameStates.GameEnded)
+                keyInfo = Console.ReadKey(true);
+
+            while (GameStates.Pause) ;
+
+            if (!GameStates.GameEnded)
+            {
+                SquareHighLight(false, currentLocation);
+                foreach (int[,] loc in possibleEndLocations)
+                {
+                    int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
+                    if (endloc_[0] == currentLocation[0] && endloc_[1] == currentLocation[1])
+                    {
+                        PaintBackground(Settings.SelectMoveSquareColour, loc);
+                        break;
+                    }
+                }
+                if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
+                {
+                    currentLocation[1]--;
+                }
+                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
+                {
+                    currentLocation[1]++;
+                }
+                else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
+                {
+                    currentLocation[0]--;
+                }
+                else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
+                {
+                    currentLocation[0]++;
+                }
+                else if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    return true;
+                }
+                SquareHighLight(true, currentLocation);
+                return false;
+            }
+            return null;
         }
 
         /// <summary>
