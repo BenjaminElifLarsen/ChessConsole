@@ -466,6 +466,7 @@ namespace Chess
         private static byte[,] chessPieceAmounts = new byte[2,2];
         private static short turns = -1;
         private static short turnDrawCounter;
+        private static bool nonTurnWin; 
 
         /// <summary>
         /// True if it is player turn, else false.
@@ -492,6 +493,10 @@ namespace Chess
         /// </summary>
         public static bool Pause { get => pause; set => pause = value; }
         /// <summary>
+        /// The other player surrendered while it was not their turn. 
+        /// </summary>
+        public static bool OtherPlayerSurrendered { get => nonTurnWin; set => nonTurnWin = value; }
+        /// <summary>
         /// Sets and gets the number of chespieces. [0,~] is white. [1,~] is black. [~,0] is new value. [~,1] is old value.
         /// </summary>
         public static byte[,] PieceAmount { get => chessPieceAmounts; set => chessPieceAmounts = value; }
@@ -514,6 +519,7 @@ namespace Chess
             gameEnded = false;
             won = null;
             canMove = false;
+            nonTurnWin = false;
             NetSearch.Abort = false;
             NetSearch.Searching = false;
             turns = -1;
@@ -1088,6 +1094,12 @@ namespace Chess
                             ChessTable.RepaintBoardAndPieces();
                             //networkStream.Close(); //maybe just have a finally.
                             //otherPlayer.Close();
+                        }
+                        else if (type == 41) //won by the other player surrendered while it was not their turn.
+                        { 
+                            GameStates.GameEnded = true;
+                            GameStates.Won = true;
+                            GameStates.OtherPlayerSurrendered = true;
                         }
                         else
                         {//connected client is not about to transmit map data
@@ -2211,11 +2223,11 @@ namespace Chess
                     GameStates.IsTurn = false;
                     if (GameStates.GameEnded) 
                     { //transmit a signal to the other player' receiver to let them know the game has ended. 
-                        if (GameStates.Won == null)
+                        if (GameStates.Won == null && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(6, Network.Transmit.OtherPlayerIpAddress); //Draw  //5 is loss for the other player, 4 is victory for the other player. 
-                        else if (GameStates.Won == true)
+                        else if (GameStates.Won == true && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(5, Network.Transmit.OtherPlayerIpAddress); //other player lost
-                        else if (GameStates.Won == false)
+                        else if (GameStates.Won == false && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(4, Network.Transmit.OtherPlayerIpAddress); //other player won
                         Network.Receive.Stop();
                     }
@@ -2349,8 +2361,10 @@ namespace Chess
                         GameStates.Won = true;
                     return true;
                 }
-                if(!GameStates.GameEnded)
+                if (!GameStates.GameEnded)
                     Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
+                else
+                    return true;
 
                 return false;
             }
@@ -3496,7 +3510,7 @@ namespace Chess
                     {
                         Console.Clear();
                         string drawTitle = "Other player wants to draw";
-                        string[] drawOptions = {"Accept Draw", "Decline Draw" }; //need an option in the Menu draw function that allows for a "title" e.g. what to do "Will you accept the draw?"
+                        string[] drawOptions = {"Accept Draw", "Decline Draw" };
                         string drawAnswer = Menu.MenuAccess(drawOptions, drawTitle);
                         switch (drawAnswer)
                         {
@@ -3515,12 +3529,12 @@ namespace Chess
                     }
                     break;
 
-                case "Surrender": //currently, this require the player to finish their turn to work. Fixed
+                case "Surrender": 
                     GameStates.GameEnded = true;
                     GameStates.Won = false; 
                     GameStates.WhiteWin = !white;
                     if(GameStates.IsOnline)
-                        Network.Transmit.GeneralValueTransmission(4,Network.Transmit.OtherPlayerIpAddress);
+                        Network.Transmit.GeneralValueTransmission(41,Network.Transmit.OtherPlayerIpAddress);
                     break;
 
                 case "Game Stats":
