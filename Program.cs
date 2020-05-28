@@ -2178,7 +2178,7 @@ namespace Chess
             GameStates.PieceAmount[0, 1] = (byte)ChessList.GetList(true).Count;
             GameStates.PieceAmount[1, 0] = (byte)ChessList.GetList(false).Count;
             GameStates.PieceAmount[1, 1] = (byte)ChessList.GetList(false).Count;
-
+            bool firstTurn = starter;
             //game loop
             do
             {
@@ -2262,7 +2262,9 @@ namespace Chess
                 //GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
                 //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
-                Draw(true, updatePieces: true);
+                if(!firstTurn)
+                Draw(true, updatePieces: team);
+                firstTurn = false;
 
                 otherPlayerCheckMate = IsKingChecked(!team); //updates whether the other player' king is under threat.
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
@@ -2310,7 +2312,7 @@ namespace Chess
                 //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
                 if (!GameStates.GameEnded)
-                    draw = Draw(); //ensures that the game will draw if there are only kings left
+                    draw = Draw(updatePieces: !team); 
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
