@@ -1034,7 +1034,7 @@ namespace Chess
                                 case "Accept Draw":
                                     GameStates.GameEnded = true;
                                     GameStates.Won = null;
-
+                                    GameStates.OtherPlayerSurrendered = true; //not the best use since they did not surrender
                                     //transmit answer
                                     Transmit.GeneralValueTransmission(30, Transmit.OtherPlayerIpAddress);
                                     //networkStream.Close(); //maybe just have a finally.
@@ -5503,6 +5503,7 @@ namespace Chess
         /// <returns>Returns true if enter is pressed, else false.</returns>
         protected bool? FeltMove(int[] currentLocation)
         {
+            SquareHighLight(true, currentLocation);
             ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
             while (Console.KeyAvailable) //this should flush the keys
             {
@@ -5510,15 +5511,15 @@ namespace Chess
             }
 
             while (!Console.KeyAvailable && !GameStates.GameEnded) ;
-            if (!GameStates.GameEnded)
-                keyInfo = Console.ReadKey(true);
+            if (!GameStates.GameEnded) 
+                keyInfo = Console.ReadKey(true); //consider moving this and its variable into the if-statment below
 
             while (GameStates.Pause) ;
 
             if (!GameStates.GameEnded)
             {
                 SquareHighLight(false, currentLocation);
-                foreach (int[,] loc in possibleEndLocations)
+                foreach (int[,] loc in possibleEndLocations) //paints a single legal move square instead of repainting them all
                 {
                     int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
                     if (endloc_[0] == currentLocation[0] && endloc_[1] == currentLocation[1])
@@ -5547,7 +5548,7 @@ namespace Chess
                 {
                     return true;
                 }
-                SquareHighLight(true, currentLocation);
+                //SquareHighLight(true, currentLocation);
                 return false;
             }
             return null;
