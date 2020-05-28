@@ -1018,6 +1018,8 @@ namespace Chess
                         }
                         else if (type == 3) //being asked for a draw
                         {
+                            Console.Clear();
+                            GameStates.Pause = true;
                             string[] drawOptions = { "Accept Draw", "Decline Draw" };
                             string title = "Other play ask for draw";
                             string answer = Menu.MenuAccess(drawOptions, title);
@@ -1041,7 +1043,7 @@ namespace Chess
                                     //redraw map and pieces.
                                     break;
                             }
-
+                            GameStates.Pause = false;
                         }
                         else if (type == 4) //this player is victory
                         {
@@ -3565,7 +3567,7 @@ namespace Chess
             {
                 Console.ReadKey(true);
             }
-
+            while (GameStates.Pause) ;
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
             SquareHighLight(false);
             if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
