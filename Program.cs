@@ -3577,12 +3577,18 @@ namespace Chess
         /// <returns></returns>
         private bool? FeltMove(int[] currentLocation)
         {
+            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
             while (Console.KeyAvailable) //this should flush the keys
             {
                 Console.ReadKey(true);
             }
-            ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+
+            while (!Console.KeyAvailable) ;
+            if(!GameStates.GameEnded)
+                keyInfo = Console.ReadKey(true);
+
             while (GameStates.Pause) ;
+
             if (!GameStates.GameEnded) { 
                 SquareHighLight(false);
                 if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
