@@ -3569,7 +3569,7 @@ namespace Chess
             }
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
             while (GameStates.Pause) ;
-            if (GameStates.GameEnded) { 
+            if (!GameStates.GameEnded) { 
                 SquareHighLight(false);
                 if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
                 {
