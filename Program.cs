@@ -46,7 +46,9 @@ namespace Chess
         /// </summary>
         public static string[,] Map { get => map; set => map = value; }
 
-
+        /// <summary>
+        /// Updates the old version of the map with the data of the current map.
+        /// </summary>
         public static void UpdateOldMap() //for testing only. 
         {
             for (int n = 0; n < 8; n++)
@@ -171,7 +173,7 @@ namespace Chess
     public class Settings
     { //consider having settings for write locations related to the king check. Also what should be written should be location, perhaps, e.g. e5. So convert the first number of each location to a letter.
         private Settings() { }
-        private static byte squareSize = 5;
+        private static byte squareSize = 5; //default is 5.
         private static byte[] lineColour = new byte[] { 122, 122, 122 };
         private static byte[] lineColourBase = new byte[] { 87, 65, 47 };
         private static byte[] squareColour1 = new byte[] { 182, 123, 91 };
@@ -208,11 +210,11 @@ namespace Chess
         /// </summary>
         public static byte SquareSize { get => squareSize; }
         /// <summary>
-        /// ???
+        /// Gets the foreground colour of the lines between the squares.
         /// </summary>
         public static byte[] LineColour { get => lineColour; }
         /// <summary>
-        /// ???
+        /// Gets the background colour of the lines between the squares.
         /// </summary>
         public static byte[] LineColourBase { get => lineColourBase; }
         /// <summary>
@@ -275,7 +277,6 @@ namespace Chess
         /// Gets the location to write out the promotions. 
         /// </summary>
         public static int[] PromotionWriteLocation { get => writeLocationPromotion; }
-
         /// <summary>
         /// The colour of the menu options.
         /// </summary>
@@ -371,8 +372,7 @@ namespace Chess
                 GetConsoleMode(handle, out mode);
                 SetConsoleMode(handle, mode | 0x4);
             }
-
-
+            
             /// <summary>
             ///  Digital Equipment Corporation Special Graphics Character Set class. Requires <c>Settings.CVTS.ActivateCVTS()</c> to be called first to work
             /// </summary>
@@ -586,9 +586,15 @@ namespace Chess
         //    //Transmit.TransmitSetup();
         //}
 
+        /// <summary>
+        /// Class for transmitting data.
+        /// </summary>
         public class Transmit
         {
             private static string ipAddress_other;
+            /// <summary>
+            /// Gets the IP address of the other player.
+            /// </summary>
             public static string OtherPlayerIpAddress { get => ipAddress_other; set => ipAddress_other = value; }
 
             /// <summary>
@@ -661,7 +667,7 @@ namespace Chess
                     Converter.Conversion.ValueToBitArrayQuick(1, out data);
                     networkStream.Write(data, 0, data.Length);
 
-                    //transmit map data size.
+                    //convert and transmit map data size.
                     byte[] mapdataByte = Converter.Conversion.ASCIIToByteArray(mapData);
                     byte[] mapdataByteSize = null;
                     Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length, out mapdataByteSize);
@@ -676,7 +682,6 @@ namespace Chess
 
                     //transmit the mapdataByte
                     networkStream.Write(mapdataByte, 0, mapdataByte.Length);
-
 
                     //wait on answer from the receiver. 
                     networkStream.Read(receptionAnswerByte, 0, 4); //penty of exceptions to deal with regarding .Write() and .Read()
@@ -793,6 +798,9 @@ namespace Chess
             }
         }
 
+        /// <summary>
+        /// Class for receiving data.
+        /// </summary>
         public class Receive
         {
 
@@ -833,6 +841,7 @@ namespace Chess
                     string endPoint = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
                     client.Close();
                     GameStates.NetSearch.Searching = false;
+                    Debug.WriteLine(endPoint);
                     return endPoint;
                 }
                 return null;
@@ -987,7 +996,7 @@ namespace Chess
                             string[,] newMap = NetworkSupport.StringToMapConvertion(mapdataString);
 
                             //update the chess pieces and the map
-                            MapMatrix.UpdateOldMap(); 
+                            //MapMatrix.UpdateOldMap(); 
                             NetworkSupport.UpdatedChessPieces(newMap, (bool)team);
                             NetworkSupport.UpdateMap(newMap);
 
@@ -2171,6 +2180,7 @@ namespace Chess
             Thread receiveThread = new Thread(Network.Receive.ReceiveGameLoop);
             receiveThread.Name = "Receiver Thread";
             bool whiteTeam = starter;
+            bool firstTurn = starter;
             receiveThread.Start(starter);
             GameStates.IsTurn = starter;
             GameStates.IsOnline = true;
@@ -2178,7 +2188,8 @@ namespace Chess
             GameStates.PieceAmount[0, 1] = (byte)ChessList.GetList(true).Count;
             GameStates.PieceAmount[1, 0] = (byte)ChessList.GetList(false).Count;
             GameStates.PieceAmount[1, 1] = (byte)ChessList.GetList(false).Count;
-            bool firstTurn = starter;
+            if (MapMatrix.LastMoveMap[0, 0] == null)
+                MapMatrix.UpdateOldMap();
             //game loop
             do
             {
@@ -2263,15 +2274,16 @@ namespace Chess
                 //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
                 if(!firstTurn)
-                Draw(true, updatePieces: team);
+                Draw(team, updatePieces: team); //a "move", after the rules, consist of both players turn. This call ensures the draw counter is updated before white player's turn
+                if (team) 
+                    MapMatrix.UpdateOldMap();
                 firstTurn = false;
 
                 otherPlayerCheckMate = IsKingChecked(!team); //updates whether the other player' king is under threat.
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
 
                 ProtectKing.Protect = saveKingList;
-                if (MapMatrix.LastMoveMap[0,0] == null)
-                    MapMatrix.UpdateOldMap();
+
                 if(checkmate != null)
                     if(!(bool)checkmate) //if the king is not checkmate, play
                         player.Control();
@@ -2312,7 +2324,9 @@ namespace Chess
                 //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
                 if (!GameStates.GameEnded)
-                    draw = Draw(updatePieces: !team); 
+                    draw = Draw(!team, updatePieces: !team); //ensures that draw 50 move counter is updated after black player turn. Auto-draw from the fifty-move rule can only happen at the end of black player turn
+                if (!team)
+                    MapMatrix.UpdateOldMap();
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
@@ -4440,10 +4454,10 @@ namespace Chess
             moveDirection = team ? (sbyte)-1 : (sbyte)1;
             //teamString = team ? "+" : "-";
             Draw();
-            promotions.Add("Knight", 4); //remember to use these
-            promotions.Add("Rock", 5);
-            promotions.Add("Bishop", 3);
-            promotions.Add("Queen", 2);
+            promotions.Add("knight", 4); 
+            promotions.Add("rook", 5);
+            promotions.Add("bishop", 3);
+            promotions.Add("queen", 2);
             directions = new int[][] { new int[] {0, moveDirection } };
             canPromoted = true;
         }
@@ -4460,18 +4474,10 @@ namespace Chess
         {
             oldMapLocation = null;
             bool hasSelected = false;
-            //if (ProtectKing.GetListFromDic(ID) != null)
-            //{
-            //    possibleEndLocations = ProtectKing.GetListFromDic(ID);
-            //    specialBool = false;
-            //    hasMoved = true;
-            //    couldMove = true;
-            //}
-            //else
-            //{
+
             if(possibleEndLocations == null)
                 EndLocations();
-            //}
+
             if (possibleEndLocations.Count != 0)
             {
                 firstTurn = false; //firstTurn ? false : false;
@@ -4525,64 +4531,6 @@ namespace Chess
             //possibleEndLocations = null;
 
         }
-
-//        /// <summary>
-//        /// A modified version of the base Move function. Designed to check if the player uses a double move. 
-//        /// </summary>
-//        protected override void SetEndLocations(List<int[,]> locations)
-//        {
-//            oldMapLocation = null;
-//            bool hasSelected = false;
-//            if (locations.Count != 0)
-//            {
-//                firstTurn = false; //firstTurn ? false : false;
-//                DisplayPossibleMove(locations);
-//                int[] cursorLocation = GetMapLocation;
-//                do
-//                {
-//                    bool selected = FeltMove(cursorLocation);
-//                    if (selected)
-//                    {
-//                        foreach (int[,] loc in locations)
-//                        {
-//                            int[] endloc_ = new int[2] { loc[0, 0], loc[0, 1] };
-//                            if (endloc_[0] == cursorLocation[0] && endloc_[1] == cursorLocation[1])
-//                            {
-
-//                                couldMove = true;
-//                                oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-//                                mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
-//                                hasSelected = true;
-//                                if (Math.Abs((sbyte)(oldMapLocation[1]) - (sbyte)(cursorLocation[1])) == 2)
-//                                {
-//                                    SpecialBool = true;
-//                                }
-//                                else
-//                                {
-//                                    SpecialBool = false;
-//                                    if (oldMapLocation[0] != cursorLocation[0])
-//                                    {
-//                                        if (MapMatrix.Map[cursorLocation[0], cursorLocation[1]] == "")
-//                                            TakeEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
-//                                        else
-//                                            TakeEnemyPiece(cursorLocation);
-//                                    }
-//                                }
-//                                break;
-//                            }
-//                        }
-//                    }
-//                } while (!hasSelected);
-//                NoneDisplayPossibleMove();
-//                possibleEndLocations.Clear();
-//                hasMoved = true;
-//        }
-//            else
-//            {
-//                couldMove = false;
-//            }
-
-//}
 
         /// <summary>
         /// Used by the online play and used to update a piece that has been changed by the other player that is not on this computer. 
@@ -4721,13 +4669,13 @@ namespace Chess
                 string answer = "";
                 //How to select? Arrowkeys? Numberkeys? Written?
                 DisplayPromotions();
-                Console.SetCursorPosition(Settings.PromotionWriteLocation[0], Settings.PromotionWriteLocation[1] + 1);
+                Console.SetCursorPosition(Settings.PromotionWriteLocation[0], Settings.PromotionWriteLocation[1] + 2);
                 Console.Write(command);
                 do //not really happy with this, it does not fit the rest of the game. Consider other ways to do it.
                 {
-                    Console.SetCursorPosition(Settings.PromotionWriteLocation[0] + command.Length, Settings.PromotionWriteLocation[1] + 1);
+                    Console.SetCursorPosition(Settings.PromotionWriteLocation[0] + command.Length, Settings.PromotionWriteLocation[1] + 2);
                     Console.Write("".PadLeft(answer.Length));
-                    Console.SetCursorPosition(Settings.PromotionWriteLocation[0] + command.Length, Settings.PromotionWriteLocation[1] + 1);
+                    Console.SetCursorPosition(Settings.PromotionWriteLocation[0] + command.Length, Settings.PromotionWriteLocation[1] + 2);
                     answer = Console.ReadLine();
                     foreach (string promotionKey in promotions.Keys)
                     {
@@ -4746,28 +4694,29 @@ namespace Chess
                 Taken();
                 string[] IDParts = ID.Split(':');
                 string newID;
+                IDParts[1] = promotions[answer].ToString();
                 switch (answer)
                 {
                     case "knight":
-                        IDParts[1] = "4";
+                        //IDParts[1] = "4";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]); //The P is to indicate that the piece used to be a pawn.
                         ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID));
                         break;
 
                     case "bishop":
-                        IDParts[1] = "3";
+                        //IDParts[1] = "3";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
                         ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID));
                         break;
 
-                    case "rock":
-                        IDParts[1] = "5";
+                    case "rook":
+                        //IDParts[1] = "5";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
                         ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID));
                         break;
 
                     case "queen":
-                        IDParts[1] = "2";
+                        //IDParts[1] = "2";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
                         ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID));
                         break;
@@ -4782,10 +4731,13 @@ namespace Chess
         /// </summary>
         private void DisplayPromotions()
         { //writes to a location what chesspieces it can be promoted too.
-            string promotionsString = "";
+            string promotionsString = $"Possible Promotions:{Environment.NewLine}{"".PadLeft(Settings.PromotionWriteLocation[0])}";
             foreach (string key in promotions.Keys)
             {
-                promotionsString += key + " ";
+                char[] charArray = key.ToCharArray();
+                charArray[0] = (char)((int)charArray[0] - 32);
+                string keyUpper = new string(charArray);
+                promotionsString += keyUpper + " ";
             }
             Console.SetCursorPosition(Settings.PromotionWriteLocation[0], Settings.PromotionWriteLocation[1]);
             Console.Write(promotionsString);
