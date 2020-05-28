@@ -3583,7 +3583,7 @@ namespace Chess
                 Console.ReadKey(true);
             }
 
-            while (!Console.KeyAvailable) ;
+            while (!Console.KeyAvailable && !GameStates.GameEnded) ;
             if(!GameStates.GameEnded)
                 keyInfo = Console.ReadKey(true);
 
