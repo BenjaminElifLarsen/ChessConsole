@@ -2229,7 +2229,7 @@ namespace Chess
                             Network.Transmit.GeneralValueTransmission(5, Network.Transmit.OtherPlayerIpAddress); //other player lost
                         else if (GameStates.Won == false && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(4, Network.Transmit.OtherPlayerIpAddress); //other player won
-                        Network.Receive.Stop();
+                        //Network.Receive.Stop();
                     }
                 }
                 else //not this computer's turn to move. 
@@ -3533,8 +3533,8 @@ namespace Chess
                     GameStates.GameEnded = true;
                     GameStates.Won = false; 
                     GameStates.WhiteWin = !white;
-                    if(GameStates.IsOnline)
-                        Network.Transmit.GeneralValueTransmission(41,Network.Transmit.OtherPlayerIpAddress);
+                    if (GameStates.IsOnline && !GameStates.IsTurn)
+                        Network.Transmit.GeneralValueTransmission(41, Network.Transmit.OtherPlayerIpAddress);
                     break;
 
                 case "Game Stats":
