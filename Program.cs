@@ -3567,38 +3567,40 @@ namespace Chess
             {
                 Console.ReadKey(true);
             }
-            while (GameStates.Pause) ;
             ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-            SquareHighLight(false);
-            if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
-            {
-                currentLocation[1]--;
-            }
-            else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
-            {
-                currentLocation[1]++;
-            }
-            else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
-            {
-                currentLocation[0]--;
-            }
-            else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
-            {
-                currentLocation[0]++;
-            }
-            else if (keyInfo.Key == ConsoleKey.Enter)
-            {
-                return true;
-            }
-            else if (keyInfo.Key == ConsoleKey.Escape)
-            {
-                PlayerMenu();
-                return null; 
-            }
+            while (GameStates.Pause) ;
+            if (GameStates.GameEnded) { 
+                SquareHighLight(false);
+                if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
+                {
+                    currentLocation[1]--;
+                }
+                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
+                {
+                    currentLocation[1]++;
+                }
+                else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
+                {
+                    currentLocation[0]--;
+                }
+                else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
+                {
+                    currentLocation[0]++;
+                }
+                else if (keyInfo.Key == ConsoleKey.Enter)
+                {
+                    return true;
+                }
+                else if (keyInfo.Key == ConsoleKey.Escape)
+                {
+                    PlayerMenu();
+                    return null; 
+                }
 
-            SquareHighLight(true);
-            return false;
-
+                SquareHighLight(true);
+                return false;
+            }
+            return null;
         }
 
         /// <summary>
