@@ -982,9 +982,12 @@ namespace Chess
                             //receive the map data
                             networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, it does not matter? Would matter if it was UDP. 
 
-                            //decode data and update the chess pieces and the map
+                            //decode data 
                             string mapdataString = Converter.Conversion.ByteArrayToASCII(data);
                             string[,] newMap = NetworkSupport.StringToMapConvertion(mapdataString);
+
+                            //update the chess pieces and the map
+                            MapMatrix.UpdateOldMap(); 
                             NetworkSupport.UpdatedChessPieces(newMap, (bool)team);
                             NetworkSupport.UpdateMap(newMap);
 
@@ -1183,9 +1186,7 @@ namespace Chess
                 for (int x = 0; x < 8; x++)
                     for (int y = 0; y < 8; y++)
                         oldMap[x, y] = MapMatrix.Map[x, y];
-
-                MapMatrix.UpdateOldMap(); //test location 
-
+                
                 for (int x = 0; x < 8; x++)
                     for (int y = 0; y < 8; y++)
                     {
@@ -2075,7 +2076,7 @@ namespace Chess
 
 
         /// <summary>
-        /// Function that checks if the game has reached a draw.
+        /// Function that checks if the game has reached a draw. It wil lalso update the draw turn counter.
         /// </summary>
         /// <returns>Returns true if the game is in a draw, else false.</returns>
         private bool Draw(bool newMove = false, bool updatePieces = false)
@@ -2109,7 +2110,7 @@ namespace Chess
                 if (updatePieces)
                 {
                     if (GameStates.PieceAmount[0, 0] == GameStates.PieceAmount[0, 1] && GameStates.PieceAmount[1, 0] == GameStates.PieceAmount[1, 1])
-                    { //where to set those values?
+                    { 
                         noCapture = true;
                     }
                     else
@@ -2130,51 +2131,6 @@ namespace Chess
             }
            
             return false;
-
-            /* Idea:
-             * Save a one move (that is both black and white has moved) of the map. 
-             * When a move has gone, check if team:number is the same between the old and new
-             * If they are, add 1 to a counter, else set counter to zero.
-             * 
-             */
-
-            //void ThreefoldRepetition(bool team) //should this function be changed from an nested function to a normal function.
-            //{//how to best now which move is done. Could look through the mapmatrix and look for any changes. So have an old copy of it. 
-            //    /* Before player turn, copy current mapmatrix into the "old" mapmatrix. Let player move. Compare old to new maptrix. 
-            //     * Find the change and added it to the threefoldRepetition array
-            //     * Check if the same player has done the exactly same move 3 tiems in row. If true, draw.
-            //     * 
-            //     * So have two for loops for x an y movement, nested. Run until you find a difference, save into the array and end both loops. 
-            //     *
-            //     *This idea will not work that easily
-            //     *  "threefold repetition rule (also known as repetition of position) states that a player can claim a draw if the same position occurs three times, or will occur after their next move, with the same player to move. 
-            //     *  The repeated positions do not need to occur in succession."
-            //     * "In chess, in order for a position to be considered the same, each player must have the same set of legal moves each time, including the possible rights to castle and capture en passant. 
-            //     * Positions are considered the same if the same type of piece is on a given square. For example, if a player has two knights and the knights are on the same squares, it does not matter if the positions of the two knights have been exchanged. 
-            //     * The game is not automatically drawn if a position occurs for the third time – one of the players, on their turn, must claim the draw with the arbiter. "
-            //     * https://en.wikipedia.org/wiki/Threefold_repetition
-            //     * 
-            //     * ...
-            //     * Read up some more to make sure you understand it correctly. Also might be easier to not have a function for this, but let the player(s) use a draw function.
-            //     */
-
-            //    byte teamIndex = team ? (byte)0 : (byte)1;
-            //    for (int i = 2; i > 0; i--)
-            //    {
-            //        threefoldRepetition[teamIndex, i] = threefoldRepetition[teamIndex, i - 1];
-            //    }
-            //    for (int n = 0; n < MapMatrix.Map.GetLength(0); n++)
-            //    {
-            //        for (int m = 0; m < MapMatrix.Map.GetLength(1); m++)
-            //        {
-            //            if (lastUpdateMap[n,m] != MapMatrix.Map[n,m])
-            //            {
-            //                threefoldRepetition[teamIndex, 0] = MapMatrix.Map[n, m]; //need to add the last location... 
-            //            }
-            //        }
-            //        //lastUpdateMap
-            //    }
-            //}
         }
 
         private void EndScreen()
@@ -2285,7 +2241,7 @@ namespace Chess
 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //removes it own, captured, pieces. Needs to be called before player.Control else the default hover overed piece might be one of the captured. 
                 {
-                    if (ChessList.GetList(team)[i].BeenTaken)
+                    if (ChessList.GetList(team)[i].BeenCaptured)
                         ChessList.GetList(team).RemoveAt(i);
                 }
 
@@ -2297,15 +2253,16 @@ namespace Chess
 
                 ProtectKing.ProtectEndLocations.Clear();
                 ProtectKing.ProtectingTheKing.Clear();
-                ProtectKing.CannotMove = ProtectingTheKing(team); //under testing
+                ProtectKing.CannotMove = ProtectingTheKing(team); 
                 
-                byte teamIndex = team ? (byte)0 : (byte)1;
-                GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
-                GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
-                GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
-                GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+                //byte teamIndex = team ? (byte)0 : (byte)1;
+                PieceAmountUpdate();
+                //GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
+                //GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
+                //GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
+                //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
-                Draw(true, updatePieces: team);
+                Draw(true, updatePieces: true);
 
                 otherPlayerCheckMate = IsKingChecked(!team); //updates whether the other player' king is under threat.
                 checkmate = CheckmateChecker(team, out List<string> saveKingList); 
@@ -2320,9 +2277,17 @@ namespace Chess
                 otherPlayerCheckMate = CheckmateChecker(!team); //these two updates the write locations
                 checkmate = IsKingChecked(team); //these two updates the write locations
 
+                for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //ensures any promoted pawns are removed from the list.
+                {
+                    if (ChessList.GetList(team)[i].BeenCaptured)
+                    {
+                        ChessList.GetList(team).RemoveAt(i);
+                        break;
+                    }
+                }
                 for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes captured pieces.
                 {
-                    if (ChessList.GetList(!team)[i].BeenTaken)
+                    if (ChessList.GetList(!team)[i].BeenCaptured)
                     {
                         ChessList.GetList(!team).RemoveAt(i);
                         break;
@@ -2338,13 +2303,14 @@ namespace Chess
                     }
                 }
 
-                GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
-                GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
-                GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
-                GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+                PieceAmountUpdate();
+                //GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
+                //GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
+                //GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
+                //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
 
                 if (!GameStates.GameEnded)
-                    draw = Draw(false, !team); //true to ensure that the gamestats regarding turn and draw turn counters are updating.  
+                    draw = Draw(); //ensures that the game will draw if there are only kings left
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
@@ -2360,6 +2326,17 @@ namespace Chess
 
                 return false;
             }
+        }
+
+        /// <summary>
+        /// Updates the GameStates.PieceAmount.
+        /// </summary>
+        private void PieceAmountUpdate()
+        {
+            GameStates.PieceAmount[1, 1] = GameStates.PieceAmount[1, 0];
+            GameStates.PieceAmount[1, 0] = (byte)ChessList.GetList(false).Count;
+            GameStates.PieceAmount[0, 1] = GameStates.PieceAmount[0, 0];
+            GameStates.PieceAmount[0, 0] = (byte)ChessList.GetList(true).Count;
         }
 
         /// <summary>
@@ -2429,24 +2406,25 @@ namespace Chess
 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //ensures any promoted pawns are removed from the list.
                 {
-                    if (ChessList.GetList(team)[i].BeenTaken)
+                    if (ChessList.GetList(team)[i].BeenCaptured)
                         ChessList.GetList(team).RemoveAt(i);
                 }
-                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes any cpatured hostile pieces. 
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //removes any captured hostile pieces. 
                 {
-                    if (ChessList.GetList(!team)[i].BeenTaken)
+                    if (ChessList.GetList(!team)[i].BeenCaptured)
                         ChessList.GetList(!team).RemoveAt(i);
                 }
-                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //ensures that en passant is set to false, if it is true.
+                for (int i = ChessList.GetList(!team).Count - 1; i >= 0; i--) //ensures that en passant is set to false if it is true.
                 {
                     if (ChessList.GetList(!team)[i] is Pawn && ChessList.GetList(!team)[i].SpecialBool == true)
                         ChessList.GetList(!team)[i].SpecialBool = false;
                 }
                 byte teamIndex = team ? (byte)0 : (byte)1;
-                GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
-                GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
-                GameStates.PieceAmount[1-teamIndex, 1] = GameStates.PieceAmount[1-teamIndex, 0];
-                GameStates.PieceAmount[1-teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
+                PieceAmountUpdate();
+                //GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
+                //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+                //GameStates.PieceAmount[1-teamIndex, 1] = GameStates.PieceAmount[1-teamIndex, 0];
+                //GameStates.PieceAmount[1-teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
 
                 draw = Draw(!team, !team); //maybe move this one out to the outer loop
                 if (draw)
@@ -5248,9 +5226,9 @@ namespace Chess
         }
 
         /// <summary>
-        /// Returns a bool that indicate if this piece has been "taken" by another player's piece. 
+        /// Returns a bool that indicate if this piece has been captured by another player's piece. 
         /// </summary>
-        public bool BeenTaken { get => hasBeenTaken; } //use by other code to see if the piece have been "taken" and should be removed from game. 
+        public bool BeenCaptured { get => hasBeenTaken; } //use by other code to see if the piece have been "taken" and should be removed from game. 
 
         /// <summary>
         /// Sets the hasBeenTaken value...
