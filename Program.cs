@@ -2203,8 +2203,8 @@ namespace Chess
             //game loop
             do
             {
-                byte counter = 0;
-                bool connectionExist;
+                //byte counter = 0;
+                //bool connectionExist;
                 if (GameStates.IsTurn) //only true when Network.Receive.ReceiveMapData has received map data from the other player' transmitter
                 {
                     GameStates.GameEnded = PlayerControlNet(starter);
@@ -2220,7 +2220,7 @@ namespace Chess
                         Network.Receive.Stop();
                     }
                 }
-                else //not this computer' turn to move. 
+                else //not this computer's turn to move. 
                 {
                     Player waitingPlayer = starter ? white : black;
                     waitingPlayer.ControlOnlyMenu();
@@ -2349,8 +2349,8 @@ namespace Chess
                         GameStates.Won = true;
                     return true;
                 }
-
-                Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
+                if(!GameStates.GameEnded)
+                    Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
 
                 return false;
             }
@@ -3337,7 +3337,7 @@ namespace Chess
         public void ControlOnlyMenu()
         {
             //ConsoleKeyInfo info = new ConsoleKeyInfo();
-            while (!GameStates.IsTurn)
+            while (!GameStates.IsTurn && !GameStates.GameEnded)
             {
 
                 if(Console.KeyAvailable == true)
