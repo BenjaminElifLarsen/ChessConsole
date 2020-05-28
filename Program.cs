@@ -185,8 +185,8 @@ namespace Chess
         private static byte[] menuColourHovered = new byte[] { 255, 0, 0 };
         private static byte[] menuColourTitle = new byte[] {255,0,255 };
         private static byte[] offset = new byte[] { 4, 2 }; //works as it should
-        private static byte[] menuOffset = new byte[] { 2, 2 };
-        private static byte[] menuTitleOffset = new byte[] { (byte)(menuOffset[0]-1),menuOffset[1] };
+        private static byte[] menuOffset = new byte[] { 2, 3 };
+        private static byte[] menuTitleOffset = new byte[] { (byte)(menuOffset[0]-1),(byte)(menuOffset[1]-1) };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
         private static string title = "Chess";
@@ -1494,9 +1494,10 @@ namespace Chess
 
                     //select colour
                     string[] colourOptions = { "White", "Black" };
+                    string colourTitle = "Select your colour";
                     string colour = null;
-                    colour = Interact(colourOptions);
-                    Console.CursorTop = Console.CursorTop + 1;
+                    colour = Interact(colourOptions,colourTitle);
+                    Console.CursorTop += 1;
                     Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Conneting{Settings.CVTS.Reset}");
 
                     //transmit the colour
@@ -1682,7 +1683,7 @@ namespace Chess
             keyColour = keyColour == null ? Settings.CVTS.BrightCyanForeground : keyColour;
             exitColour = exitColour == null ? Settings.CVTS.BrightRedForeground : exitColour;
             sbyte lineNumber = -1;
-            Debug.WriteLine("Console Width: " + Console.WindowWidth);
+            //Debug.WriteLine("Console Width: " + Console.WindowWidth);
             foreach (string str in writeOut)
             {
                 lineNumber++;
@@ -1692,7 +1693,7 @@ namespace Chess
                 int stringLength = 0;
                 int wordNumber = 0;
 
-                Debug.WriteLine("Line number: {0}", lineNumber);
+                //Debug.WriteLine("Line number: {0}", lineNumber);
                 foreach (string word in words)
                 {
                     wordNumber++;
@@ -1736,15 +1737,15 @@ namespace Chess
 
                     }
 
-                    Debug.WriteLine("String Width (new line check): " + stringLength);
+                    //Debug.WriteLine("String Width (new line check): " + stringLength);
                     if (stringLength + word.Length + 1 >= Console.WindowWidth && wordNumber != words.Length)
                     {
                         stringLength = 0;
                         newStr += Environment.NewLine;
                         lineNumber++;
                         extraLines++;
-                        Debug.WriteLine("New Line: {0}", lineNumber);
-                        Debug.WriteLine(word);
+                        //Debug.WriteLine("New Line: {0}", lineNumber);
+                        //Debug.WriteLine(word);
                     }
 
                     if (!isKeyword && !isExitWord)
@@ -1755,7 +1756,7 @@ namespace Chess
                         newStr += exitColour + word + Settings.CVTS.Reset + " ";
                     
                     stringLength += word.Length + 1;
-                    Debug.WriteLine("String Width (word added): " + stringLength);
+                    //Debug.WriteLine("String Width (word added): " + stringLength);
                 }
                 Console.CursorTop = lineNumber + Settings.MenuTitleOffset[1] - extraLines;
                 Console.CursorLeft = 0;
@@ -1837,12 +1838,17 @@ namespace Chess
         /// <param name="hoveredColour">The colour of the hovered over option.</param>
         /// <param name="offset">Offset to the top left corner.</param>
         private static void Display(string[] options, byte hoveredOverOption, byte[] optionColours, byte[] hoveredColour, byte[] offset, string title = null, byte[] titleColour = null, byte[] titleOffset = null)
-        {   
-            //consider programming it such that if there is no title the options are not moved down with one. 
+        {
+            //consider programming it such that if there is no title the options are not moved down with one.
+            byte yOffSetSupport = 0;
             if(title != null)
             {
-                if(titleOffset == null)
+                //Debug.WriteLine($"Title should be {title}");
+                if (titleOffset == null)
+                {
+                    yOffSetSupport++;
                     Console.SetCursorPosition(offset[0], offset[1]);
+                }
                 else
                     Console.SetCursorPosition(titleOffset[0], titleOffset[1]);
                 if (titleColour == null)
@@ -1853,7 +1859,7 @@ namespace Chess
 
             for (int i = 0; i < options.Length; i++)
             {
-                Console.SetCursorPosition(offset[0], offset[1] + i + 1);
+                Console.SetCursorPosition(offset[0], offset[1] + i + yOffSetSupport);
                 if (i == hoveredOverOption)
                 {
                     Paint(options[i], hoveredColour);
@@ -1866,7 +1872,9 @@ namespace Chess
 
             void Paint(string option, byte[] colour)
             {
+                //Debug.WriteLine($"Printed out: {option}");
                 Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}" + Settings.CVTS.Reset, option);
+                //Thread.Sleep(1000);
             }
         }
 
@@ -2212,28 +2220,30 @@ namespace Chess
                 }
                 else //not this computer' turn to move. 
                 {
-                    Thread.Sleep(1000); //no reason to check a lot. Around 1 times per second should be good enough.
-                    if(counter == 10)
-                    {
-                        if (GameStates.GameEnded)
-                        {
-                            //receiveThread.Abort(); //figure out a better way. One of the computer stated this was not supported on its platform. Changes to the functions means there should be no reason to abort the threat anymore. 
-                            Network.Receive.Stop();
-                        }
-                        else
-                        {
-                            counter = 0;
-                            connectionExist = Network.Transmit.StillConnected(Network.Transmit.OtherPlayerIpAddress); //called to ensure there still is a connection.
-                                                                                                                      //what to do if connectionExist is false?
-                            if (!connectionExist) //Network.Transmit.StillConnected() does not work if the other player' program is just shut down. Netstat shows connections with the state of "TIME_WAIT" on the computer that closed the program. 
-                                                  //From reading, the connections will be removed after 4 mins.... 
-                                Console.WriteLine("Lost connection");//test
-                        }
-                    }
-                    else
-                    {
-                        counter++;
-                    }
+                    Player waitingPlayer = starter ? white : black;
+                    waitingPlayer.ControlOnlyMenu();
+                    //Thread.Sleep(1000); //no reason to check a lot. Around 1 times per second should be good enough.
+                    //if(counter == 10)
+                    //{
+                    //    if (GameStates.GameEnded)
+                    //    {
+                    //        //receiveThread.Abort(); //figure out a better way. One of the computer stated this was not supported on its platform. Changes to the functions means there should be no reason to abort the threat anymore. 
+                    //        Network.Receive.Stop();
+                    //    }
+                    //    else
+                    //    {
+                    //        counter = 0;
+                    //        connectionExist = Network.Transmit.StillConnected(Network.Transmit.OtherPlayerIpAddress); //called to ensure there still is a connection.
+                    //                                                                                                  //what to do if connectionExist is false?
+                    //        if (!connectionExist) //Network.Transmit.StillConnected() does not work if the other player' program is just shut down. Netstat shows connections with the state of "TIME_WAIT" on the computer that closed the program. 
+                    //                              //From reading, the connections will be removed after 4 mins.... 
+                    //            Console.WriteLine("Lost connection");//test
+                    //    }
+                    //}
+                    //else
+                    //{
+                    //    counter++;
+                    //}
                 }
 
             } while (!GameStates.GameEnded);
@@ -3317,6 +3327,24 @@ namespace Chess
                 }
 
             } while (!didMove);
+        }
+
+        /// <summary>
+        /// Allows access to the PlayerMenu() function if pressing esc
+        /// </summary>
+        public void ControlOnlyMenu()
+        {
+            //ConsoleKeyInfo info = new ConsoleKeyInfo();
+            while (!GameStates.IsTurn)
+            {
+
+                if(Console.KeyAvailable == true)
+                {
+                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    if (key.Key == ConsoleKey.Escape)
+                        PlayerMenu();
+                }
+            }
         }
 
         /// <summary>
