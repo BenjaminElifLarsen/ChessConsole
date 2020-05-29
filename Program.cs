@@ -491,7 +491,8 @@ namespace Chess
         private static byte[,] chessPieceAmounts = new byte[2,2];
         private static short turns = -1;
         private static short turnDrawCounter;
-        private static bool nonTurnWin; 
+        private static bool nonTurnWin;
+        private static bool? playerTeam = null;
 
         /// <summary>
         /// True if it is player turn, else false.
@@ -522,6 +523,10 @@ namespace Chess
         /// </summary>
         public static bool OtherPlayerSurrendered { get => nonTurnWin; set => nonTurnWin = value; }
         /// <summary>
+        /// True for white player. False for black player. Only used online. If playing offline it is set to null.
+        /// </summary>
+        public static bool? PlayerTeam { get => playerTeam; set => playerTeam = value; }
+        /// <summary>
         /// Sets and gets the number of chespieces. [0,~] is white. [1,~] is black. [~,0] is new value. [~,1] is old value.
         /// </summary>
         public static byte[,] PieceAmount { get => chessPieceAmounts; set => chessPieceAmounts = value; }
@@ -549,6 +554,7 @@ namespace Chess
             NetSearch.Searching = false;
             turns = -1;
             turnDrawCounter = 0;
+            playerTeam = null;
         }
 
         public class NetSearch
@@ -1065,6 +1071,10 @@ namespace Chess
                                     GameStates.OtherPlayerSurrendered = true; //not the best use since they did not surrender
                                     //transmit answer
                                     Transmit.GeneralValueTransmission(30, Transmit.OtherPlayerIpAddress);
+
+                                    //update the turn counter if black player
+                                    if (GameStates.PlayerTeam == false)
+                                        GameStates.TurnCounter++;
                                     //networkStream.Close(); //maybe just have a finally.
                                     //otherPlayer.Close();
                                     break;
@@ -1126,6 +1136,10 @@ namespace Chess
                             GameStates.GameEnded = true;
                             GameStates.Won = true;
                             GameStates.OtherPlayerSurrendered = true;
+
+                            //update the turn counter if black player
+                            if (GameStates.PlayerTeam == false)
+                                GameStates.TurnCounter++;
                         }
                         else
                         {//connected client is not about to transmit map data
@@ -1550,6 +1564,7 @@ namespace Chess
                     if (response == "ready")
                     { //what if the response is not "ready"? It would mean there is some unalignment in the transmission and reception of data. So, firstly bugfixing. Else, return to the main menu
                         bool firstMove = colour == "White" ? true : false;
+                        GameStates.PlayerTeam = firstMove;
                         Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
                         Start(firstMove);
                     }
@@ -1606,6 +1621,7 @@ namespace Chess
 
                     //starts game, string colour parameters that decide whoes get the first turn.
                     bool firstMove = colour == "White" ? true : false;
+                    GameStates.PlayerTeam = firstMove;
                     Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
                     Start(firstMove);
                 }
