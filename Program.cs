@@ -189,6 +189,12 @@ namespace Chess
         private static byte[] menuTitleOffset = new byte[] { (byte)(menuOffset[0]-1),(byte)(menuOffset[1]-1) };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
+        private static ConsoleKey controlKey = ConsoleKey.Enter;
+        private static ConsoleKey downKey = ConsoleKey.DownArrow;
+        private static ConsoleKey upKey = ConsoleKey.UpArrow;
+        private static ConsoleKey leftKey = ConsoleKey.LeftArrow;
+        private static ConsoleKey rightKey = ConsoleKey.RightArrow;
+        private static ConsoleKey escapeKey = ConsoleKey.Escape;
         private static string title = "Chess";
         private static byte extraSpacing = 1; //works as it should
         private static byte edgeSize = (byte)(1); //does not affect the letters and numbers in the correct way. 
@@ -198,11 +204,6 @@ namespace Chess
         private static int[] windowSize = new int[] { squareSize * 8 + 9 + 2 * edgeSize + offset[0] * 2 + windowSizeModifer[0], squareSize * 8 + 9 + 2 * edgeSize + offset[1] * 2 + windowSizeModifer[1] };
         private static int[,] writeLocationCheckHeader = new int[,] { { extraSpacing + windowSize[0] - windowSizeModifer[0], 10 + extraSpacing }, { extraSpacing + windowSize[0] - windowSizeModifer[0] + 8, 10 + extraSpacing } };
         private static int[,] writeLocationCheck = new int[,] { { writeLocationCheckHeader[0, 0], writeLocationCheckHeader[0, 1] + 2 }, { writeLocationCheckHeader[1, 0], writeLocationCheckHeader[1, 1] + 2 } }; //x,y //each line should contain two symbols, e.g. D5, A2 etc..
-        //Black    White
-        //king     king
-        //----     ----
-        //D5       A6
-        //         D4
         //need to deal with nulls in the places that calls the different settings. 
         private static int[] writeLocationPromotion = new int[] { offset[0] + edgeSize + 2, windowSize[1] - windowSizeModifer[1] };
         /// <summary>
@@ -305,12 +306,36 @@ namespace Chess
         /// The colour for the black chess pieces. 
         /// </summary>
         public static byte[] BlackColour { get => colourBlack; }
+        /// <summary>
+        /// Key used to select with.
+        /// </summary>
+        public static ConsoleKey SelectKey { get => controlKey; }
+        /// <summary>
+        /// Key used to go down with.
+        /// </summary>
+        public static ConsoleKey DownKey { get => downKey; }
+        /// <summary>
+        /// Key used to go up with.
+        /// </summary>
+        public static ConsoleKey UpKey { get => upKey; }
+        /// <summary>
+        /// Key used to go left with.
+        /// </summary>
+        public static ConsoleKey LeftKey { get => leftKey; }
+        /// <summary>
+        /// Key used to go right with.
+        /// </summary>
+        public static ConsoleKey RightKey { get => rightKey; }
+        /// <summary>
+        /// Key used to escape with.
+        /// </summary>
+        public static ConsoleKey EscapeKey { get => escapeKey; }
 
         /// <summary>
         /// Console Virtual Terminal Sequences
         /// </summary>
         public class CVTS //Console Virtual Terminal Sequences
-        { //have a function to turn on CVTS 
+        { 
 
             [DllImport("kernel32.dll", SetLastError = true)]
             public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
@@ -553,6 +578,9 @@ namespace Chess
         }
     } 
 
+    /// <summary>
+    /// Contains classes for transmitting and receivering data and a support class.
+    /// </summary>
     class Network
     {
         //for the transmission and reception of the map array. You could write it into to a string, encode it and trasmit it. Then decode it and, knowing the size of the array, write it back into the map.
@@ -1084,8 +1112,6 @@ namespace Chess
                             GameStates.Pause = false;
                             GameStates.GameEnded = true;
                             GameStates.Won = null;
-                            //networkStream.Close(); //maybe just have a finally.
-                            //otherPlayer.Close();
                         }
                         else if(type == 31) //draw was denied
                         {
@@ -1614,11 +1640,7 @@ namespace Chess
                             GameStates.NetSearch.Searching = false;
                             GameStates.NetSearch.Abort = true;
                         }
-                        //else if (key.Key == ConsoleKey.N)
-                        //{
-                        //    Console.WriteLine(key.Key);
-                            
-                        //}
+
                     }
                 }
 
@@ -1645,16 +1667,9 @@ namespace Chess
                 Console.WriteLine("Interaction.txt could not be found.");
                 Console.WriteLine("{0}Enter to return.", Environment.NewLine);
             }
-            //ConsoleKeyInfo key = new ConsoleKeyInfo();
-            //while (Console.KeyAvailable) //this should flush the keys
-            //{
-            //    Console.ReadKey(false);
-            //    Thread.Sleep(1000);
-            //}
-            //string bugFinding = Console.ReadLine() + "-Pressed";
-            //Debug.WriteLine(bugFinding);
-            while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
-            //Console.ReadLine();
+
+            while (Console.ReadKey(true).Key != Settings.SelectKey) ;
+            
 
         }
 
@@ -1677,7 +1692,7 @@ namespace Chess
                 Console.WriteLine("Rules.txt could not be found.");
                 Console.WriteLine("Enter to return.");
             }
-            while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
+            while (Console.ReadKey(true).Key != Settings.SelectKey) ;
 
         }
 
@@ -1827,15 +1842,15 @@ namespace Chess
             bool Move()
             {
                 ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-                if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation > 0)
+                if (keyInfo.Key == Settings.UpKey && currentLocation > 0)
                 {
                     currentLocation--;
                 }
-                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation < options.Length - 1)
+                else if (keyInfo.Key == Settings.DownKey && currentLocation < options.Length - 1)
                 {
                     currentLocation++;
                 }
-                else if (keyInfo.Key == ConsoleKey.Enter)
+                else if (keyInfo.Key == Settings.SelectKey)
                 {
                     return true;
                 }
@@ -1853,7 +1868,6 @@ namespace Chess
         /// <param name="offset">Offset to the top left corner.</param>
         private static void Display(string[] options, byte hoveredOverOption, byte[] optionColours, byte[] hoveredColour, byte[] offset, string title = null, byte[] titleColour = null, byte[] titleOffset = null)
         {
-            //consider programming it such that if there is no title the options are not moved down with one.
             byte yOffSetSupport = 0;
             if(title != null)
             {
@@ -1899,14 +1913,6 @@ namespace Chess
     /// </summary>
     class ChessTable
     {
-        //[DllImport("kernel32.dll", SetLastError = true)]
-        //public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
-        //[DllImport("kernel32.dll", SetLastError = true)]
-        //public static extern bool GetConsoleMode(IntPtr handle, out int mode);
-
-        //[DllImport("kernel32.dll", SetLastError = true)]
-        //public static extern IntPtr GetStdHandle(int handle);
-
         private Player white; 
         private Player black; 
         private int[,] whiteSpawnLocation;
@@ -1916,20 +1922,11 @@ namespace Chess
         public ChessTable()
         {
             MapMatrix.PrepareMap();
-            //var handle = GetStdHandle(-11);
-            //int mode;
-            //GetConsoleMode(handle, out mode);
-            //SetConsoleMode(handle, mode | 0x4);
 
-            //windowsSize[0] = Settings.WindowSize[0];
-            //windowsSize[1] = Settings.WindowSize[1];
             windowsSize[0] = Settings.WindowSize[0] > Console.LargestWindowWidth ? Console.LargestWindowWidth : Settings.WindowSize[0];
             windowsSize[1] = Settings.WindowSize[1] > Console.LargestWindowHeight ? Console.LargestWindowHeight : Settings.WindowSize[1];
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            //if (windowsSize[0] < Console.LargestWindowWidth && windowsSize[1] < Console.LargestWindowHeight)
-            //    Console.SetWindowSize(windowsSize[0], windowsSize[1]);
-            //else
-            //    Console.SetWindowSize(Console.LargestWindowWidth/2, Console.LargestWindowHeight);
+
             blackSpawnLocation = new int[,] {
                 { 0, 1 }, { 1, 1 }, { 2, 1 }, { 3, 1 }, { 4, 1 }, { 5, 1 }, { 6, 1 }, { 7, 1 },
                 { 0, 0 }, { 1, 0 }, { 2, 0 }, { 3, 0 }, { 4, 0 }, { 5, 0 }, { 6, 0 }, { 7, 0 }
@@ -1951,9 +1948,9 @@ namespace Chess
         {
             bool kingcheck;
             BoardSetup();
-            foreach (ChessPiece chePie in ChessList.GetList(true)) //after implementing this the console is really slow to start up the main menu at times.
+            foreach (ChessPiece chePie in ChessList.GetList(true)) 
             {
-                chePie.IsHoveredOn(false); //this function is not meant for this, but it works. 
+                chePie.IsHoveredOn(false); //this function is not meant for this, but it works regarding replainting the pieces. 
                 if (chePie is King king)
                     kingcheck = king.SpecialBool; //called to get the king, if threaten, to write out the location it is treaten from
             }
@@ -1961,7 +1958,7 @@ namespace Chess
             {
                 chePie.IsHoveredOn(false);
                 if (chePie is King king)
-                    kingcheck = king.SpecialBool; //called to get the king, if threaten, to write out the location it is treaten from
+                    kingcheck = king.SpecialBool; 
             }
         }
 
@@ -2111,15 +2108,16 @@ namespace Chess
         /// </summary>
         /// <returns>Returns true if the game is in a draw, else false.</returns>
         private bool Draw(bool newMove = false, bool updatePieces = false)
-        { 
+        {
+
+            bool noCapture;
+            bool pawnChange = false;
             if (ChessList.GetList(true).Count == 1 && ChessList.GetList(false).Count == 1)
             {
                 return true;
             }
-            else if (newMove) 
+            if (newMove) 
             {
-                bool noCapture;
-                bool pawnChange = false;
                 if(MapMatrix.LastMoveMap[0, 0] != null)
                     for (int n = 0; n < 8; n++)
                     {
@@ -2138,29 +2136,29 @@ namespace Chess
                             }
                         }
                     }
-                if (updatePieces)
-                {
-                    if (GameStates.PieceAmount[0, 0] == GameStates.PieceAmount[0, 1] && GameStates.PieceAmount[1, 0] == GameStates.PieceAmount[1, 1])
-                    { 
-                        noCapture = true;
-                    }
-                    else
-                        noCapture = false;
-
-                    if (noCapture && !pawnChange)
-                    {
-                        GameStates.TurnDrawCounter++;
-                    }
-                    else
-                    {
-                        GameStates.TurnDrawCounter = 0;
-                    }
-                    if (GameStates.TurnDrawCounter == 70)
-                        return true;
-                }
+                
 
             }
-           
+            if (updatePieces)
+            {
+                if (GameStates.PieceAmount[0, 0] == GameStates.PieceAmount[0, 1] && GameStates.PieceAmount[1, 0] == GameStates.PieceAmount[1, 1])
+                {
+                    noCapture = true;
+                }
+                else
+                    noCapture = false;
+
+                if (noCapture && !pawnChange)
+                {
+                    GameStates.TurnDrawCounter++;
+                }
+                else
+                {
+                    GameStates.TurnDrawCounter = 0;
+                }
+                if (GameStates.TurnDrawCounter == 70)
+                    return true;
+            }
             return false;
         }
 
@@ -2180,7 +2178,7 @@ namespace Chess
                 $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}{endMessage} {Settings.CVTS.Reset}{Environment.NewLine}" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Amount of Moves: {Settings.CVTS.BrightCyanForeground}{Settings.CVTS.Underscore}{GameStates.TurnCounter}{Settings.CVTS.Reset}{Environment.NewLine}" +
                 $"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightRedForeground}Enter{Settings.CVTS.BrightWhiteForeground} to continue. {Settings.CVTS.Reset}");
-            while (Console.ReadKey(true).Key != ConsoleKey.Enter) ;
+            while (Console.ReadKey(true).Key != Settings.SelectKey) ;
             Console.Clear();
         }
 
@@ -2290,15 +2288,11 @@ namespace Chess
                 ProtectKing.ProtectingTheKing.Clear();
                 ProtectKing.CannotMove = ProtectingTheKing(team); 
                 
-                //byte teamIndex = team ? (byte)0 : (byte)1;
-                PieceAmountUpdate();
-                //GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
-                //GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
-                //GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
-                //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+                if(team)
+                    PieceAmountUpdate(); //draw counters need to be updated before white player turn.
 
                 if(!firstTurn)
-                Draw(team, updatePieces: team); //a "move", after the rules, consist of both players turn. This call ensures the draw counter is updated before white player's turn
+                Draw(true, updatePieces: team); //a "move", after the rules, consist of both players turn. This call ensures the draw counter is updated before white player's turn
                 if (team) 
                     MapMatrix.UpdateOldMap();
                 firstTurn = false;
@@ -2341,14 +2335,11 @@ namespace Chess
                     }
                 }
 
-                PieceAmountUpdate();
-                //GameStates.PieceAmount[1 - teamIndex, 1] = GameStates.PieceAmount[1 - teamIndex, 0];
-                //GameStates.PieceAmount[1 - teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
-                //GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
-                //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
+                if(!team)
+                    PieceAmountUpdate(); //needs to be updated after black player turn.
 
                 if (!GameStates.GameEnded)
-                    draw = Draw(!team, updatePieces: !team); //ensures that draw 50 move counter is updated after black player turn. Auto-draw from the fifty-move rule can only happen at the end of black player turn
+                    draw = Draw(false, updatePieces: !team); //ensures that draw 50 move counter is updated after black player turn. Auto-draw from the fifty-move rule can only happen at the end of black player turn
                 if (!team)
                     MapMatrix.UpdateOldMap();
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
@@ -2461,14 +2452,9 @@ namespace Chess
                     if (ChessList.GetList(!team)[i] is Pawn && ChessList.GetList(!team)[i].SpecialBool == true)
                         ChessList.GetList(!team)[i].SpecialBool = false;
                 }
-                byte teamIndex = team ? (byte)0 : (byte)1;
                 PieceAmountUpdate();
-                //GameStates.PieceAmount[teamIndex, 1] = GameStates.PieceAmount[teamIndex, 0];
-                //GameStates.PieceAmount[teamIndex, 0] = (byte)ChessList.GetList(team).Count;
-                //GameStates.PieceAmount[1-teamIndex, 1] = GameStates.PieceAmount[1-teamIndex, 0];
-                //GameStates.PieceAmount[1-teamIndex, 0] = (byte)ChessList.GetList(!team).Count;
 
-                draw = Draw(!team, !team); //maybe move this one out to the outer loop
+                draw = Draw(team, team); //maybe move this one out to the outer loop
                 if (draw)
                 {
                     GameStates.Won = null;
@@ -3590,34 +3576,43 @@ namespace Chess
             while (GameStates.Pause) ;
 
             if (!GameStates.GameEnded) { 
-                SquareHighLight(false);
-                if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
+                if (keyInfo.Key == Settings.UpKey && currentLocation[1] > 0)
                 {
+                    SquareHighLight(false);
                     currentLocation[1]--;
+                    SquareHighLight(true);
                 }
-                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
+                else if (keyInfo.Key == Settings.DownKey && currentLocation[1] < 7)
                 {
+                    SquareHighLight(false);
                     currentLocation[1]++;
+                    SquareHighLight(true);
                 }
-                else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
+                else if (keyInfo.Key == Settings.LeftKey && currentLocation[0] > 0)
                 {
+                    SquareHighLight(false);
                     currentLocation[0]--;
+                    SquareHighLight(true);
                 }
-                else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
+                else if (keyInfo.Key == Settings.RightKey && currentLocation[0] < 7)
                 {
+                    SquareHighLight(false);
                     currentLocation[0]++;
+                    SquareHighLight(true);
                 }
-                else if (keyInfo.Key == ConsoleKey.Enter)
+                else if (keyInfo.Key == Settings.SelectKey)
                 {
+                    //SquareHighLight(true);
                     return true;
                 }
-                else if (keyInfo.Key == ConsoleKey.Escape)
+                else if (keyInfo.Key == Settings.EscapeKey)
                 {
                     PlayerMenu();
+                    SquareHighLight(true);
                     return null; 
                 }
 
-                SquareHighLight(true);
+                //SquareHighLight(true);
                 return false;
             }
             return null;
@@ -5528,23 +5523,23 @@ namespace Chess
                         break;
                     }
                 }
-                if (keyInfo.Key == ConsoleKey.UpArrow && currentLocation[1] > 0)
+                if (keyInfo.Key == Settings.UpKey && currentLocation[1] > 0)
                 {
                     currentLocation[1]--;
                 }
-                else if (keyInfo.Key == ConsoleKey.DownArrow && currentLocation[1] < 7)
+                else if (keyInfo.Key == Settings.DownKey && currentLocation[1] < 7)
                 {
                     currentLocation[1]++;
                 }
-                else if (keyInfo.Key == ConsoleKey.LeftArrow && currentLocation[0] > 0)
+                else if (keyInfo.Key == Settings.LeftKey && currentLocation[0] > 0)
                 {
                     currentLocation[0]--;
                 }
-                else if (keyInfo.Key == ConsoleKey.RightArrow && currentLocation[0] < 7)
+                else if (keyInfo.Key == Settings.RightKey && currentLocation[0] < 7)
                 {
                     currentLocation[0]++;
                 }
-                else if (keyInfo.Key == ConsoleKey.Enter)
+                else if (keyInfo.Key == Settings.SelectKey)
                 {
                     return true;
                 }
