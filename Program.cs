@@ -1091,10 +1091,11 @@ namespace Chess
                         }
                         else if (type == 4) //this player is victory
                         {
-                            //networkStream.Close(); //maybe just have a finally.
-                            //otherPlayer.Close();
                             GameStates.GameEnded = true;
                             GameStates.Won = true;
+
+                            if (GameStates.PlayerTeam == false)
+                                GameStates.TurnCounter++;
                         }
                         else if (type == 5) //this player is defeated
                         {
