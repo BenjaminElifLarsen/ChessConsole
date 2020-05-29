@@ -1,12 +1,12 @@
-﻿----Interaction----
+﻿{MenuTitleOffset} ----Interaction----
 
-Menu:
-  Arrowkeys to move to different options.
-  Enter to select an option.
+{MenuTitleOffset} Menu:
+{MenuOffset} [Arrowkeys] to move to different [options].
+{MenuOffset} {SelectKey} to select an [option].
 
-Gameplay:
-  Move to a location using arrowkeys. 
-  Enter to select the location.
-  Esc to open a menu.
+{MenuTitleOffset} Gameplay:
+{MenuOffset} [Move] to a location using [arrowkeys]. 
+{MenuOffset} {SelectKey} to [select] the location.
+{MenuOffset} {EscapeKey} to [open] the game [menu].
 
-Press enter to return.
+{MenuOffset} Press {selectKey} to [return].

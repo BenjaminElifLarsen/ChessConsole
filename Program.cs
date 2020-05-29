@@ -6,6 +6,7 @@ using System.Net;
 using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Reflection;
 
 namespace Chess
 {   //https://www.chessvariants.com/d.chess/chess.html
@@ -168,10 +169,11 @@ namespace Chess
     }
 
     /// <summary>
-    /// Class that contains the settings used in the chess game. 
+    /// Class that contains the settings used by the program.
     /// </summary>
     public class Settings
     { //consider having settings for write locations related to the king check. Also what should be written should be location, perhaps, e.g. e5. So convert the first number of each location to a letter.
+        //public Settings(bool test) { }
         private Settings() { }
         private static byte squareSize = 5; //default is 5.
         private static byte[] lineColour = new byte[] { 122, 122, 122 };
@@ -189,6 +191,12 @@ namespace Chess
         private static byte[] menuTitleOffset = new byte[] { (byte)(menuOffset[0]-1),(byte)(menuOffset[1]-1) };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
+        private static char exitWordLeft = '{';
+        private static char exitWordRight = '}';
+        private static char[] exitWordBracket = new char[2] { exitWordLeft, exitWordRight };
+        private static char keywordLeft = '['; //maybe use an array instead of, new char[2];
+        private static char keywordRight = ']';
+        private static char[] keywordBracket = new char[2] {keywordLeft, keywordRight };
         private static ConsoleKey controlKey = ConsoleKey.Enter;
         private static ConsoleKey downKey = ConsoleKey.DownArrow;
         private static ConsoleKey upKey = ConsoleKey.UpArrow;
@@ -1674,13 +1682,13 @@ namespace Chess
             try
             {
                 string[] interaction = File.ReadAllLines("Interaction.txt");
-                string[] keywords = { "arrowkeys", "move", "location", "option", "options", "menu", "gameplay" };
-                string[] exitWords = { "----interaction----", "enter", "esc" };
-                PrintOut(interaction, keywords, exitWords);
+                //string[] keywords = { "arrowkeys", "move", "location", "option", "options", "menu", "gameplay" };
+                //string[] exitWords = { "----interaction----", "enter", "escape" };
+                PrintOut(interaction);
             }
             catch (Exception e)
             {
-                Debug.WriteLine(e);
+                Debug.WriteLine(e); //this block is also entered if something else goes wrong, e.g. System.NullReferenceException and index size
                 Console.WriteLine("Interaction.txt could not be found.");
                 Console.WriteLine("{0}Enter to return.", Environment.NewLine);
             }
@@ -1699,9 +1707,9 @@ namespace Chess
             try
             {
                 string[] about = File.ReadAllLines("Rules.txt");
-                string[] keywords = {"castling", "check", "selected", "moved", "kingmove", "draw", "return", "70", "deselected" };
-                string[] exitWords = { "----rules----", "enter" };
-                PrintOut(about, keywords, exitWords);
+                //string[] keywords = {"castling", "check", "selected", "moved", "kingmove", "draw", "return", "70", "deselected" };
+                //string[] exitWords = { "----rules----", "enter" };
+                PrintOut(about);
                 
             }
             catch
@@ -1745,46 +1753,66 @@ namespace Chess
                     wordNumber++;
                     bool isKeyword = false;
                     bool isExitWord = false;
-                    if (word != "")
+
+
+                    char[] testChar = word.ToCharArray();
+                    string addToString = word;
+                    bool comma = false;
+                    bool dot = false;
+                    bool semicolon = false;
+                    bool colon = false;
+                    SpecialEndSign();
+                    if (testChar.Length > 2)
                     {
-                        bool comma = word.EndsWith(',');
-                        bool dot = word.EndsWith('.');
-                        bool semicolon = word.EndsWith(';');
-                        bool colon = word.EndsWith(':');
-                        if(keywords != null)
-                            foreach (string keyword in keywords)
+                        bool isCapitalised = false;
+                        byte endPoint = comma || dot || semicolon || colon ? (byte)2 : (byte)1;
+                        if (testChar[0] == '{' && testChar[testChar.Length - endPoint] == '}') //consider having {, }, [ and ] as settings.
+                        {
+                            char[] property = new char[testChar.Length - (1 + endPoint)];
+                            for (int i = 1; i < testChar.Length - endPoint; i++)
                             {
-                                string key = "";
-                                key = comma ? keyword + "," : keyword;
-                                key = dot ? key + "." : key;
-                                key = semicolon ? key + ";" : key;
-                                key = colon ? key + ":" : key;
-                                if (key == word.ToLower())
+                                property[i - 1] = testChar[i];
+                            }
+                            isCapitalised = (int)property[0] < 97 ? true : false;
+                            if (!isCapitalised)
+                                property[0] = (char)((int)property[0] - 32);
+                            string findProperty = new string(property);
+                            Type setting = typeof(Settings);
+                            //Settings setting = new Settings(true);
+                            //addToString = setting.GetType().GetProperty(find).GetValue(setting).ToString();
+                            try
+                            {
+
+                                if (setting.GetProperty(findProperty).PropertyType.Name == "ConsoleKey")
+                                    addToString = !isCapitalised ? setting.GetProperty(findProperty).GetValue(setting).ToString().ToLower() : setting.GetProperty(findProperty).GetValue(setting).ToString();
+                                else if(setting.GetProperty(findProperty).PropertyType.Name == "Byte[]")
                                 {
-                                    isKeyword = true;
-                                    break;
+                                    byte[] offset = (byte[])setting.GetProperty(findProperty).GetValue(setting);
+                                    addToString = "".PadLeft(offset[0] - 1);
                                 }
                             }
-                        if(exitwords != null)
-                            if (!isKeyword)
-                                foreach (string exitWord in exitwords)
-                                {
-                                    string exit = "";
-                                    exit = comma ? exitWord + "," : exitWord;
-                                    exit = dot ? exit + "." : exit;
-                                    exit = semicolon ? exit + ";" : exit;
-                                    exit = colon ? exit + ":" : exit;
-                                    if (exit == word.ToLower())
-                                    {
-                                        isExitWord = true;
-                                        break;
-                                    }
-                                }
+                            catch (Exception e)
+                            {
+                                Debug.WriteLine(e);
+                                addToString = "erorr";
+                            }
+                            isExitWord = true;
+                        }
+                        else if (testChar[0] == '[' && testChar[testChar.Length - endPoint] == ']')
+                        {
+                            char[] keyWord = new char[testChar.Length - (1 + endPoint)];
+                            for (int i = 1; i < testChar.Length - endPoint; i++)
+                            {
+                                keyWord[i - 1] = testChar[i];
+                            }
+                            addToString = new string(keyWord);
+                            isKeyword = true;
+                        }
 
                     }
-
+                    
                     //Debug.WriteLine("String Width (new line check): " + stringLength);
-                    if (stringLength + word.Length + 1 >= Console.WindowWidth && wordNumber != words.Length)
+                    if (stringLength + addToString.Length + 1 >= Console.WindowWidth && wordNumber != words.Length)
                     {
                         stringLength = 0;
                         newStr += Environment.NewLine;
@@ -1795,18 +1823,53 @@ namespace Chess
                     }
 
                     if (!isKeyword && !isExitWord)
-                        newStr += Settings.CVTS.BrightWhiteForeground + word + Settings.CVTS.Reset + " ";
+                        newStr += Settings.CVTS.BrightWhiteForeground + addToString + Settings.CVTS.Reset;
                     else if (isKeyword)
-                        newStr += keyColour + word + Settings.CVTS.Reset + " ";
+                        newStr += keyColour + addToString + Settings.CVTS.Reset;
                     else if (isExitWord)
-                        newStr += exitColour + word + Settings.CVTS.Reset + " ";
+                        newStr += exitColour + addToString + Settings.CVTS.Reset;
                     
-                    stringLength += word.Length + 1;
+                    if (dot && (isKeyword || isExitWord))
+                    {
+                        newStr += ".";
+                        stringLength++;
+                    }
+                    else if (comma && (isKeyword || isExitWord))
+                    {
+                        newStr += ",";
+                        stringLength++;
+                    }
+                    else if (semicolon && (isKeyword || isExitWord))
+                    {
+                        newStr += ";";
+                        stringLength++;
+                    }
+                    else if (colon && (isKeyword || isExitWord))
+                    {
+                        newStr += ":";
+                        stringLength++;
+                    }
+                    newStr += " ";
+                    stringLength += addToString.Length + 1;
+
                     //Debug.WriteLine("String Width (word added): " + stringLength);
+                    void SpecialEndSign()
+                    {
+
+                            comma = addToString.EndsWith(',');
+                            dot = addToString.EndsWith('.');
+                            semicolon = addToString.EndsWith(';');
+                            colon = addToString.EndsWith(':');
+
+                    }
                 }
                 Console.CursorTop = lineNumber + Settings.MenuTitleOffset[1] - extraLines;
                 Console.CursorLeft = 0;
-                Console.WriteLine(newStr);
+                //https://docs.microsoft.com/en-us/dotnet/framework/reflection-and-codedom/reflection
+                //https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection
+                Console.WriteLine($"{newStr}");
+
+
             }
         }
 
@@ -5037,9 +5100,9 @@ namespace Chess
         {
             Design = new string[]
             {
-                "_+_",
-                "|O|",
-                "-B-"
+                $"_{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Plus_Minus}{Settings.CVTS.DEC.DEC_Deactive}_",
+                $"{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Vertical_Line}{Settings.CVTS.DEC.DEC_Deactive}O{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Vertical_Line}{Settings.CVTS.DEC.DEC_Deactive}",
+                $"-B-"
             };
             //Design = new string[]
             //{ //changes the length of the first string so code needs to be changed to either use the amount of strings in the array or something else. Also the code that control the paint location
@@ -5474,8 +5537,6 @@ namespace Chess
                 possibleEndLocations = null;
                 couldMove = false;
             }
-            //RemoveDisplayPossibleMove();
-            //possibleEndLocations = null;
         }
 
         /// <summary>
@@ -5483,10 +5544,6 @@ namespace Chess
         /// </summary>
         /// <param name="movements">List of locations the piece can move to.</param>
         public virtual List<int[,]> SetEndLocations { set => possibleEndLocations = value; }
-        //public virtual void SetEndLocations(List<int[,]> movements)
-        //{
-        //    possibleEndLocations = movements;
-        //}
 
         /// <summary>
         /// Checks if <paramref name="locationToCheck"/> contain an ID and if the ID is hostile, the function will call that ID's chesspiece's Taken function.
@@ -5645,10 +5702,11 @@ namespace Chess
         /// <param name="mapLoc">The location on the map matrix that is used to determine background colour.</param>
         /// <returns></returns>
         protected byte[] PaintCalculations(out int drawLocationX, out int drawLocationY, int[] mapLoc)
-        { //replace a lot of code with this function
-            byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
-            drawLocationX = (int)Location[0] + (int)(squareSize - designSize[0]) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
-            drawLocationY = (int)Location[1] + (int)(squareSize - designSize[1]) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+        {
+            //byte[] designSize = new byte[] { (byte)Design[0].Length, (byte)Design.Length };
+            int designSize = Design.Length;
+            drawLocationX = (int)Location[0] + (int)(squareSize - designSize) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
+            drawLocationY = (int)Location[1] + (int)(squareSize - designSize) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
             int locationForColour = (mapLoc[0] + mapLoc[1]) % 2; //if zero, background colour is "white", else background colour is "black".
             byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
             return colours;
@@ -5657,12 +5715,11 @@ namespace Chess
         /// <summary>
         /// Paints the foreground of the current location.
         /// </summary>
-        protected void PaintForeground() //these did not really end up saving on code. Consider moving the first 3 or 5 lines of code into a function...
+        protected void PaintForeground()
         {
-
             byte[] colours = PaintCalculations(out int drawLocationX, out int drawLocationY, mapLocation);
-            for (int i = 0; i < design[0].Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
-            { //To fix, the background colour is overwritten with the default colour, black, rather than keeping the current background colour.
+            for (int i = 0; i < design.Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
+            { 
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
                 Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m" + Settings.CVTS.ExtendedForegroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}" + Settings.CVTS.Reset, design[i], colours);
             }
@@ -5675,7 +5732,7 @@ namespace Chess
         {
             byte[] backColours = PaintCalculations(out int drawLocationX, out int drawLocationY, mapLocation);
             byte[] colours = Settings.SelectPieceColour;
-            for (int i = 0; i < design[0].Length; i++)
+            for (int i = 0; i < design.Length; i++)
             {
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
                 Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + backColours[0] + ";" + backColours[1] + ";" + backColours[2] + "m" + Settings.CVTS.ExtendedForegroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m{0}" + Settings.CVTS.Reset, design[i]);
@@ -5691,10 +5748,10 @@ namespace Chess
             if (locationToRemove != null)
             {
                 byte[] colours = PaintCalculations(out int drawLocationX, out int drawLocationY, locationToRemove);
-                for (int i = 0; i < design[0].Length; i++)
+                for (int i = 0; i < design.Length; i++)
                 {
                     Console.SetCursorPosition(drawLocationX, drawLocationY + i);
-                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m".PadRight(design[0].Length + 1, ' ') + Settings.CVTS.Reset);
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m".PadRight(design.Length + 1, ' ') + Settings.CVTS.Reset);
                 }
             }
         }
