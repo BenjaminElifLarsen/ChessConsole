@@ -1,13 +1,13 @@
-﻿{MenuTitleOffset} ----Rules----
+﻿@HeaderTextOffset ----Rules----
 
-{MenuTitleOffset} When a chesspiece has been [selected] it can be [deselected] by [selecting] the [piece] [again] and another piece can be selected. If it [cannot] be [moved], [another] chesspiece is [allowed]. 
+@HeaderTextOffset When a chesspiece has been [selected] it can be [deselected] by [selecting] the [piece] [again] and another piece can be selected. If it [cannot] be [moved], [another] chesspiece is [allowed]. 
 
-{MenuTitleOffset} [King] specific [rule(s)]:
-{MenuOffset} [Castling] is a [kingmove].
+@HeaderTextOffset [King] specific [rule(s)]:
+@TextOffset [Castling] is a [kingmove].
 
-{MenuTitleOffset} If the [king] is [check], only pieces that can [prevent] the check can be moved. 
-{MenuTitleOffset} Pieces that are keeping the king [safe] from hostile pieces [cannot] be [moved] in such a way that the king comes [under] [check].
+@HeaderTextOffset If the [king] is [check], only pieces that can [prevent] the check can be moved. 
+@HeaderTextOffset Pieces that are keeping the king [safe] from hostile pieces [cannot] be [moved] in such a way that the king comes [under] [check].
 
-{MenuTitleOffset} The game will [draw] [automatically] if [no] piece has been [captured] and [no] [pawn] has been [moved] the last [70] turns. 
+@HeaderTextOffset The game will [draw] [automatically] if [no] piece has been [captured] and [no] [pawn] has been [moved] the last [70] turns. 
 
-{MenuTitleOffset} Press {selectKey} to [return].
+@HeaderTextOffset Press {selectKey} to [return].

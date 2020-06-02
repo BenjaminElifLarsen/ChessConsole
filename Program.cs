@@ -172,10 +172,11 @@ namespace Chess
     /// Class that contains the settings used by the program.
     /// </summary>
     public class Settings
-    { //consider having settings for write locations related to the king check. Also what should be written should be location, perhaps, e.g. e5. So convert the first number of each location to a letter.
-        //public Settings(bool test) { }
+    { 
         private Settings() { }
+        private static bool canHighlight = true; 
         private static byte squareSize = 5; //default is 5.
+        private static byte chesspieceDesignSize = 3;
         private static byte[] lineColour = new byte[] { 122, 122, 122 };
         private static byte[] lineColourBase = new byte[] { 87, 65, 47 };
         private static byte[] squareColour1 = new byte[] { 182, 123, 91 };
@@ -189,13 +190,16 @@ namespace Chess
         private static byte[] offset = new byte[] { 4, 2 }; //works as it should
         private static byte[] menuOffset = new byte[] { 2, 3 };
         private static byte[] menuTitleOffset = new byte[] { (byte)(menuOffset[0]-1),(byte)(menuOffset[1]-1) };
+        private static byte[] textOffset = new byte[] { 2, 2 };
+        private static byte[] headerTextOffset = new byte[] { 1, 1 };
         private static char lineX = '-'; //works as it should
         private static char lineY = '|'; //works as it should
-        private static char exitWordLeft = '{';
-        private static char exitWordRight = '}';
+        private static char exitWordLeft = '[';
+        private static char exitWordRight = ']';
+        private static char keywordLeft = '{'; //maybe use an array instead of, new char[2];
+        private static char keywordRight = '}';
+        private static char offsetWord = '@';
         private static char[] exitWordBracket = new char[2] { exitWordLeft, exitWordRight };
-        private static char keywordLeft = '['; //maybe use an array instead of, new char[2];
-        private static char keywordRight = ']';
         private static char[] keywordBracket = new char[2] {keywordLeft, keywordRight };
         private static ConsoleKey controlKey = ConsoleKey.Enter;
         private static ConsoleKey downKey = ConsoleKey.DownArrow;
@@ -218,6 +222,10 @@ namespace Chess
         /// Gets the size of the squares. 
         /// </summary>
         public static byte SquareSize { get => squareSize; }
+        /// <summary>
+        /// Gets the size of the chess pieces. 
+        /// </summary>
+        public static byte ChesspieceDesignSize { get => chesspieceDesignSize; }
         /// <summary>
         /// Gets the foreground colour of the lines between the squares.
         /// </summary>
@@ -338,6 +346,30 @@ namespace Chess
         /// Key used to escape with.
         /// </summary>
         public static ConsoleKey EscapeKey { get => escapeKey; }
+        /// <summary>
+        /// Text file offset.
+        /// </summary>
+        public static byte[] TextOffset { get => textOffset; }
+        /// <summary>
+        /// Header text file offset
+        /// </summary>
+        public static byte[] HeaderTextOffset { get => headerTextOffset; }
+        /// <summary>
+        /// Gets the left and right brackets that indicats a keyword. 
+        /// </summary>
+        public static char[] KeywordBrackets { get => keywordBracket; }
+        /// <summary>
+        /// Gets the left and right brackets that indicats an exit word. 
+        /// </summary>
+        public static char[] ExitWordBrackets { get => exitWordBracket; }
+        /// <summary>
+        /// Char used to identify any modifier to text execpt for keywords and exit words, see <c>KeywordBrackets</c> and <c>ExitWordBrackets</c> for those. 
+        /// </summary>
+        public static char TextOffsetChar { get => offsetWord; }
+        /// <summary>
+        /// If true square/piece can be highlighted else not. It will still highlight empty squares if false. 
+        /// </summary>
+        public static bool CanHighLight { get => canHighlight; set => canHighlight = value; }
 
         /// <summary>
         /// Console Virtual Terminal Sequences
@@ -1433,11 +1465,27 @@ namespace Chess
             MainMenu();
         }
 
+        /// <summary>
+        /// Sets the window size to the values in the Settings.WindowSize or the max size if Settings.WindowSize is big.
+        /// </summary>
         private void WindowSize()
         {
             int[] windowsSize = new int[2];
             windowsSize[0] = Settings.WindowSize[0] > Console.LargestWindowWidth ? Console.LargestWindowWidth : Settings.WindowSize[0];
             windowsSize[1] = 20 > Console.LargestWindowHeight ? Console.LargestWindowHeight : 20;
+            Console.SetWindowSize(windowsSize[0], windowsSize[1]);
+        }
+
+        /// <summary>
+        /// Sets the window size to the values in the width/height or the max size if Settings.WindowSize is big.
+        /// </summary>
+        /// <param name="width">The width of the window.</param>
+        /// <param name="height">The height of the window</param>
+        private void WindowSize(byte width, byte height)
+        {
+            int[] windowsSize = new int[2];
+            windowsSize[0] = width > Console.LargestWindowWidth ? Console.LargestWindowWidth : width;
+            windowsSize[1] = height > Console.LargestWindowHeight ? Console.LargestWindowHeight : height;
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
         }
 
@@ -1753,25 +1801,41 @@ namespace Chess
                     wordNumber++;
                     bool isKeyword = false;
                     bool isExitWord = false;
+                    bool isOffset = false;
 
-
-                    char[] testChar = word.ToCharArray();
-                    string addToString = word;
+                    char[] wordChar = word.ToCharArray();
+                    string addToString = null;
                     bool comma = false;
                     bool dot = false;
                     bool semicolon = false;
                     bool colon = false;
-                    SpecialEndSign();
-                    if (testChar.Length > 2)
+                    SpecialEndSign(word);
+
+                    if (wordChar.Length > 2)
                     {
                         bool isCapitalised = false;
                         byte endPoint = comma || dot || semicolon || colon ? (byte)2 : (byte)1;
-                        if (testChar[0] == '{' && testChar[testChar.Length - endPoint] == '}') //consider having {, }, [ and ] as settings.
+                        if (wordChar[0] == Settings.TextOffsetChar)
                         {
-                            char[] property = new char[testChar.Length - (1 + endPoint)];
-                            for (int i = 1; i < testChar.Length - endPoint; i++)
+                            endPoint = comma || dot || semicolon || colon ? (byte)1 : (byte)0;
+                            char[] function = new char[wordChar.Length - (endPoint+1)];
+                            for (int i = 1; i < wordChar.Length - (endPoint); i++)
+                                function[i - 1] = wordChar[i];
+                            isCapitalised = (int)function[0] < 97 ? true : false;
+                            if (!isCapitalised)
+                                function[0] = (char)((int)function[0] - 32);
+                            string findProperty = new string(function);
+                            Type setting = typeof(Settings);
+                            byte[] offset = (byte[])setting.GetProperty(findProperty).GetValue(setting);
+                            addToString = "".PadLeft(offset[0]);
+                            isOffset = true;
+                        } 
+                        else if (wordChar[0] == Settings.KeywordBrackets[0] && wordChar[wordChar.Length - endPoint] == Settings.KeywordBrackets[1]) //consider having {, }, [ and ] as settings.
+                        {
+                            char[] property = new char[wordChar.Length - (1 + endPoint)];
+                            for (int i = 1; i < wordChar.Length - endPoint; i++)
                             {
-                                property[i - 1] = testChar[i];
+                                property[i - 1] = wordChar[i];
                             }
                             isCapitalised = (int)property[0] < 97 ? true : false;
                             if (!isCapitalised)
@@ -1785,11 +1849,11 @@ namespace Chess
 
                                 if (setting.GetProperty(findProperty).PropertyType.Name == "ConsoleKey")
                                     addToString = !isCapitalised ? setting.GetProperty(findProperty).GetValue(setting).ToString().ToLower() : setting.GetProperty(findProperty).GetValue(setting).ToString();
-                                else if(setting.GetProperty(findProperty).PropertyType.Name == "Byte[]")
-                                {
-                                    byte[] offset = (byte[])setting.GetProperty(findProperty).GetValue(setting);
-                                    addToString = "".PadLeft(offset[0] - 1);
-                                }
+                                //else if(setting.GetProperty(findProperty).PropertyType.Name == "Byte[]")
+                                //{
+                                //    byte[] offset = (byte[])setting.GetProperty(findProperty).GetValue(setting);
+                                //    addToString = "".PadLeft(offset[0] - 1);
+                                //}
                             }
                             catch (Exception e)
                             {
@@ -1798,24 +1862,26 @@ namespace Chess
                             }
                             isExitWord = true;
                         }
-                        else if (testChar[0] == '[' && testChar[testChar.Length - endPoint] == ']')
+                        else if (wordChar[0] == Settings.ExitWordBrackets[0] && wordChar[wordChar.Length - endPoint] == Settings.ExitWordBrackets[1])
                         {
-                            char[] keyWord = new char[testChar.Length - (1 + endPoint)];
-                            for (int i = 1; i < testChar.Length - endPoint; i++)
+                            char[] keyWord = new char[wordChar.Length - (1 + endPoint)];
+                            for (int i = 1; i < wordChar.Length - endPoint; i++)
                             {
-                                keyWord[i - 1] = testChar[i];
+                                keyWord[i - 1] = wordChar[i];
                             }
                             addToString = new string(keyWord);
                             isKeyword = true;
                         }
 
                     }
-                    
+                    if (addToString == null)
+                        addToString = word;
+
                     //Debug.WriteLine("String Width (new line check): " + stringLength);
                     if (stringLength + addToString.Length + 1 >= Console.WindowWidth && wordNumber != words.Length)
                     {
-                        stringLength = 0;
-                        newStr += Environment.NewLine;
+                        stringLength = 0 + "".PadLeft(Settings.TextOffset[0]).Length;
+                        newStr += Environment.NewLine + "".PadLeft(Settings.TextOffset[0]);
                         lineNumber++;
                         extraLines++;
                         //Debug.WriteLine("New Line: {0}", lineNumber);
@@ -1849,17 +1915,20 @@ namespace Chess
                         newStr += ":";
                         stringLength++;
                     }
-                    newStr += " ";
-                    stringLength += addToString.Length + 1;
 
+                    if (!isOffset)
+                    {
+                        newStr += " ";
+                        stringLength += addToString.Length + 1;
+                    }
                     //Debug.WriteLine("String Width (word added): " + stringLength);
-                    void SpecialEndSign()
+                    void SpecialEndSign(string wordToCheck)
                     {
 
-                            comma = addToString.EndsWith(',');
-                            dot = addToString.EndsWith('.');
-                            semicolon = addToString.EndsWith(';');
-                            colon = addToString.EndsWith(':');
+                            comma = wordToCheck.EndsWith(',');
+                            dot = wordToCheck.EndsWith('.');
+                            semicolon = wordToCheck.EndsWith(';');
+                            colon = wordToCheck.EndsWith(':');
 
                     }
                 }
@@ -1867,10 +1936,13 @@ namespace Chess
                 Console.CursorLeft = 0;
                 //https://docs.microsoft.com/en-us/dotnet/framework/reflection-and-codedom/reflection
                 //https://docs.microsoft.com/en-us/dotnet/csharp/programming-guide/concepts/reflection
-                Console.WriteLine($"{newStr}");
+                Console.Write($"{newStr}");
 
 
             }
+            Console.SetCursorPosition(0, 0);
+            if(lineNumber+1 > Console.WindowHeight)
+                WindowSize((byte)Console.WindowWidth, (byte)(lineNumber+1));
         }
 
         /// <summary>
@@ -2002,7 +2074,7 @@ namespace Chess
         public ChessTable()
         {
             MapMatrix.PrepareMap();
-
+            Settings.CanHighLight = Settings.SquareSize > Settings.ChesspieceDesignSize + 1 ? true : false; 
             windowsSize[0] = Settings.WindowSize[0] > Console.LargestWindowWidth ? Console.LargestWindowWidth : Settings.WindowSize[0];
             windowsSize[1] = Settings.WindowSize[1] > Console.LargestWindowHeight ? Console.LargestWindowHeight : Settings.WindowSize[1];
             Console.SetWindowSize(windowsSize[0], windowsSize[1]);
@@ -3438,6 +3510,7 @@ namespace Chess
             int? lastPiece = 0;
             ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(true);
             bool hasSelected = false;
+            bool? friendlyPiece = true;
             location = ChessList.GetList(white)[0].GetMapLocation;
             SquareHighLight(true);
             do
@@ -3445,9 +3518,13 @@ namespace Chess
                 bool? selected = FeltMove(location);
                 if (lastPiece != null && !GameStates.GameEnded) //if a previous chess piece has been hovered over, remove the highlight. 
                 {
+                    if(friendlyPiece == true)
                     ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                    else if (friendlyPiece == false)
+                        ChessList.GetList(!white)[(int)lastPiece].IsHoveredOn(false);
                     lastPiece = null;
                     lastMapLocationID = null;
+                    friendlyPiece = null;
                 }
                 string squareID = MapMatrix.Map[location[0], location[1]];
                 if(selected == null)
@@ -3469,13 +3546,12 @@ namespace Chess
                                 piece.IsHoveredOn(true);
                                 lastMapLocationID = piece.GetID;
                                 lastPiece = posistion;
-
-
+                                friendlyPiece = true;
                                 if (selected == true)
                                 {
                                     if (ProtectKing.Protect.Count != 0) //ensures only pieces that can protect the king can be moved
                                     {
-                                        foreach (string id in ProtectKing.Protect) 
+                                        foreach (string id in ProtectKing.Protect)
                                         {
                                             if (piece.GetID == id)
                                             {
@@ -3488,38 +3564,35 @@ namespace Chess
                                     }
                                     else
                                     {
-                                        //if(ProtectKing.CannotMove.Count != 0) //if not zero it means there is a hostile piec that can check the king if 
-                                        //{ //one, or more pieces, is moved that is between the king and a hostile piece that can check the king. 
-                                        //    foreach (string protecterID in ProtectKing.CannotMove)
-                                        //    {
-                                        //        if (piece.GetID == protecterID)
-                                        //        {
-                                        //            if(ProtectKing.ProtectingTheKing[piece.GetID].Count != 0)
-                                        //            {
-
-                                        //                hasSelected = true;
-                                        //                selectedChessPiece = posistion;
-                                        //                ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
-                                        //            }
-                                        //            break;
-                                        //        }
-                                        //    }
-                                        //}
-                                        //else
-                                        //{
-
-                                            hasSelected = true;
-                                            selectedChessPiece = posistion;
-                                            ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
-                                            break;
+                                        hasSelected = true;
+                                        selectedChessPiece = posistion;
+                                        ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
+                                        break;
                                         //}
 
                                     }
 
                                 }
+                                break;
                             }
                             posistion++;
                         }
+                    } //if wanting to highlight the other team, can have an else here. 
+                    else
+                    {
+                        int posistion = 0;
+                        if (!Settings.CanHighLight)
+                            foreach (ChessPiece chePie in ChessList.GetList(!white))
+                            {
+                                if (chePie.GetID == squareID)
+                                {
+                                    friendlyPiece = false;
+                                    chePie.IsHoveredOn(true,true);
+                                    lastPiece = posistion;
+                                    break;
+                                }
+                                posistion++;
+                            }
                     }
 
             } while (!hasSelected);
@@ -3707,16 +3780,24 @@ namespace Chess
             byte squareSize = Settings.SquareSize;
             int startLocationX = location[0] * squareSize + (location[0] + Settings.Spacing + Settings.EdgeSpacing) * 1 + Settings.Offset[0];
             int startLocationY = location[1] * squareSize + (location[1] + Settings.Spacing + Settings.EdgeSpacing) * 1 + Settings.Offset[1];
+            bool emptySquare = MapMatrix.Map[location[0], location[1]] == "" ? true : false;
+            bool shallHighlight = true;
+            if (!Settings.CanHighLight)
+                if (!emptySquare)
+                    shallHighlight = false;
+
             if (isHighlighted)
             {
                 byte[] colour = Settings.SelectSquareColour;
-                Paint(colour);
+                if(shallHighlight)
+                    Paint(colour);
             }
             else
             {
                 byte colorLocator = (byte)((location[0] + location[1]) % 2);
                 byte[] colour = colorLocator == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
-                Paint(colour);
+                if(shallHighlight)
+                    Paint(colour);
             }
 
             void Paint(byte[] colour)
@@ -3750,22 +3831,6 @@ namespace Chess
             {
                 locations = ProtectKing.GetListFromProtectingKingDic(ChessList.GetList(white)[selectedChessPiece].GetID);
             }
-            //foreach (string protectID in ProtectKing.CannotMove)
-            //{
-            //    if (ChessList.GetList(white)[selectedChessPiece].GetID == protectID)
-            //    {
-            //        protectingTheKing = true;
-            //        break;
-            //    }
-                    
-            //}
-            //if(locations == null)
-            //    foreach (string protectID in ProtectKing.CannotMove)
-            //    {
-            //        if (ChessList.GetList(white)[selectedChessPiece].GetID == protectID)
-            //            if (locations == null)
-            //                locations = new List<int[,]>();
-            //    }
             if (locations != null)
                 ChessList.GetList(white)[selectedChessPiece].SetEndLocations = locations;
             
@@ -3801,6 +3866,8 @@ namespace Chess
                 "*|*",
                 "-K-"
             };
+            mostImportantDesignPart = new byte[] { 1, 2 };
+            DesignResize();
             Draw();
             directions = new int[][]
             {
@@ -4183,7 +4250,7 @@ namespace Chess
         {
             if (captured)
             {
-                Taken();
+                Captured();
                 Debug.WriteLine("{0} Captured", ID);
             }
             //Taken();
@@ -4341,7 +4408,7 @@ namespace Chess
                                         break;
                                     }
                                     else if (!castling)
-                                        TakeEnemyPiece(cursorLocation);
+                                        CaptureEnemyPiece(cursorLocation);
                                     mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
                                     hasSelected = true;
                                 }
@@ -4486,6 +4553,8 @@ namespace Chess
                 "~|~",
                 "-Q-"
             };
+            mostImportantDesignPart = new byte[] { 1, 2 };
+            DesignResize();
             Draw();
             directions = new int[][]
                         {
@@ -4596,6 +4665,8 @@ namespace Chess
             };
             moveDirection = team ? (sbyte)-1 : (sbyte)1;
             //teamString = team ? "+" : "-";
+            mostImportantDesignPart = new byte[] { 1, 2 };
+            DesignResize();
             Draw();
             promotions.Add("knight", 4); 
             promotions.Add("rook", 5);
@@ -4658,9 +4729,9 @@ namespace Chess
                                         if (oldMapLocation[0] != cursorLocation[0])
                                         {
                                             if (MapMatrix.Map[cursorLocation[0], cursorLocation[1]] == "")
-                                                TakeEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
+                                                CaptureEnemyPiece(new int[] { cursorLocation[0], cursorLocation[1] - moveDirection }); //minus since the direction the pawn is moving is the oppesite direction of the hostile pawn is at. 
                                             else
-                                                TakeEnemyPiece(cursorLocation);
+                                                CaptureEnemyPiece(cursorLocation);
                                         }
                                     }
                                 }
@@ -4698,7 +4769,7 @@ namespace Chess
         {
             if (captured)
             {
-                Taken();
+                Captured();
                 Debug.WriteLine("{0} Captured", ID);
             }
             else
@@ -4848,7 +4919,8 @@ namespace Chess
                 Console.SetCursorPosition(0, Settings.PromotionWriteLocation[1]); //removes the written promotion text
                 Console.WriteLine("".PadLeft(Settings.WindowSize[0]));
                 Console.WriteLine("".PadLeft(Settings.WindowSize[0]));
-                Taken();
+                Console.WriteLine("".PadLeft(Settings.WindowSize[0]));
+                Captured();
                 string[] IDParts = ID.Split(':');
                 string newID;
                 IDParts[1] = promotions[answer].ToString();
@@ -4924,6 +4996,8 @@ namespace Chess
                 "|=|",
                 "-R-"
             };
+            mostImportantDesignPart = new byte[] { 1, 2 };
+            DesignResize();
             Draw();
             directions = new int[][]
                         {
@@ -5041,7 +5115,7 @@ namespace Chess
         {
             if (captured)
             {
-                Taken();
+                Captured();
                 Debug.WriteLine("{0} Captured", ID);
             }
             //Taken();
@@ -5104,6 +5178,8 @@ namespace Chess
                 $"{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Vertical_Line}{Settings.CVTS.DEC.DEC_Deactive}O{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Vertical_Line}{Settings.CVTS.DEC.DEC_Deactive}",
                 $"-B-"
             };
+            mostImportantDesignPart = new byte[] { 1, 2 };
+            DesignResize();
             //Design = new string[]
             //{ //changes the length of the first string so code needs to be changed to either use the amount of strings in the array or something else. Also the code that control the paint location
             //    $"_{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Plus_Minus}{Settings.CVTS.DEC.DEC_Deactive}_",
@@ -5197,6 +5273,8 @@ namespace Chess
                 " |>",
                 "-k-"
             };
+            mostImportantDesignPart = new byte[] { 1, 2 };
+            DesignResize();
             Draw();
             directions = new int[][]
                 {
@@ -5315,6 +5393,7 @@ namespace Chess
         protected bool specialBool;
         protected bool canPromoted; 
         protected int[][] directions;
+        protected byte[] mostImportantDesignPart;
         //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
 
@@ -5340,11 +5419,6 @@ namespace Chess
         /// Returns a bool that indicate if this piece has been captured by another player's piece. 
         /// </summary>
         public bool BeenCaptured { get => hasBeenTaken; } //use by other code to see if the piece have been "taken" and should be removed from game. 
-
-        /// <summary>
-        /// Sets the hasBeenTaken value...
-        /// </summary>
-        protected bool SetBeenTaken { set => hasBeenTaken = value; }
 
         /// <summary>
         /// Gets and sets the location of the chesspiece on the console.  
@@ -5379,18 +5453,6 @@ namespace Chess
         protected int[] MapLocation { set => mapLocation = value; }
 
         /// <summary>
-        /// Returns the location on the map. 
-        /// </summary>
-        public int[] GetMapLocation
-        {
-            get
-            {
-                int[] mapLo = new int[2] { mapLocation[0], mapLocation[1] };
-                return mapLo;
-            }
-        }
-
-        /// <summary>
         /// Gets and set the ID of the chesspiece. //maybe have some code that ensures the ID is unique 
         /// </summary>
         protected string ID { get => id; set => id = value; } //maybe split into two. Set being protected and the Get being public 
@@ -5421,9 +5483,19 @@ namespace Chess
         public bool CanBePromoted { get => canPromoted; }
 
         /// <summary>
+        /// Returns the location on the map. 
+        /// </summary>
+        public int[] GetMapLocation
+        {
+            get
+            {
+                int[] mapLoc = new int[2] { mapLocation[0], mapLocation[1] };
+                return mapLoc;
+            }
+        }
+        /// <summary>
         /// Function that "controls" a piece. What to explain and how to..
         /// </summary>
-        /// <param name="moves">If not null, the piece can only move to locations in the list. If null, the piece will calculate all legal end locations.</param>
         public virtual void Control()
         {
             Move();
@@ -5434,7 +5506,49 @@ namespace Chess
         }
 
         /// <summary>
-        /// The function of this function depends on the chesspiece. Rock, pawn, and king got different implementations.
+        /// if the design is bigger than the square part of the design will be removed so it fits the square. 
+        /// </summary>
+        public void DesignResize()
+        {
+            if(Settings.ChesspieceDesignSize > squareSize)
+            {
+                string[] resizedDesign = new string[squareSize];
+                byte usableDesignParts = squareSize;
+                byte importLocation = mostImportantDesignPart[0] < squareSize ? mostImportantDesignPart[0] : (byte)(resizedDesign.Length - 1);
+                //char[] designImportant = design[mostImportantDesignPart[1]].ToCharArray(); //find the design part with important design and converts it to an array.
+                for (int i = resizedDesign.Length-1; i >= 0; i--)
+                {
+                    char[] designImportant = design[mostImportantDesignPart[1]-i].ToCharArray();
+                    resizedDesign[resizedDesign.Length-1-i] = DesignCreate(designImportant); //resizedDesign.Length-1-i ensures the new design is not mirrowed. 
+                }
+                design = resizedDesign;
+
+                string DesignCreate(char[] charArray)
+                {
+                    char[] newDesign = new char[squareSize];
+                    byte mostImportLocation = mostImportantDesignPart[0] < squareSize ? mostImportantDesignPart[0] : (byte)(newDesign.Length - 1);
+                    newDesign[mostImportLocation] = charArray[mostImportantDesignPart[0]];
+                    if (squareSize > 1)
+                    {
+                        byte firstHalfSquare = (byte)Math.Floor((mostImportantDesignPart[0] - 1) / 2d);
+                        for (int i = firstHalfSquare; i < squareSize - 1; i++)
+                        {
+                            newDesign[i] = charArray[i];
+                        }
+                        byte secondtHalfSquare = (byte)Math.Ceiling((mostImportantDesignPart[0] - 1) / 2d); //currently this and the above loop thinks there are similar amount of squares next to the 
+                        for (int i = secondtHalfSquare + 1; i < squareSize; i++) //most important one, but this might not always be true. 
+                        {
+                            newDesign[i] = charArray[i];
+                        }
+                    }
+                    string newDesignString = new string(newDesign);
+                    return newDesignString;
+                }
+            }
+        }
+
+        /// <summary>
+        /// The function of this function depends on the chesspiece. Rock, pawn, and king got different implementations. The rest will always return false.
         /// </summary>
         /// <returns></returns>
         public virtual bool SpecialChessPieceFunction()
@@ -5451,7 +5565,7 @@ namespace Chess
         }
 
         /// <summary>
-        /// Updates the piece, if it has been modified by the other player. 
+        /// Updates the piece, if it has been modified by the other player. If both parameters are not null the piece will be set as captured only.
         /// </summary>
         /// <param name="newLocation">If not null, will move the piece to this location.</param>
         /// <param name="captured">If not null, will set the piece as been captured.</param>
@@ -5459,7 +5573,7 @@ namespace Chess
         {
             if (captured)
             {
-                Taken();
+                Captured();
                 Debug.WriteLine($"{ID} Captured");
             }
                 //Taken();
@@ -5514,7 +5628,7 @@ namespace Chess
                                 {
                                     couldMove = true;
                                     oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
-                                    TakeEnemyPiece(cursorLocation);
+                                    CaptureEnemyPiece(cursorLocation);
                                     mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
                                     hasSelected = true;
                                 }
@@ -5549,7 +5663,7 @@ namespace Chess
         /// Checks if <paramref name="locationToCheck"/> contain an ID and if the ID is hostile, the function will call that ID's chesspiece's Taken function.
         /// </summary>
         /// <param name="locationToCheck">The location to check for a chess piece</param>
-        protected void TakeEnemyPiece(int[] locationToCheck)
+        protected void CaptureEnemyPiece(int[] locationToCheck)
         {
             string feltID = MapMatrix.Map[locationToCheck[0], locationToCheck[1]];
             if (feltID != "")
@@ -5559,7 +5673,7 @@ namespace Chess
                     {
                         if (chessHostile.GetID == feltID)
                         {
-                            chessHostile.Taken();
+                            chessHostile.Captured();
                         }
                     }
                 }
@@ -5568,7 +5682,7 @@ namespace Chess
         /// <summary>
         /// Allows the chesspiece to select different sqaures on the board. If enter is pressed on a square the chesspiece can move too, it will move to that square. 
         /// </summary>
-        /// <param name="currentLocation">The current location of hovered over square. </param>
+        /// <param name="currentLocation">The current location of hovered over square.</param>
         /// <returns>Returns true if enter is pressed, else false.</returns>
         protected bool? FeltMove(int[] currentLocation)
         {
@@ -5631,35 +5745,95 @@ namespace Chess
         protected void SquareHighLight(bool isHighlighted, int[] currentLocation)
         {
             byte squareSize = Settings.SquareSize;
+            byte[] colour;
             int startLocationX = currentLocation[0] * squareSize + (currentLocation[0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0];
             int startLocationY = currentLocation[1] * squareSize + (currentLocation[1] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1];
+            bool notEmpty = MapMatrix.Map[currentLocation[0], currentLocation[1]] != "" ? true : false;
+
             if (isHighlighted)
             {
-                byte[] colour = Settings.SelectSquareColour;
-                Paint(colour);
+                colour = Settings.SelectSquareColour;
             }
             else
             {
                 byte colorLocator = (byte)((currentLocation[0] + currentLocation[1]) % 2);
-                byte[] colour = colorLocator == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
-                Paint(colour);
+                colour = colorLocator == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
             }
-
-            void Paint(byte[] colour)
+            if (!Settings.CanHighLight)
+            {
+                if (notEmpty) //if the piece can move to a location with a hostile it will not display the "cursor"
+                {
+                    bool wasFound = false;
+                    foreach (int[,] loc in possibleEndLocations)
+                    {
+                        if(currentLocation[0] == loc[0,0] && currentLocation[1]== loc[0, 1])
+                        {
+                            Paint(colour);
+                            wasFound = true;
+                            break;
+                        }
+                    }
+                    if (!wasFound)
+                    {
+                        string squareID = MapMatrix.Map[currentLocation[0], currentLocation[1]];
+                        if (squareID != "")
+                        {
+                            if(squareID.Split(':')[0] != teamIcon)
+                            {
+                                foreach (ChessPiece chePie in ChessList.GetList(!team))
+                                {
+                                    if(chePie.GetID == squareID)
+                                    {
+                                        if (isHighlighted) 
+                                            chePie.IsHoveredOn(true, true);
+                                        else
+                                            chePie.Draw();
+                                        break;
+                                    }
+                                }
+                            }
+                            else
+                            {
+                                foreach (ChessPiece chePie in ChessList.GetList(team))
+                                {
+                                    if (chePie.GetID == squareID)
+                                    {
+                                        if (isHighlighted)
+                                            chePie.IsHoveredOn(true, true);
+                                        else
+                                            chePie.Draw();
+                                        break;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    Paint(colour);
+                }
+                
+            }
+            else
+                Paint(colour); 
+            
+                
+            void Paint(byte[] paintColour)
             {
                 for (int n = startLocationX; n < startLocationX + squareSize; n++)
                 {
                     Console.SetCursorPosition((int)n, (int)startLocationY);
-                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + paintColour[0] + ";" + paintColour[1] + ";" + paintColour[2] + "m " + Settings.CVTS.Reset);
                     Console.SetCursorPosition((int)n, (int)startLocationY + squareSize - 1);
-                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + paintColour[0] + ";" + paintColour[1] + ";" + paintColour[2] + "m " + Settings.CVTS.Reset);
                 }
                 for (int n = startLocationY; n < startLocationY + squareSize; n++)
                 {
                     Console.SetCursorPosition((int)startLocationX, (int)n);
-                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + paintColour[0] + ";" + paintColour[1] + ";" + paintColour[2] + "m " + Settings.CVTS.Reset);
                     Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
-                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + paintColour[0] + ";" + paintColour[1] + ";" + paintColour[2] + "m " + Settings.CVTS.Reset);
                 }
             }
         }
@@ -5684,11 +5858,11 @@ namespace Chess
         /// Displays a piece in another colour if it is hovered over. 
         /// </summary>
         /// <param name="hover">If true, the piece will be coloured in a different colour. If false, the piece will have its normal colour.</param>
-        public void IsHoveredOn(bool hover)
+        public void IsHoveredOn(bool hover, bool otherTeam = false)
         {
             if (hover)
             { //a lot of this code is the same as in other functions, e.g. RemoveDraw and Draw, just with other colours. Consider making a new function with this code and parameters for colour.
-                PaintBoth();
+                PaintBoth(otherTeam);
             }
             else
                 Draw();
@@ -5728,10 +5902,15 @@ namespace Chess
         /// <summary>
         /// Paints both the background and foreground of the current location. 
         /// </summary>
-        protected void PaintBoth()
+        protected void PaintBoth(bool otherPlayer = false)
         {
             byte[] backColours = PaintCalculations(out int drawLocationX, out int drawLocationY, mapLocation);
-            byte[] colours = Settings.SelectPieceColour;
+            byte[] colours;// = Settings.SelectPieceColour;
+            if(!otherPlayer)
+                colours = Settings.SelectPieceColour;
+            else
+                colours = new byte[] {(byte)(255 - Settings.SelectPieceColour[0]), (byte)(255 - Settings.SelectPieceColour[1]), (byte)(255 - Settings.SelectPieceColour[2]) };
+
             for (int i = 0; i < design.Length; i++)
             {
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
@@ -5770,10 +5949,10 @@ namespace Chess
 
 
         /// <summary>
-        /// Set a chesspeice set to be taken so it can be removed and removes its visual representation. 
+        /// Set a chesspeice set to be captured so it can be removed and removes its visual representation. 
         /// </summary>
-        public void Taken()
-        {//call by another piece, the one that takes this piece. 
+        public void Captured()
+        {//call by another piece, the one that captures this piece. 
             hasBeenTaken = true;
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = "";
             RemoveDraw(mapLocation);
@@ -5797,7 +5976,41 @@ namespace Chess
             {
                 byte colourLoc = (byte)((end[0, 0] + end[0, 1]) % 2);
                 byte[] backColour = colourLoc == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
-                PaintBackground(backColour, end);
+                if (!Settings.CanHighLight)
+                {
+                    string squareID = MapMatrix.Map[end[0, 0], end[0, 1]];
+                    if (squareID != "")
+                    {
+                        if (squareID == ID)
+                            PaintBackground(backColour, end);
+                        else if(squareID.Split(':')[0] != teamIcon)
+                        {
+                            foreach (ChessPiece chePie in ChessList.GetList(!team))
+                            {
+                                if(chePie.GetID == squareID)
+                                {
+                                    chePie.Draw();
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            foreach (ChessPiece chePie in ChessList.GetList(team))
+                            {
+                                if (chePie.GetID == squareID)
+                                {
+                                    chePie.Draw();
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                    else
+                        PaintBackground(backColour, end);
+                }
+                else
+                    PaintBackground(backColour, end);
             }
         }
 

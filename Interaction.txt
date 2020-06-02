@@ -1,12 +1,12 @@
-﻿{MenuTitleOffset} ----Interaction----
+﻿@HeaderTextOffset ----Interaction----
 
-{MenuTitleOffset} Menu:
-{MenuOffset} [Arrowkeys] to move to different [options].
-{MenuOffset} {SelectKey} to select an [option].
+@HeaderTextOffset Menu:
+@TextOffset [Arrowkeys] to move to different [options].
+@TextOffset {SelectKey} to select an [option].
 
-{MenuTitleOffset} Gameplay:
-{MenuOffset} [Move] to a location using [arrowkeys]. 
-{MenuOffset} {SelectKey} to [select] the location.
-{MenuOffset} {EscapeKey} to [open] the game [menu].
+@HeaderTextOffset Gameplay:
+@TextOffset [Move] to a location using [arrowkeys]. 
+@TextOffset {SelectKey} to [select] the location.
+@TextOffset {EscapeKey} to [open] the game [menu].
 
-{MenuOffset} Press {selectKey} to [return].
+@TextOffset Press {selectKey} to [return].
