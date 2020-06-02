@@ -1106,36 +1106,35 @@ namespace Chess
                             switch (answer)
                             { //the transmitter answer will need to be transmitted by the GeneralValueTransmission since the ReceiveGameLoop will receive the data
                                 case "Accept Draw":
+
+                                    //update the turn counter if black player
+                                    if (GameStates.PlayerTeam == false)
+                                        GameStates.TurnCounter++;
+
                                     GameStates.GameEnded = true;
                                     GameStates.Won = null;
                                     GameStates.OtherPlayerSurrendered = true; //not the best use since they did not surrender
                                     //transmit answer
                                     Transmit.GeneralValueTransmission(30, Transmit.OtherPlayerIpAddress);
-
-                                    //update the turn counter if black player
-                                    if (GameStates.PlayerTeam == false)
-                                        GameStates.TurnCounter++;
-                                    //networkStream.Close(); //maybe just have a finally.
-                                    //otherPlayer.Close();
                                     break;
                                 case "Decline Draw":
                                     Transmit.GeneralValueTransmission(31, Transmit.OtherPlayerIpAddress);
-                                    //networkStream.Close(); //maybe just have a finally.
-                                    //otherPlayer.Close();
+
+                                    //redraw map and pieces.
                                     Console.Clear();
                                     ChessTable.RepaintBoardAndPieces();
-                                    //redraw map and pieces.
+                                    NetworkSupport.RepaintEndLocation((bool)team);
                                     break;
                             }
                             GameStates.Pause = false;
                         }
                         else if (type == 4) //this player is victory
                         {
-                            GameStates.GameEnded = true;
-                            GameStates.Won = true;
-
                             if (GameStates.PlayerTeam == false)
                                 GameStates.TurnCounter++;
+
+                            GameStates.GameEnded = true;
+                            GameStates.Won = true;
                         }
                         else if (type == 5) //this player is defeated
                         {
@@ -1146,6 +1145,8 @@ namespace Chess
                         }
                         else if (type == 6) //draw by gamerules.
                         {
+                            if (GameStates.PlayerTeam == false)
+                                GameStates.TurnCounter++;
                             //networkStream.Close(); //maybe just have a finally.
                             //otherPlayer.Close();
                             GameStates.Won = null;
@@ -1160,6 +1161,8 @@ namespace Chess
                         }
                         else if (type == 30) //draw was accepted
                         {
+                            if (GameStates.PlayerTeam == false)
+                                GameStates.TurnCounter++;
                             GameStates.Pause = false;
                             GameStates.GameEnded = true;
                             GameStates.Won = null;
@@ -1173,14 +1176,14 @@ namespace Chess
                             //otherPlayer.Close();
                         }
                         else if (type == 41) //won by the other player surrendered while it was not their turn.
-                        { 
+                        {
+                            if (GameStates.PlayerTeam == false)
+                                GameStates.TurnCounter++;
                             GameStates.GameEnded = true;
                             GameStates.Won = true;
                             GameStates.OtherPlayerSurrendered = true;
 
                             //update the turn counter if black player
-                            if (GameStates.PlayerTeam == false)
-                                GameStates.TurnCounter++;
                         }
                         else
                         {//connected client is not about to transmit map data
@@ -1221,6 +1224,17 @@ namespace Chess
         /// </summary>
         public static class NetworkSupport
         {
+
+
+            public static void RepaintEndLocation(bool team)
+            {
+                foreach (ChessPiece chePie in ChessList.GetList(team))
+                {
+                    if (chePie.IsSelected)
+                        chePie.NetworkUpdate(repaintEndLocation: true);
+                }
+            }
+
             /// <summary>
             /// Gets the, internetwork, address used by the computer when contacting the router to get out on the internet. 
             /// </summary>
@@ -3568,8 +3582,6 @@ namespace Chess
                                         selectedChessPiece = posistion;
                                         ChessList.GetList(white)[(int)lastPiece].IsHoveredOn(false);
                                         break;
-                                        //}
-
                                     }
 
                                 }
@@ -3673,7 +3685,11 @@ namespace Chess
                     GameStates.Won = false; 
                     GameStates.WhiteWin = !white;
                     if (GameStates.IsOnline && !GameStates.IsTurn)
+                    {
+                        if (GameStates.PlayerTeam == false)
+                            GameStates.TurnCounter++;
                         Network.Transmit.GeneralValueTransmission(41, Network.Transmit.OtherPlayerIpAddress);
+                    }
                     break;
 
                 case "Game Stats":
@@ -3921,12 +3937,14 @@ namespace Chess
         /// </summary>
         public override void Control()
         {
+            isSelected = true;
             Move();
             RemoveDraw(oldMapLocation);
             LocationUpdate();
             Draw();
             UpdateMapMatrix(oldMapLocation);
             castLingCandidates.Clear();
+            isSelected = false;
         }
 
         /// <summary>
@@ -4246,7 +4264,7 @@ namespace Chess
             }
         }
 
-        public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
+        public override void NetworkUpdate(int[] newLocation = null, bool captured = false, bool repaintEndLocation = false)
         {
             if (captured)
             {
@@ -4254,10 +4272,9 @@ namespace Chess
                 Debug.WriteLine("{0} Captured", ID);
             }
             //Taken();
-            else
+            else if(newLocation != null)
             { 
-                if (newLocation != null)
-                {
+
                     hasMoved = true;
                     Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
                     RemoveDraw(mapLocation);
@@ -4268,7 +4285,11 @@ namespace Chess
                     Debug.WriteLine("Location Updated");
                     Draw();
                     Debug.WriteLine("Visuals Repainted");
-                }
+                
+            }
+            else if (repaintEndLocation)
+            {
+                DisplayPossibleMove();
             }
 
         }
@@ -4765,31 +4786,32 @@ namespace Chess
         /// </summary>
         /// <param name="newLocation"></param>
         /// <param name="captured"></param>
-        public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
+        public override void NetworkUpdate(int[] newLocation = null, bool captured = false, bool repaintEndLocation = false)
         {
             if (captured)
             {
                 Captured();
                 Debug.WriteLine("{0} Captured", ID);
             }
-            else
-            { 
-                if (newLocation != null)
+            else if (newLocation != null)
+            {
+                Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
+                if (Math.Abs(newLocation[1] - mapLocation[1]) == 2)
                 {
-                    Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
-                    if (Math.Abs(newLocation[1] - mapLocation[1]) == 2)
-                    {
-                        specialBool = true;
-                    }
-                    RemoveDraw(mapLocation);
-                    Debug.WriteLine("Visuals Removed");
-                    mapLocation = newLocation;
-                    Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
-                    LocationUpdate();
-                    Debug.WriteLine("Location Updated");
-                    Draw();
-                    Debug.WriteLine("Visuals Repainted");
+                    specialBool = true;
                 }
+                RemoveDraw(mapLocation);
+                Debug.WriteLine("Visuals Removed");
+                mapLocation = newLocation;
+                Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
+                LocationUpdate();
+                Debug.WriteLine("Location Updated");
+                Draw();
+                Debug.WriteLine("Visuals Repainted");
+            }
+            else if (repaintEndLocation)
+            {
+                DisplayPossibleMove();
             }
         }
 
@@ -4800,12 +4822,14 @@ namespace Chess
         /// </summary>
         public override void Control()
         {
+            isSelected = true;
             Move();
             RemoveDraw(oldMapLocation);
             LocationUpdate();
             Draw();
             UpdateMapMatrix(oldMapLocation);
             Promotion();
+            isSelected = false;
         }
 
         /// <summary>
@@ -5111,7 +5135,7 @@ namespace Chess
             return false;
         }
 
-        public override void NetworkUpdate(int[] newLocation = null, bool captured = false)
+        public override void NetworkUpdate(int[] newLocation = null, bool captured = false, bool repaintEndLocation = false)
         {
             if (captured)
             {
@@ -5119,7 +5143,7 @@ namespace Chess
                 Debug.WriteLine("{0} Captured", ID);
             }
             //Taken();
-            else
+            else if(newLocation != null)
             { //for king, rock and pawn it needs more code. 
                 if (newLocation != null)
                 {
@@ -5134,6 +5158,10 @@ namespace Chess
                     Draw();
                     Debug.WriteLine("Visuals Repainted");
                 }
+            }
+            else if (repaintEndLocation)
+            {
+                DisplayPossibleMove();
             }
 
         }
@@ -5386,6 +5414,7 @@ namespace Chess
         protected int[] oldMapLocation;
         protected string id;
         protected bool hasBeenTaken = false;
+        protected bool isSelected = false;
         protected byte squareSize = Settings.SquareSize;
         protected List<int[,]> possibleEndLocations = null;
         protected string teamIcon; //come up with a better name
@@ -5493,16 +5522,24 @@ namespace Chess
                 return mapLoc;
             }
         }
+
+        /// <summary>
+        /// If true the piece is selected by a player, else it is false.
+        /// </summary>
+        public bool IsSelected { get => isSelected; set => isSelected = value; }
+        
         /// <summary>
         /// Function that "controls" a piece. What to explain and how to..
         /// </summary>
         public virtual void Control()
         {
+            isSelected = true;
             Move();
             RemoveDraw(oldMapLocation);
             LocationUpdate();
             Draw();
             UpdateMapMatrix(oldMapLocation);
+            isSelected = false;
         }
 
         /// <summary>
@@ -5569,7 +5606,7 @@ namespace Chess
         /// </summary>
         /// <param name="newLocation">If not null, will move the piece to this location.</param>
         /// <param name="captured">If not null, will set the piece as been captured.</param>
-        public virtual void NetworkUpdate(int[] newLocation = null, bool captured = false)
+        public virtual void NetworkUpdate(int[] newLocation = null, bool captured = false, bool repaintEndLocation = false)
         {
             if (captured)
             {
@@ -5577,7 +5614,7 @@ namespace Chess
                 Debug.WriteLine($"{ID} Captured");
             }
                 //Taken();
-            else
+            else if (newLocation != null)
             { //for king, rock and pawn it needs more code. 
                 if (newLocation != null)
                 {
@@ -5591,6 +5628,10 @@ namespace Chess
                     Draw();
                     Debug.WriteLine("Visuals Repainted");
                 }
+            }
+            else if (repaintEndLocation)
+            {
+                DisplayPossibleMove();
             }
         }
 
