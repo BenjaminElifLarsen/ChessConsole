@@ -915,7 +915,8 @@ namespace Chess
         /// </summary>
         public class Receive
         {
-
+            //public delegate void turnChangedDel(string nogetTekst);
+            //public static event turnChangedDel TurnChanged;
             /// <summary>
             /// Starts the receiver. 
             /// </summary>
@@ -923,7 +924,10 @@ namespace Chess
             {
                 Debug.WriteLine("Receiver starting up");
                 receiver.Start();
-                Debug.WriteLine("Receiver hsa started up");
+                Debug.WriteLine("Receiver has started up");
+
+                //TurnChanged?.Invoke("hello");
+
             }
 
             /// <summary>
@@ -1050,6 +1054,9 @@ namespace Chess
             /// <param name="team">bool: True for white player, false for black player.</param>
             public static void ReceiveGameLoop(object team/*, TcpClient otherPlayer*/)
             {
+
+                //Receive.TurnChanged += Receive_TurnChanged;
+
                 try
                 {
                     TcpClient otherPlayer;
@@ -1097,11 +1104,13 @@ namespace Chess
                             Converter.Conversion.ValueToBitArrayQuick(0, out tranmissionAnswerByte);
                             networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
                             
+                            //waits on data
                             while (!networkStream.DataAvailable)
                             {
                             }
+
                             //receive the map data
-                            networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, it does not matter? Would matter if it was UDP. 
+                            networkStream.Read(data, 0, dataSize); //how to ensure the data is correct? Since it is using TCP, it does not matter. Would matter if it was UDP. 
 
                             //decode data 
                             string mapdataString = Converter.Conversion.ByteArrayToASCII(data);
@@ -1116,9 +1125,6 @@ namespace Chess
                             Converter.Conversion.ValueToBitArrayQuick(1, out tranmissionAnswerByte);
                             networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
 
-                            //shutdown connection to client. 
-                            //networkStream.Close(); //read up on what the differences between .Close and .Dispose are and which is best to use here. 
-                            //otherPlayer.Close();
                             GameStates.IsTurn = true;
                         }
                         else if (type == 2) //draw //not really needed
@@ -1224,6 +1230,7 @@ namespace Chess
                             //networkStream.Close();
                             //otherPlayer.Close();
                         }
+                        //shutdown connection to client. 
                         networkStream.Close(); 
                         otherPlayer.Close();
                     }
@@ -1248,7 +1255,10 @@ namespace Chess
 
             }
 
-
+            //private static void Receive_TurnChanged(string nogetTekst)
+            //{
+            //    throw new NotImplementedException();
+            //}
         }
 
         /// <summary>
