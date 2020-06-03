@@ -533,6 +533,7 @@ namespace Chess
         private static short turnDrawCounter;
         private static bool nonTurnWin;
         private static bool? playerTeam = null;
+        private static bool? lostConnection;
 
         /// <summary>
         /// True if it is player turn, else false.
@@ -566,6 +567,10 @@ namespace Chess
         /// True for white player. False for black player. Only used online. If playing offline it is set to null.
         /// </summary>
         public static bool? PlayerTeam { get => playerTeam; set => playerTeam = value; }
+        /// <summary>
+        /// True if the connect is lost and the game ends.
+        /// </summary>
+        public static bool? LostConnection { get => lostConnection; set => lostConnection = value; }
         /// <summary>
         /// Sets and gets the number of chespieces. [0,~] is white. [1,~] is black. [~,0] is new value. [~,1] is old value.
         /// </summary>
@@ -695,6 +700,13 @@ namespace Chess
                 catch (Exception e)
                 { //write anything out?
                     Debug.WriteLine(e);
+                    Console.Clear();
+                    Console.WriteLine("Connection could not be established/was lost");
+                    Console.WriteLine("Enter to return too the menu");
+                    while (Console.ReadKey().Key != ConsoleKey.Enter) ;
+                    GameStates.Won = null;
+                    GameStates.LostConnection = true;
+                    GameStates.GameEnded = true;
                     return false;
                 }
 
@@ -723,10 +735,9 @@ namespace Chess
             /// <summary>
             /// Transmit the map data to the IP address stored in <c>OtherPlayerIpAddress</c>.
             /// </summary>
-            public static void TransmitMapData(string ipAddress)
-            { //might need a try catch
+            public static bool TransmitMapData(string ipAddress)
+            { 
                 //should it only allow IPv4 or also IPv6?
-
                 try //is it better to use Socket or TcpListiner/TcpClient?
                 { // https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream?view=netcore-3.1
                     //https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.socket?view=netcore-3.1
@@ -735,9 +746,12 @@ namespace Chess
                     //https://docs.microsoft.com/en-us/dotnet/framework/network-programming/sockets?view=netcore-3.1
                     byte[] receptionAnswerByte = new byte[4];
                     short receptionAnswer = -1;
+
+                    //contacts the receiver of the other player. 
                     TransmitSetup(ipAddress);
+
+                    //converts the map to a string.
                     string mapData = NetworkSupport.MapToStringConvertion();
-                    //should transmit a signal to the receiver and wait on an answer. If it does not receive an answer, do what? 
 
                     //open transmission
                     NetworkStream networkStream = transmitter.GetStream();
@@ -754,6 +768,9 @@ namespace Chess
                     networkStream.Write(mapdataByteSize, 0, mapdataByteSize.Length);
 
                     Debug.WriteLine("Transmitting map. {0} bytes", mapdataByte.Length);
+
+                    //Testing for possible errors
+                    Environment.Exit(1);
 
                     //wait on answer from the receiver
                     networkStream.Read(receptionAnswerByte, 0, 4);  //the reads are used to ensure that the TransmitData is not ahead of ReceiveData. This ensures the next turn is not started before the map and chess pieces are ready.
@@ -774,11 +791,26 @@ namespace Chess
                     //shut down transmission
                     networkStream.Close();
                     transmitter.Close();
+                    return true;
 
+                }
+                catch (ObjectDisposedException e) //this should only be entered if the receiver has been shut down... I think
+                {
+                    Debug.WriteLine(e);
+                    transmitter.Close(); 
+
+                    GameStates.Won = null;
+                    GameStates.LostConnection = true;
+                    GameStates.GameEnded = true;
+                    return false;
                 }
                 catch (Exception e)
                 { //what to do if this is entered?
                     Console.WriteLine(e);
+                    GameStates.Won = null;
+                    GameStates.LostConnection = true;
+                    GameStates.GameEnded = true;
+                    return false;
                 }
 
             }
@@ -2387,7 +2419,7 @@ namespace Chess
                 {
                     GameStates.GameEnded = PlayerControlNet(starter);
                     GameStates.IsTurn = false;
-                    if (GameStates.GameEnded) 
+                    if (GameStates.GameEnded && GameStates.LostConnection == false) 
                     { //transmit a signal to the other player' receiver to let them know the game has ended. 
                         if (GameStates.Won == null && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(6, Network.Transmit.OtherPlayerIpAddress); //Draw  //5 is loss for the other player, 4 is victory for the other player. 
@@ -2402,28 +2434,6 @@ namespace Chess
                 {
                     Player waitingPlayer = starter ? white : black;
                     waitingPlayer.ControlOnlyMenu();
-                    //Thread.Sleep(1000); //no reason to check a lot. Around 1 times per second should be good enough.
-                    //if(counter == 10)
-                    //{
-                    //    if (GameStates.GameEnded)
-                    //    {
-                    //        //receiveThread.Abort(); //figure out a better way. One of the computer stated this was not supported on its platform. Changes to the functions means there should be no reason to abort the threat anymore. 
-                    //        Network.Receive.Stop();
-                    //    }
-                    //    else
-                    //    {
-                    //        counter = 0;
-                    //        connectionExist = Network.Transmit.StillConnected(Network.Transmit.OtherPlayerIpAddress); //called to ensure there still is a connection.
-                    //                                                                                                  //what to do if connectionExist is false?
-                    //        if (!connectionExist) //Network.Transmit.StillConnected() does not work if the other player' program is just shut down. Netstat shows connections with the state of "TIME_WAIT" on the computer that closed the program. 
-                    //                              //From reading, the connections will be removed after 4 mins.... 
-                    //            Console.WriteLine("Lost connection");//test
-                    //    }
-                    //}
-                    //else
-                    //{
-                    //    counter++;
-                    //}
                 }
 
             } while (!GameStates.GameEnded);
@@ -2521,7 +2531,12 @@ namespace Chess
                     return true;
                 }
                 if (!GameStates.GameEnded)
-                    Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
+                {
+
+                    bool successTransmission = Network.Transmit.TransmitMapData(Network.Transmit.OtherPlayerIpAddress);
+                    if (!successTransmission) //if it fails to transmit data end the game
+                        return true;
+                }
                 else
                     return true;
 
@@ -3868,7 +3883,7 @@ namespace Chess
                 "-K-"
             };
             mostImportantDesignPart = new byte[] { 1, 2 };
-            DesignResize();
+            DesignResizer();
             Draw();
             directions = new int[][]
             {
@@ -4460,7 +4475,7 @@ namespace Chess
                 "-Q-"
             };
             mostImportantDesignPart = new byte[] { 1, 2 };
-            DesignResize();
+            DesignResizer();
             Draw();
             directions = new int[][]
                         {
@@ -4572,7 +4587,7 @@ namespace Chess
             moveDirection = team ? (sbyte)-1 : (sbyte)1;
             //teamString = team ? "+" : "-";
             mostImportantDesignPart = new byte[] { 1, 2 };
-            DesignResize();
+            DesignResizer();
             Draw();
             promotions.Add("knight", 4); 
             promotions.Add("rook", 5);
@@ -4906,7 +4921,7 @@ namespace Chess
                 "-R-"
             };
             mostImportantDesignPart = new byte[] { 1, 2 };
-            DesignResize();
+            DesignResizer();
             Draw();
             directions = new int[][]
                         {
@@ -5090,7 +5105,7 @@ namespace Chess
                 $"-B-"
             };
             mostImportantDesignPart = new byte[] { 1, 2 };
-            DesignResize();
+            DesignResizer();
             //Design = new string[]
             //{ //changes the length of the first string so code needs to be changed to either use the amount of strings in the array or something else. Also the code that control the paint location
             //    $"_{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Plus_Minus}{Settings.CVTS.DEC.DEC_Deactive}_",
@@ -5185,7 +5200,7 @@ namespace Chess
                 "-k-"
             };
             mostImportantDesignPart = new byte[] { 1, 2 };
-            DesignResize();
+            DesignResizer();
             Draw();
             directions = new int[][]
                 {
@@ -5427,40 +5442,109 @@ namespace Chess
         }
 
         /// <summary>
-        /// if the design is bigger than the square part of the design will be removed so it fits the square. 
+        /// if the design is bigger than the square, part of the design will be removed so it fits the square. 
         /// </summary>
-        public void DesignResize()
+        public void DesignResizer()
         {
-            if(Settings.ChesspieceDesignSize > squareSize)
+            if (Settings.ChesspieceDesignSize > squareSize)
             {
                 string[] resizedDesign = new string[squareSize];
-                byte usableDesignParts = squareSize;
-                byte importLocation = mostImportantDesignPart[0] < squareSize ? mostImportantDesignPart[0] : (byte)(resizedDesign.Length - 1);
-                //char[] designImportant = design[mostImportantDesignPart[1]].ToCharArray(); //find the design part with important design and converts it to an array.
-                for (int i = resizedDesign.Length-1; i >= 0; i--)
+
+                if (resizedDesign.Length > 1) 
                 {
-                    char[] designImportant = design[mostImportantDesignPart[1]-i].ToCharArray();
-                    resizedDesign[resizedDesign.Length-1-i] = DesignCreate(designImportant); //resizedDesign.Length-1-i ensures the new design is not mirrowed. 
+                    //figure out if there are strings above and/or below the most significant string
+                    byte belowStringAmount = (byte)(design.Length - (mostImportantDesignPart[1] + 1)); //the amount of strings below
+                    byte aboveStringAmount = (byte)(design.Length - belowStringAmount - 1); //the -1 is the most important string
+                    sbyte direction = belowStringAmount >= aboveStringAmount ? (sbyte)1 : (sbyte)-1;
+                    byte stringAmount = belowStringAmount >= aboveStringAmount ? belowStringAmount : aboveStringAmount;
+
+                    byte startLocation = (byte)(mostImportantDesignPart[1]);
+                    byte endLocation = direction < 0 ? (byte)(startLocation - resizedDesign.Length) : (byte)(startLocation + resizedDesign.Length);
+                    byte lengthDifference = (byte)(design.Length - resizedDesign.Length);
+                    byte indexSubtraction = startLocation < stringAmount ? (byte)0 : lengthDifference;
+                    for (int i = startLocation; i != endLocation; i += direction)
+                    {
+                        char[] designImportant = design[i].ToCharArray();
+                        resizedDesign[i - indexSubtraction] = DesignCreate(designImportant, (byte)design.Length);
+                    }
+                }
+                else
+                {
+                    string importantString = design[mostImportantDesignPart[1]];
+                    char[] importantChars = importantString.ToCharArray();
+                    char[] importantChar = new char[] { importantChars[mostImportantDesignPart[0]] };
+                    resizedDesign[0] = new string(importantChar);
                 }
                 design = resizedDesign;
 
-                string DesignCreate(char[] charArray)
+                string DesignCreate(char[] charArray, byte charLength)
                 {
+                    bool?[] DECLocation = new bool?[charLength];
+                    bool?[] DECSymbolUsed = new bool?[charLength];
+                    int charDECLength = 0;
+                    if(charLength < charArray.Length) //DEC is present 
+                    {
+                        charDECLength = charArray.Length;
+                        byte posistion = 0;
+                        char[] nonDECArray = new char[charLength];
+                        for (int m = 0; m < charArray.Length; m++)
+                        {
+                            if (charArray[m] == '\u001b') //DEC is either activated or deactivated
+                            {
+                                if (charArray[m + 2] == '0') //DEC is activated 
+                                {
+                                    DECLocation[posistion] = true;
+                                }
+                                m += 2; //jumps to the end of the DEC char sequence. 
+                            }
+                            else
+                            {
+                                nonDECArray[posistion] = charArray[m];
+                                posistion++;
+                            }
+                        }
+                        charArray = nonDECArray;
+                    }
+
                     char[] newDesign = new char[squareSize];
                     byte mostImportLocation = mostImportantDesignPart[0] < squareSize ? mostImportantDesignPart[0] : (byte)(newDesign.Length - 1);
                     newDesign[mostImportLocation] = charArray[mostImportantDesignPart[0]];
-                    if (squareSize > 1)
+                    byte rightAmountOfChars = (byte)(charLength - (mostImportantDesignPart[0]+1)); //the +1 is to make up with the difference in array length and indexes.
+                    byte leftAmountOfChars = (byte)(charLength - 1 - rightAmountOfChars); //the -1 is to subtract the important char. 
+                    sbyte charDirection = rightAmountOfChars >= leftAmountOfChars ? (sbyte)1 : (sbyte)-1; //right : left
+                    byte charAmount = rightAmountOfChars >= leftAmountOfChars ? rightAmountOfChars : leftAmountOfChars;
+                    byte startCharLocation = (byte)(mostImportantDesignPart[0]);
+                    byte endCharLoction = charDirection < 0 ? (byte)(startCharLocation - newDesign.Length) : (byte)(startCharLocation + newDesign.Length);
+                    byte lengthCharDifference = (byte)(charLength - newDesign.Length);
+                    byte indexCharSubtraction = startCharLocation < charAmount ? (byte)0 : lengthCharDifference;
+                    for (int n = startCharLocation; n != endCharLoction; n += charDirection)
                     {
-                        byte firstHalfSquare = (byte)Math.Floor((mostImportantDesignPart[0] - 1) / 2d);
-                        for (int i = firstHalfSquare; i < squareSize - 1; i++)
+                        newDesign[n - indexCharSubtraction] = charArray[n];
+                        if (DECLocation[n] == true)
+                            DECSymbolUsed[n] = true;
+                        else
+                            DECSymbolUsed[n] = false;
+                    }
+                    if(charDECLength > charLength) //checks to see if DEC escape signs might should be reimplemented
+                    {
+                        List<char> reconsturectionChar = new List<char>();
+                        for (int k = 0; k < DECSymbolUsed.Length; k++)
                         {
-                            newDesign[i] = charArray[i];
+                            if (DECSymbolUsed[k] == true)
+                            {
+                                reconsturectionChar.Add('\u001b');
+                                reconsturectionChar.Add('(');
+                                reconsturectionChar.Add('0'); //active DEC
+                                reconsturectionChar.Add(charArray[k]);
+                                reconsturectionChar.Add('\u001b');
+                                reconsturectionChar.Add('(');
+                                reconsturectionChar.Add('B'); //deactive DEC
+                            }
+                            else if (DECSymbolUsed[k] == false)
+                                reconsturectionChar.Add(charArray[k]);
                         }
-                        byte secondtHalfSquare = (byte)Math.Ceiling((mostImportantDesignPart[0] - 1) / 2d); //currently this and the above loop thinks there are similar amount of squares next to the 
-                        for (int i = secondtHalfSquare + 1; i < squareSize; i++) //most important one, but this might not always be true. 
-                        {
-                            newDesign[i] = charArray[i];
-                        }
+                        if(reconsturectionChar.Count > newDesign.Length)
+                            newDesign = reconsturectionChar.ToArray();
                     }
                     string newDesignString = new string(newDesign);
                     return newDesignString;
@@ -5470,6 +5554,7 @@ namespace Chess
 
         /// <summary>
         /// The function of this function depends on the chesspiece. Rock, pawn, and king got different implementations. The rest will always return false.
+        /// The rook and the king will be true if they have moved and the pawn will be true if last move made a double move.
         /// </summary>
         /// <returns></returns>
         public virtual bool SpecialChessPieceFunction()
@@ -5478,7 +5563,7 @@ namespace Chess
         }
 
         /// <summary>
-        /// Calculates the, legal, end locations that a chess piece can move too.
+        /// Calculates the, legal, end locations that a chess piece can move too. Should also be overriden the inherience class
         /// </summary>
         protected virtual void EndLocations()
         {
