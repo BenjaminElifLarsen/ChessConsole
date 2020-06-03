@@ -4857,6 +4857,7 @@ namespace Chess
                         break;
 
                 }
+                ChessList.GetList(team)[ChessList.GetList(team).Count - 1].SpecialBool = true;
             }
 
         }
@@ -5302,6 +5303,7 @@ namespace Chess
         protected bool canPromoted; 
         protected int[][] directions;
         protected byte[] mostImportantDesignPart;
+        protected int[] cursorLocation;
         //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
 
@@ -5508,6 +5510,7 @@ namespace Chess
             else if (repaintLocation)
             {
                 DisplayPossibleMove();
+                SquareHighLight(true, cursorLocation);
             }
         }
 
@@ -5602,6 +5605,7 @@ namespace Chess
         /// <returns>Returns true if enter is pressed, else false.</returns>
         protected bool? FeltMove(int[] currentLocation)
         {
+            cursorLocation = currentLocation;
             SquareHighLight(true, currentLocation);
             ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
             while (Console.KeyAvailable) //this should flush the keys
@@ -5647,6 +5651,7 @@ namespace Chess
                 {
                     return true;
                 }
+                cursorLocation = currentLocation;
                 //SquareHighLight(true, currentLocation);
                 return false;
             }
