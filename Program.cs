@@ -4239,6 +4239,7 @@ namespace Chess
             else if (repaintLocation)
             {
                 DisplayPossibleMove();
+                SquareHighLight(true, cursorLocation);
             }
         }
 
@@ -4694,6 +4695,7 @@ namespace Chess
             else if (repaintLocation)
             {
                 DisplayPossibleMove();
+                SquareHighLight(true, cursorLocation);
             }
         }
 
@@ -5042,6 +5044,7 @@ namespace Chess
             else if (repaintLocation)
             {
                 DisplayPossibleMove();
+                SquareHighLight(true, cursorLocation);
             }
 
         }
