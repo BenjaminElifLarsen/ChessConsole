@@ -1610,8 +1610,10 @@ namespace Chess
 
             DT.WriteOut("Test");
             DT.MathTest(2, 5, 1.1f, -5.2f, 5, 1, -10, 3);
-            DT.WriteOutEvent();
 
+            double result = DT.MathCalculator(5, 2, 5, 1, 2, 5);
+            DT.WriteOut(DT.MathCalculator(5, -2, 1, 5, 2, -0.1).ToString());
+            DT.WriteOutEvent();
             while (Console.ReadKey().Key != ConsoleKey.Enter) ;
 
         }
@@ -6107,7 +6109,13 @@ namespace Chess
     public class DelegateTest
     {
         private delegate void StringOut(string s);
+        private delegate double ReturnOut(params double[] values);
+        private delegate void ArrayOut<T>(params T[][] arrays);
         StringOut stringOut;
+        ReturnOut returnOut;
+        ArrayOut<string> typeOut;
+        ArrayOut<int> typeIntOut;
+        //ArrayOut test;
         //private static event StringOut stringOutTest;
         Publisher pub;
         List<Subscriber> subs = new List<Subscriber>();
@@ -6116,12 +6124,52 @@ namespace Chess
             stringOut = StringWritter;
             stringOut += StringMehWritter;
             stringOut += StringFancyWritter;
+            returnOut = MathCal;
+            typeOut = OutDotPrintLine;
+            typeIntOut = OutDotPrintLine<int>;
 
             pub = new Publisher();
             subs.Add(new Subscriber("sub1", pub));
             subs.Add(new Subscriber("sub2", pub));
 
         }
+
+        public void Print<T>(params T[][] arrays)
+        {
+
+            //if (typeof(T) == typeof(int))
+                //typeIntOut(Array.ConvertAll(arrays, item => (int)item); //https://stackoverflow.com/questions/2068120/c-sharp-cast-entire-array
+            //else if
+        }
+
+        private void OutDotPrintLine<T>(params T[][] arrays)
+        {
+            foreach (T[] array in arrays)
+            {
+                foreach (T item in array)
+                {
+                    Console.Write(item.ToString() + "");
+                }
+                Console.WriteLine();
+            }
+        }
+
+        public double MathCalculator(params double[] values)
+        {
+            double result = returnOut(values);
+            stringOut(result.ToString());
+            return result;
+        }
+
+        private double MathCal(params double[] values)
+        {
+            double result = 0;
+            foreach (double value in values)
+            {
+                result += value;
+            }
+            return result;
+        } 
 
         public void WriteOutEvent()
         {
@@ -6194,11 +6242,10 @@ namespace Chess
 
             public event EventHandler<Event> StringEvent2;
 
-            public delegate void EventValue(object sender, Event args);
-
-            public event EventValue ValueEvent;
+            public event EventTest ValueEvent;
 
             public event EventHandler<Event> KeyEvent;
+
 
             public void Test()
             {
@@ -6241,7 +6288,7 @@ namespace Chess
 
                         if (type == "Double[]")
                         {
-                            if (eValues[0].GetValue(e) != null)
+                            if (eValues[n].GetValue(e) != null)
                             {
                                 double result = 0;
                                 double[] values = (double[])e.GetType().GetProperty(eValues[n].Name).GetValue(e);
@@ -6249,7 +6296,8 @@ namespace Chess
                                 {
                                     result += value;
                                 }
-                                e.Message += $"Result is {result}"; //
+                                e.Values = new double[] { result };
+                                //e.Message += $"Result is {result}"; //
                                 testEvent.Invoke(this, e);
                             }
                         }
@@ -6301,7 +6349,18 @@ namespace Chess
 
             protected void HandleString2Event(object sender, Event e)
             {
-                Console.WriteLine($"{ID} received this message: {e.Message}");
+                var eProperties = e.GetType().GetProperties();
+                for (int n = 0; n < eProperties.Length; n++)
+                {
+                    if(eProperties[n].GetValue(e) != null)
+                    {
+                        string type = eProperties[n].PropertyType.Name;
+                        if (type == "String")
+                            Console.WriteLine($"{ID} received this message: {e.Message}");
+                        else if (type == "Double[]")
+                            Console.WriteLine($"{ID} received this value: {e.Values[0]}");
+                    }
+                }
             }
 
         }
