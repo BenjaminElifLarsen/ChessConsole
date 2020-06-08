@@ -671,6 +671,11 @@ namespace Chess
             public ConsoleKeyInfo Key { get; set; }
         }
 
+        public class NetworkEventArgs
+        {
+
+        }
+
     }
 
     /// <summary>
