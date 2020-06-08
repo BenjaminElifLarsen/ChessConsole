@@ -519,6 +519,34 @@ namespace Chess
 
     }
 
+    /// <summary>
+    /// Contains the publisher class that all objects, that needs to react when a key is pressed, should subscribe too.
+    /// </summary>
+    public class SubList
+    {
+        private static KeyPublisher pub;
+        private SubList()
+        {
+            //pub = new KeyPublisher();
+        }
+        /// <summary>
+        /// Get the publisher class instant.
+        /// </summary>
+        public static KeyPublisher Pub { get => pub; }
+        /// <summary>
+        /// Ensures that the publisher instant is not null if it is null.
+        /// </summary>
+        public static void SetClass()
+        {
+            if(pub == null)
+                pub = new KeyPublisher();
+        }
+
+    }
+
+    /// <summary>
+    /// 
+    /// </summary>
     public class GameStates
     {
         private GameStates() { }
@@ -629,7 +657,10 @@ namespace Chess
         }
     } 
 
-    class ControlEvents : EventArgs
+    /// <summary>
+    /// Event class with events related to the control of the program.
+    /// </summary>
+    public class ControlEvents : EventArgs
     {
         public ControlEvents(ConsoleKeyInfo key)
         {
@@ -638,32 +669,39 @@ namespace Chess
         public ConsoleKeyInfo Key { get; set; }
     }
 
-    class KeyPublisher
+    /// <summary>
+    /// Class contains events, delegates and functions related to the movement and selection using a keyboard.  
+    /// </summary>
+    public class KeyPublisher
     {
         public delegate void keyEventHandler(object sender, ControlEvents args);
+
         public event keyEventHandler RaiseKeyEvent;
 
         /// <summary>
-        /// Runs as long time the game is going on. If a a key is pressed it will trigger an event that transmit the <c>ConsoleKeyInfo key</c> to all subscribers.  
+        /// Runs as long time the <c>GameStates.GameEnded</c> is false. If a a key is pressed it will trigger an event that transmit the <c>ConsoleKeyInfo key</c> to all subscribers.  
         /// </summary>
         public void KeyPresser()
         { //needs to run on its own thread.
             while (!GameStates.GameEnded)
             {
                 while (!Console.KeyAvailable) ;
-                ConsoleKeyInfo key = Console.ReadKey();
-                onKeyPress(new ControlEvents(key));
+                ConsoleKeyInfo key = Console.ReadKey(true);
+                OnKeyPress(new ControlEvents(key));
+                while (Console.KeyAvailable)
+                    Console.ReadKey(true);
             }
         }
 
-
-        protected virtual void onKeyPress(ControlEvents e)
+        /// <summary>
+        /// Invokes the event RaiseKeyEvent. 
+        /// </summary>
+        /// <param name="e"></param>
+        protected virtual void OnKeyPress(ControlEvents e)
         {
             keyEventHandler eventHandler = RaiseKeyEvent;
             if (eventHandler != null)
-            {
                 eventHandler.Invoke(this, e);
-            }
         }
     }
 
@@ -1508,19 +1546,19 @@ namespace Chess
                                     chePie.NetworkUpdate(captured: true);
                                     if (chessNumber == "2")
                                     {
-                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew));
+                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
                                     }
                                     else if (chessNumber == "3")
                                     {
-                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew));
+                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
                                     }
                                     else if (chessNumber == "4")
                                     {
-                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew));
+                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
                                     }
                                     else if (chessNumber == "5")
                                     {
-                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew));
+                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
                                     }
                                     break;
                                 }
@@ -1544,6 +1582,8 @@ namespace Chess
     /// </summary>
     class Menu
     {
+        private static ConsoleKeyInfo key;
+        private static bool isActive = false; 
         /// <summary>
         /// Sets up the Menu for use
         /// </summary>
@@ -1551,6 +1591,8 @@ namespace Chess
         {
             Settings.CVTS.ActivateCVTS();
             Console.CursorVisible = false;
+            SubList.SetClass();
+            SubList.Pub.RaiseKeyEvent += KeyEventHandler;
         }
 
         /// <summary>
@@ -1558,6 +1600,8 @@ namespace Chess
         /// </summary>
         public void Run()
         {
+            Thread controlSystem = new Thread(SubList.Pub.KeyPresser);
+            controlSystem.Start();
             MainMenu();
         }
 
@@ -1598,7 +1642,7 @@ namespace Chess
                 "Net Play",
                 "Rules",
                 "Interaction",
-                "Delegate Test",
+                //"Delegate Test",
                 "Exit"
             };
 
@@ -1859,10 +1903,15 @@ namespace Chess
                 Console.WriteLine("Interaction.txt could not be found.");
                 Console.WriteLine("{0}Enter to return.", Environment.NewLine);
             }
+            PrintOutMenuExit();
+        }
 
-            while (Console.ReadKey(true).Key != Settings.SelectKey) ;
-            
-
+        private void PrintOutMenuExit()
+        {
+            isActive = true;
+            while (key.Key != Settings.SelectKey) ;
+            isActive = false;
+            key = new ConsoleKeyInfo();
         }
 
         /// <summary>
@@ -1884,8 +1933,7 @@ namespace Chess
                 Console.WriteLine("Rules.txt could not be found.");
                 Console.WriteLine("Enter to return.");
             }
-            while (Console.ReadKey(true).Key != Settings.SelectKey) ;
-
+            PrintOutMenuExit();
         }
 
         /// <summary>
@@ -2095,7 +2143,7 @@ namespace Chess
             bool selected = false;
             byte currentLocation = 0;
             string answer = null;
-
+            isActive = true;
             do
             {
                 Display(options, currentLocation, Settings.MenuColour, Settings.MenuColourHovered, Settings.MenuOffset, title, Settings.MenuColourTitle, Settings.MenuTitleOffset);
@@ -2106,22 +2154,24 @@ namespace Chess
                     answer = options[currentLocation];
                     selected = true;
                 }
+                key = new ConsoleKeyInfo();
             } while (!selected);
-
+            isActive = false;
             return answer;
 
             bool Move()
             {
-                ConsoleKeyInfo keyInfo = Console.ReadKey(true);
-                if (keyInfo.Key == Settings.UpKey && currentLocation > 0)
+                //ConsoleKeyInfo keyInfo = Console.ReadKey(true);
+                while ((int)key.Key == 0) ;
+                if (key.Key == Settings.UpKey && currentLocation > 0)
                 {
                     currentLocation--;
                 }
-                else if (keyInfo.Key == Settings.DownKey && currentLocation < options.Length - 1)
+                else if (key.Key == Settings.DownKey && currentLocation < options.Length - 1)
                 {
                     currentLocation++;
                 }
-                else if (keyInfo.Key == Settings.SelectKey)
+                else if (key.Key == Settings.SelectKey)
                 {
                     return true;
                 }
@@ -2174,6 +2224,15 @@ namespace Chess
                 //Debug.WriteLine($"Printed out: {option}");
                 Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}" + Settings.CVTS.Reset, option);
                 //Thread.Sleep(1000);
+            }
+        }
+
+        protected void KeyEventHandler(object sender, ControlEvents e)
+        {
+            if (isActive)
+            {
+                Debug.WriteLine(e.Key.Key);
+                key = e.Key;
             }
         }
 
@@ -3497,8 +3556,8 @@ namespace Chess
         /// </summary>
         private void PlayerSetup()
         {
-            white = new Player(true);
-            black = new Player(false);
+            white = new Player(true, SubList.Pub);
+            black = new Player(false, SubList.Pub);
         }
 
         /// <summary>
@@ -3514,36 +3573,39 @@ namespace Chess
             {
                 ID = String.Format("{0}:6:{1}", team, i + 1);
                 spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
-                chessPieces.Add(new Pawn(colour, white, spawn, ID));
+                chessPieces.Add(new Pawn(colour, white, spawn, ID, SubList.Pub));
             }
             ID = String.Format("{0}:5:{1}", team, 1);
             spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.Pub));
             ID = String.Format("{0}:5:{1}", team, 2);
             spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.Pub));
             ID = String.Format("{0}:4:{1}", team, 1);
             spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.Pub));
             ID = String.Format("{0}:4:{1}", team, 2);
             spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.Pub));
             ID = String.Format("{0}:3:{1}", team, 1);
             spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.Pub));
             ID = String.Format("{0}:3:{1}", team, 2);
             spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.Pub));
             ID = String.Format("{0}:2:{1}", team, 1);
             spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
-            chessPieces.Add(new Queen(colour, white, spawn, ID));
+            chessPieces.Add(new Queen(colour, white, spawn, ID, SubList.Pub));
             ID = String.Format("{0}:1:{1}", team, 1);
             spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
-            chessPieces.Add(new King(colour, white, spawn, ID));
+            chessPieces.Add(new King(colour, white, spawn, ID, SubList.Pub));
 
             ChessList.SetChessList(chessPieces, white);
         }
+        protected void KeyEventHandler(object sender, ControlEvents e)
+        {
 
+        }
     }
 
     class Player //got to ensure that no spawnlocation is overlapping and deal with it in case there is an overlap. 
@@ -3553,11 +3615,15 @@ namespace Chess
         private int selectedChessPiece;
         private int[] location; //x,y
         private bool didMove = false;
+        private ConsoleKeyInfo key;
+        private bool isActive = false;
 
-        public Player(bool startTurn)
+        public Player(bool startTurn, KeyPublisher keyPub)
         {
             this.white = startTurn;
             team = white == true ? "+" : "-";
+            keyPub.RaiseKeyEvent += KeyEventHandler;
+            isActive = startTurn;
         }
 
         /// <summary>
@@ -3565,6 +3631,7 @@ namespace Chess
         /// </summary>
         public void Control()
         {
+            isActive = true;
             do
             {
                 bool didNotSurrender = HoverOver();
@@ -3579,6 +3646,7 @@ namespace Chess
                 }
 
             } while (!didMove);
+            isActive = false;
         }
 
         /// <summary>
@@ -3587,16 +3655,21 @@ namespace Chess
         public void ControlOnlyMenu()
         {
             //ConsoleKeyInfo info = new ConsoleKeyInfo();
+            isActive = true;
             while (!GameStates.IsTurn && !GameStates.GameEnded)
             {
 
-                if(Console.KeyAvailable == true)
+                if((int)key.Key != 0)
                 {
-                    ConsoleKeyInfo key = Console.ReadKey(true);
+                    //ConsoleKeyInfo key = Console.ReadKey(true);
                     if (key.Key == ConsoleKey.Escape)
+                    {
+
                         PlayerMenu();
+                    }
                 }
             }
+            isActive = false;
         }
 
         /// <summary>
@@ -3713,8 +3786,9 @@ namespace Chess
             };
             Console.Clear();
             string title = "Options";
+            isActive = false;
             string answer = Menu.MenuAccess(playerOptions, title);
-
+            isActive = true;
             switch (answer)
             {
                 case "Stay Playing":
@@ -3808,55 +3882,59 @@ namespace Chess
         /// <returns>Returns true if enter is pressed, null if escape is pressed, else false.</returns>
         private bool? FeltMove(int[] currentLocation)
         {
-            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
-            while (Console.KeyAvailable) //flushes any keys pressed to early (does not seem to work all the time).
-            {
-                Console.ReadKey(true);
-            }
+            //ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
+            //while (Console.KeyAvailable) //flushes any keys pressed to early (does not seem to work all the time).
+            //{
+            //    Console.ReadKey(true);
+            //}
 
-            while (!Console.KeyAvailable && !GameStates.GameEnded) ;
-            if(!GameStates.GameEnded)
-                keyInfo = Console.ReadKey(true);
+            while (/*!Console.KeyAvailable*/ (int)key.Key == 0 && !GameStates.GameEnded) ;
+            //if(!GameStates.GameEnded)
+            //    keyInfo = Console.ReadKey(true);
 
             while (GameStates.Pause) ;
 
             if (!GameStates.GameEnded) { 
-                if (keyInfo.Key == Settings.UpKey && currentLocation[1] > 0)
+                if (key.Key == Settings.UpKey && currentLocation[1] > 0)
                 {
                     SquareHighLight(false);
                     currentLocation[1]--;
                     SquareHighLight(true);
                 }
-                else if (keyInfo.Key == Settings.DownKey && currentLocation[1] < 7)
+                else if (key.Key == Settings.DownKey && currentLocation[1] < 7)
                 {
                     SquareHighLight(false);
                     currentLocation[1]++;
                     SquareHighLight(true);
                 }
-                else if (keyInfo.Key == Settings.LeftKey && currentLocation[0] > 0)
+                else if (key.Key == Settings.LeftKey && currentLocation[0] > 0)
                 {
                     SquareHighLight(false);
                     currentLocation[0]--;
                     SquareHighLight(true);
                 }
-                else if (keyInfo.Key == Settings.RightKey && currentLocation[0] < 7)
+                else if (key.Key == Settings.RightKey && currentLocation[0] < 7)
                 {
                     SquareHighLight(false);
                     currentLocation[0]++;
                     SquareHighLight(true);
                 }
-                else if (keyInfo.Key == Settings.SelectKey)
+                else if (key.Key == Settings.SelectKey)
                 {
+                    key = new ConsoleKeyInfo();
                     return true;
                 }
-                else if (keyInfo.Key == Settings.EscapeKey)
+                else if (key.Key == Settings.EscapeKey)
                 {
                     PlayerMenu();
                     SquareHighLight(true);
+                    key = new ConsoleKeyInfo();
                     return null; 
                 }
+                key = new ConsoleKeyInfo();
                 return false;
             }
+            key = new ConsoleKeyInfo();
             return null;
         }
 
@@ -3921,7 +3999,18 @@ namespace Chess
             }
             if (locations != null)
                 ChessList.GetList(white)[selectedChessPiece].SetEndLocations = locations;
+            isActive = false;
             ChessList.GetList(white)[selectedChessPiece].Control();
+            isActive = true;
+        }
+
+        protected void KeyEventHandler(object sender, ControlEvents e)
+        {
+            if(isActive)
+            {
+                Debug.WriteLine($"{this.GetType().Name} {e.Key.Key}");
+                key = e.Key;
+            }
         }
 
     }
@@ -3945,7 +4034,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public King(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public King(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
         {
             Design = new string[]
             {
@@ -4537,7 +4626,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Queen(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public Queen(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
         {
             Design = new string[]
             {
@@ -4647,7 +4736,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Pawn(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public Pawn(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
         {
             Design = new string[]
             {
@@ -4923,25 +5012,25 @@ namespace Chess
                     case "knight":
                         //IDParts[1] = "4";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]); //The P is to indicate that the piece used to be a pawn.
-                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID));
+                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID, SubList.Pub));
                         break;
 
                     case "bishop":
                         //IDParts[1] = "3";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID));
+                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID, SubList.Pub));
                         break;
 
                     case "rook":
                         //IDParts[1] = "5";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID));
+                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID, SubList.Pub));
                         break;
 
                     case "queen":
                         //IDParts[1] = "2";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID));
+                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID, SubList.Pub));
                         break;
 
                 }
@@ -4983,7 +5072,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Rook(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public Rook(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
         {
             Design = new string[]
             {
@@ -5167,7 +5256,7 @@ namespace Chess
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
 
-        public Bishop(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public Bishop(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
         {
             Design = new string[]
             {
@@ -5262,7 +5351,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Knight(byte[] colour_, bool team_, int[] spawnLocation_, string ID) : base(colour_, team_, spawnLocation_, ID)
+        public Knight(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
         {
             Design = new string[]
             {
@@ -5393,6 +5482,8 @@ namespace Chess
         protected int[][] directions;
         protected byte[] mostImportantDesignPart;
         protected int[] cursorLocation;
+        protected ConsoleKeyInfo key;
+        protected bool IsActive = false;
         //https://en.wikipedia.org/wiki/Chess_piece_relative_value if you ever want to implement an AI this could help 
 
 
@@ -5403,7 +5494,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece, true for white, false for black.</param>
         /// <param name="mapLocation_">The start location on the map.</param>
         /// <param name="ID">The ID of the chess piece. The constructor does nothing to ensure the ID is unique.</param>
-        public ChessPiece(byte[] colour_, bool team_, int[] mapLocation_, string ID)
+        public ChessPiece(byte[] colour_, bool team_, int[] mapLocation_, string ID, KeyPublisher keyPub)
         {
             Colour = colour_;
             SetTeam(team_);
@@ -5412,6 +5503,7 @@ namespace Chess
             LocationUpdate();
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
             teamIcon = ID.Split(':')[0];
+            keyPub.RaiseKeyEvent += KeyEventHandler;
         }
 
         /// <summary>
@@ -5766,15 +5858,15 @@ namespace Chess
         {
             cursorLocation = currentLocation;
             SquareHighLight(true, currentLocation);
-            ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
-            while (Console.KeyAvailable) //this should flush the keys
-            {
-                Console.ReadKey(true);
-            }
+            //ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
+            //while (Console.KeyAvailable) //this should flush the keys
+            //{
+            //    Console.ReadKey(true);
+            //}
 
-            while (!Console.KeyAvailable && !GameStates.GameEnded) ;
-            if (!GameStates.GameEnded) 
-                keyInfo = Console.ReadKey(true); //consider moving this and its variable into the if-statment below
+            while (/*!Console.KeyAvailable*/ (int)key.Key == 0 && !GameStates.GameEnded) ;
+            //if (!GameStates.GameEnded) 
+            //    keyInfo = Console.ReadKey(true); //consider moving this and its variable into the if-statment below
 
             while (GameStates.Pause) ;
 
@@ -5790,30 +5882,33 @@ namespace Chess
                         break;
                     }
                 }
-                if (keyInfo.Key == Settings.UpKey && currentLocation[1] > 0)
+                if (key.Key == Settings.UpKey && currentLocation[1] > 0)
                 {
                     currentLocation[1]--;
                 }
-                else if (keyInfo.Key == Settings.DownKey && currentLocation[1] < 7)
+                else if (key.Key == Settings.DownKey && currentLocation[1] < 7)
                 {
                     currentLocation[1]++;
                 }
-                else if (keyInfo.Key == Settings.LeftKey && currentLocation[0] > 0)
+                else if (key.Key == Settings.LeftKey && currentLocation[0] > 0)
                 {
                     currentLocation[0]--;
                 }
-                else if (keyInfo.Key == Settings.RightKey && currentLocation[0] < 7)
+                else if (key.Key == Settings.RightKey && currentLocation[0] < 7)
                 {
                     currentLocation[0]++;
                 }
-                else if (keyInfo.Key == Settings.SelectKey)
+                else if (key.Key == Settings.SelectKey)
                 {
+                    key = new ConsoleKeyInfo();  
                     return true;
                 }
                 cursorLocation = currentLocation;
                 //SquareHighLight(true, currentLocation);
+                key = new ConsoleKeyInfo();
                 return false;
             }
+            key = new ConsoleKeyInfo();
             return null;
         }
 
@@ -6137,6 +6232,20 @@ namespace Chess
                 Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
                 Console.SetCursorPosition((int)startLocationX + squareSize - 1, (int)n);
                 Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m " + Settings.CVTS.Reset);
+            }
+        }
+
+        /// <summary>
+        /// If the piece is the active one it will sets its <c>key</c> to <c>e.Key.key</c>.
+        /// </summary>
+        /// <param name="sender">The object that invoked the event.</param>
+        /// <param name="e">The parameter containing the variables and their values of ControlEvents.</param>
+        protected void KeyEventHandler(object sender, ControlEvents e)
+        {
+            if (isSelected)
+            {
+                Debug.WriteLine($"{this.GetType().Name} {e.Key.Key}");
+                key = e.Key;
             }
         }
 
