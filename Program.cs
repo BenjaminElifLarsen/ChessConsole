@@ -629,6 +629,44 @@ namespace Chess
         }
     } 
 
+    class ControlEvents : EventArgs
+    {
+        public ControlEvents(ConsoleKeyInfo key)
+        {
+            Key = key;
+        }
+        public ConsoleKeyInfo Key { get; set; }
+    }
+
+    class KeyPublisher
+    {
+        public delegate void keyEventHandler(object sender, ControlEvents args);
+        public event keyEventHandler RaiseKeyEvent;
+
+        /// <summary>
+        /// Runs as long time the game is going on. If a a key is pressed it will trigger an event that transmit the <c>ConsoleKeyInfo key</c> to all subscribers.  
+        /// </summary>
+        public void KeyPresser()
+        { //needs to run on its own thread.
+            while (!GameStates.GameEnded)
+            {
+                while (!Console.KeyAvailable) ;
+                ConsoleKeyInfo key = Console.ReadKey();
+                onKeyPress(new ControlEvents(key));
+            }
+        }
+
+
+        protected virtual void onKeyPress(ControlEvents e)
+        {
+            keyEventHandler eventHandler = RaiseKeyEvent;
+            if (eventHandler != null)
+            {
+                eventHandler.Invoke(this, e);
+            }
+        }
+    }
+
     /// <summary>
     /// Contains classes for transmitting and receivering data and a support class.
     /// </summary>
