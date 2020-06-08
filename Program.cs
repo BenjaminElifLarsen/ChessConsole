@@ -522,11 +522,11 @@ namespace Chess
     /// <summary>
     /// Contains the publisher class that all objects, that needs to react when a key is pressed, should subscribe too.
     /// </summary>
-    public class SubList
+    public class Publishers
     {
         private static KeyPublisher pubKey;
         private static NetPublisher pubNet;
-        private SubList() { }
+        private Publishers() { }
         /// <summary>
         /// Get the publisher class instant.
         /// </summary>
@@ -548,7 +548,8 @@ namespace Chess
         /// </summary>
         public static void SetNetClass()
         {
-
+            if (pubNet == null)
+                pubNet = new NetPublisher();
         }
 
     }
@@ -695,9 +696,8 @@ namespace Chess
         /// </summary>
         public class NetworkEventArgs
         {
-
             /// <summary>
-            /// 
+            /// Base constructor for the network event data. 
             /// </summary>
             /// <param name="lostConnection">True if the connect is lost and the game ends.</param>
             /// <param name="whiteWon">True if the white player won, false otherwise.</param>
@@ -706,8 +706,8 @@ namespace Chess
             /// <param name="pause">Used to "pause" the game while waiting on data from the other player.</param>
             /// <param name="won">Null for draw, true for victory, false for defeat.</param>
             /// <param name="isTurn">True if it is player turn, else false.</param>
-            public NetworkEventArgs(bool? lostConnection = null, bool? whiteWon = false, bool? otherPlayerSurrendered = false, 
-                                    bool? gameEnded = false, bool? pause = false, bool? won = null, bool? isTurn = false)
+            public NetworkEventArgs(bool? lostConnection = null, bool? whiteWon = null, bool? otherPlayerSurrendered = null, 
+                                    bool? gameEnded = null, bool? pause = null, bool? won = null, bool? isTurn = null)
             {
                 LostConnection = lostConnection;
                 WhiteWon = whiteWon;
@@ -726,7 +726,7 @@ namespace Chess
             /// </summary>
             public bool? WhiteWon { get; set; }
             /// <summary>
-            /// The other player surrendered while it was not their turn. 
+            /// If ture, the other player surrendered while it was not their turn. 
             /// </summary>
             public bool? OtherPlayerSurrendered { get; set; }
             /// <summary>
@@ -758,35 +758,74 @@ namespace Chess
 
         public event netEventHandler RaiseNetEvent;
 
+        /// <summary>
+        /// Used to inform all subscribers of whether the game has ended or not. True if the gamed has ended else false.
+        /// Invokes an event with a specific data set to <paramref name="gameHasEnded"/>.
+        /// </summary>
+        /// <param name="gameHasEnded">Null if it should be ignored in the invokement, true if the game has ended else false.</param>
         public void GameEnded(bool? gameHasEnded)
         {
             OnNetWorkChange(new ControlEvents.NetworkEventArgs(gameEnded: gameHasEnded));
         }
-        public void LostConnection(bool? connectionStatus)
+        /// <summary>
+        /// Used to inform all subscribes of the connection status of the program. True if the connection is lost. 
+        /// Invokes an event with a specific data set to <paramref name="connectionLost"/>.
+        /// </summary>
+        /// <param name="connectionLost">Null if it should be ignored in the invokement, true if the connection is lost, false if the connection is still present.</param>
+        public void LostConnection(bool? connectionLost)
         {
-            OnNetWorkChange(new ControlEvents.NetworkEventArgs(lostConnection: connectionStatus));
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(lostConnection: connectionLost));
         }
+        /// <summary>
+        /// Used to inform all subscribers of the game end state. Null for draw, false for defeat and true for victory.
+        /// Invokes an event with a specific data set to <paramref name="hasWon"/>.
+        /// </summary>
+        /// <param name="hasWon">Null if the game ended in a draw, true if the player has won, false if the player has lost.</param>
         public void Won(bool? hasWon)
         {
             OnNetWorkChange(new ControlEvents.NetworkEventArgs(won: hasWon));
         }
+        /// <summary>
+        /// Used to inform all subscribers of if the game is paused or not. True if the game is paused, false if it is not. 
+        /// Invokes an event with a specific dta set to <paramref name="isPaused"/>.
+        /// </summary>
+        /// <param name="isPaused">Null if it should be ignored in the invokement, true if the game is paused, false if it is not.</param>
         public void Pause(bool? isPaused)
         {
             OnNetWorkChange(new ControlEvents.NetworkEventArgs(pause: isPaused));
         }
+        /// <summary>
+        /// Used to inform all subscribers of whether the other player surrendered or not. True if they did else false.
+        /// Invokes an event with a specific data set to <paramref name="didOtherPlayerSurrender"/>.
+        /// </summary>
+        /// <param name="didOtherPlayerSurrender">Null if it should be ignored in the invokement, true if the other player ended the game else, false if they did not.</param>
         public void OtherPlayerSurrendered(bool? didOtherPlayerSurrender)
         {
             OnNetWorkChange(new ControlEvents.NetworkEventArgs(otherPlayerSurrendered: didOtherPlayerSurrender));
         }
+        /// <summary>
+        /// Used to inform all subscribers on whether it is the player's turn or not. True if it is else false.
+        /// Invoke an event with a specific data set to <paramref name="isTurn"/>.
+        /// </summary>
+        /// <param name="isTurn">Null if it should be ignored in the invokement, true if its the player's turn else false.</param>
         public void IsTurn(bool? isTurn)
         {
             OnNetWorkChange(new ControlEvents.NetworkEventArgs(isTurn: isTurn));
         }
+        /// <summary>
+        /// Used to inform all subscribers on whether white player won or not. True if they did else false.
+        /// Invoke an event with a specific data set <paramref name="didWhiteWin"/>.
+        /// </summary>
+        /// <param name="didWhiteWin">Null if it should be ignored in the invokement, true if white won else false.</param>
         public void WhiteWon(bool? didWhiteWin)
         {
             OnNetWorkChange(new ControlEvents.NetworkEventArgs(whiteWon: didWhiteWin));
         }
 
+        /// <summary>
+        /// Invokes an event with the data of <paramref name="e"/>, if there are any subscribers.
+        /// </summary>
+        /// <param name="e">ControlEvents.NetworkEventArgs event.</param>
         protected virtual void OnNetWorkChange(ControlEvents.NetworkEventArgs e)
         {
             netEventHandler eventHandler = RaiseNetEvent;
@@ -1450,10 +1489,10 @@ namespace Chess
                     Debug.WriteLine(e);
                     Debug.WriteLine(e.InnerException);
                 }
-                finally
-                {
-                    //receiver.Stop();
-                }
+                //finally
+                //{
+                //    //receiver.Stop();
+                //}
 
             }
 
@@ -1468,8 +1507,10 @@ namespace Chess
         /// </summary>
         public static class NetworkSupport
         {
-
-
+            /// <summary>
+            /// Repaints the end location(s) 
+            /// </summary>
+            /// <param name="team"></param>
             public static void RepaintEndLocation(bool team)
             {
                 foreach (ChessPiece chePie in ChessList.GetList(team))
@@ -1672,19 +1713,19 @@ namespace Chess
                                     chePie.NetworkUpdate(captured: true);
                                     if (chessNumber == "2")
                                     {
-                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
+                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
                                     }
                                     else if (chessNumber == "3")
                                     {
-                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
+                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
                                     }
                                     else if (chessNumber == "4")
                                     {
-                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
+                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
                                     }
                                     else if (chessNumber == "5")
                                     {
-                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
+                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
                                     }
                                     break;
                                 }
@@ -1697,11 +1738,8 @@ namespace Chess
             {
                 MapMatrix.Map = map;
             }
-
         }
-
     }
-
 
     /// <summary>
     /// The menu class. 
@@ -1710,6 +1748,7 @@ namespace Chess
     {
         private static ConsoleKeyInfo key;
         private static bool isActive = false; 
+
         /// <summary>
         /// Sets up the Menu for use
         /// </summary>
@@ -1717,8 +1756,8 @@ namespace Chess
         {
             Settings.CVTS.ActivateCVTS();
             Console.CursorVisible = false;
-            SubList.SetKeyClass();
-            SubList.PubKey.RaiseKeyEvent += KeyEventHandler;
+            Publishers.SetKeyClass();
+            Publishers.PubKey.RaiseKeyEvent += KeyEventHandler;
         }
 
         /// <summary>
@@ -1726,7 +1765,7 @@ namespace Chess
         /// </summary>
         public void Run()
         {
-            Thread controlSystem = new Thread(SubList.PubKey.KeyPresser);
+            Thread controlSystem = new Thread(Publishers.PubKey.KeyPresser);
             controlSystem.Start();
             MainMenu();
         }
@@ -1825,7 +1864,6 @@ namespace Chess
             while (Console.ReadKey().Key != ConsoleKey.Enter) ;
 
         }
-
 
         /// <summary>
         /// The net menu. Allows for people to host, join and return the main menu.
@@ -1992,20 +2030,20 @@ namespace Chess
                 int[] cursorPosistion = new int[] { Console.CursorLeft, Console.CursorTop };
                 Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightWhiteForeground}Abort?{Settings.CVTS.Reset}");
                 Console.WriteLine($"{"".PadLeft(Settings.MenuOffset[0])}{Settings.CVTS.BrightRedForeground}{Settings.CVTS.Underscore}Y{Settings.CVTS.BrightWhiteForeground}{Settings.CVTS.Underscore_Off}es{Settings.CVTS.Reset}");
+                isActive = true;
                 while (GameStates.NetSearch.Searching) //bool, true if searching for a player. False if a player is found. Store it in GameStates?
                 { 
-                    if(Console.KeyAvailable == true)
+                    if((int)key.Key != 0 )
                     {
-                        ConsoleKeyInfo key = Console.ReadKey(true); //how to use this to abort the search?
+                        //ConsoleKeyInfo key = Console.ReadKey(true);
                         if(key.Key == ConsoleKey.Y)
                         {
                             GameStates.NetSearch.Searching = false;
                             GameStates.NetSearch.Abort = true;
                         }
-
                     }
                 }
-
+                isActive = false;
             }
 
         }
@@ -2019,8 +2057,6 @@ namespace Chess
             try
             {
                 string[] interaction = File.ReadAllLines("Interaction.txt");
-                //string[] keywords = { "arrowkeys", "move", "location", "option", "options", "menu", "gameplay" };
-                //string[] exitWords = { "----interaction----", "enter", "escape" };
                 PrintOut(interaction);
             }
             catch (Exception e)
@@ -2049,8 +2085,6 @@ namespace Chess
             try
             {
                 string[] about = File.ReadAllLines("Rules.txt");
-                //string[] keywords = {"castling", "check", "selected", "moved", "kingmove", "draw", "return", "70", "deselected" };
-                //string[] exitWords = { "----rules----", "enter" };
                 PrintOut(about);
                 
             }
@@ -2064,21 +2098,19 @@ namespace Chess
 
         /// <summary>
         /// Writes out every string in <paramref name="writeOut"/> to the console.
-        /// Any words that appears in either <paramref name="keywords"/> or <paramref name="exitwords"/> will be coloured differently.
         /// </summary>
         /// <param name="writeOut">String array to write out to the console.</param>
         /// <param name="keywords">String array of words to be coloured differently.</param>
         /// <param name="exitwords">String array of words to be coloured differently.</param>
         /// <param name="keyColour">Can be any foreground colour, except of the extented type, from Settings.CVTS</param>
         /// <param name="exitColour">Can be any foreground colour, except of the extented type, from Settings.CVTS</param>
-        private void PrintOut(string[] writeOut, string[] keywords = null, string[] exitwords = null, string keyColour = null, string exitColour = null)
+        private void PrintOut(string[] writeOut, string keyColour = null, string exitColour = null)
         {
             Console.Clear();
 
             keyColour = keyColour == null ? Settings.CVTS.BrightCyanForeground : keyColour;
             exitColour = exitColour == null ? Settings.CVTS.BrightRedForeground : exitColour;
             sbyte lineNumber = -1;
-            //Debug.WriteLine("Console Width: " + Console.WindowWidth);
             foreach (string str in writeOut)
             {
                 lineNumber++;
@@ -2088,7 +2120,6 @@ namespace Chess
                 int stringLength = 0;
                 int wordNumber = 0;
 
-                //Debug.WriteLine("Line number: {0}", lineNumber);
                 foreach (string word in words)
                 {
                     wordNumber++;
@@ -2170,15 +2201,12 @@ namespace Chess
                     if (addToString == null)
                         addToString = word;
 
-                    //Debug.WriteLine("String Width (new line check): " + stringLength);
                     if (stringLength + addToString.Length + 1 >= Console.WindowWidth && wordNumber != words.Length)
                     {
                         stringLength = 0 + "".PadLeft(Settings.TextOffset[0]).Length;
                         newStr += Environment.NewLine + "".PadLeft(Settings.TextOffset[0]);
                         lineNumber++;
                         extraLines++;
-                        //Debug.WriteLine("New Line: {0}", lineNumber);
-                        //Debug.WriteLine(word);
                     }
 
                     if (!isKeyword && !isExitWord)
@@ -3686,8 +3714,8 @@ namespace Chess
         /// </summary>
         private void PlayerSetup()
         {
-            white = new Player(true, SubList.PubKey);
-            black = new Player(false, SubList.PubKey);
+            white = new Player(true, Publishers.PubKey);
+            black = new Player(false, Publishers.PubKey);
         }
 
         /// <summary>
@@ -3703,32 +3731,32 @@ namespace Chess
             {
                 ID = String.Format("{0}:6:{1}", team, i + 1);
                 spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
-                chessPieces.Add(new Pawn(colour, white, spawn, ID, SubList.PubKey));
+                chessPieces.Add(new Pawn(colour, white, spawn, ID, Publishers.PubKey));
             }
             ID = String.Format("{0}:5:{1}", team, 1);
             spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, Publishers.PubKey));
             ID = String.Format("{0}:5:{1}", team, 2);
             spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, Publishers.PubKey));
             ID = String.Format("{0}:4:{1}", team, 1);
             spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, Publishers.PubKey));
             ID = String.Format("{0}:4:{1}", team, 2);
             spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, Publishers.PubKey));
             ID = String.Format("{0}:3:{1}", team, 1);
             spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, Publishers.PubKey));
             ID = String.Format("{0}:3:{1}", team, 2);
             spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, Publishers.PubKey));
             ID = String.Format("{0}:2:{1}", team, 1);
             spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
-            chessPieces.Add(new Queen(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new Queen(colour, white, spawn, ID, Publishers.PubKey));
             ID = String.Format("{0}:1:{1}", team, 1);
             spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
-            chessPieces.Add(new King(colour, white, spawn, ID, SubList.PubKey));
+            chessPieces.Add(new King(colour, white, spawn, ID, Publishers.PubKey));
 
             ChessList.SetChessList(chessPieces, white);
         }
@@ -5144,25 +5172,25 @@ namespace Chess
                     case "knight":
                         //IDParts[1] = "4";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]); //The P is to indicate that the piece used to be a pawn.
-                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID, SubList.PubKey));
+                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID, Publishers.PubKey));
                         break;
 
                     case "bishop":
                         //IDParts[1] = "3";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID, SubList.PubKey));
+                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID, Publishers.PubKey));
                         break;
 
                     case "rook":
                         //IDParts[1] = "5";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID, SubList.PubKey));
+                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID, Publishers.PubKey));
                         break;
 
                     case "queen":
                         //IDParts[1] = "2";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID, SubList.PubKey));
+                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID, Publishers.PubKey));
                         break;
 
                 }
