@@ -662,11 +662,23 @@ namespace Chess
     /// </summary>
     public class ControlEvents : EventArgs
     {
-        public ControlEvents(ConsoleKeyInfo key)
+        public class KeyEventArgs
         {
-            Key = key;
+            public KeyEventArgs(ConsoleKeyInfo key)
+            {
+                Key = key;
+            }
+            public ConsoleKeyInfo Key { get; set; }
         }
-        public ConsoleKeyInfo Key { get; set; }
+
+    }
+
+    /// <summary>
+    /// Class contains events, delegates and functions related to the network portion of the program.
+    /// </summary>
+    public class NetPublisher
+    {
+
     }
 
     /// <summary>
@@ -674,7 +686,7 @@ namespace Chess
     /// </summary>
     public class KeyPublisher
     {
-        public delegate void keyEventHandler(object sender, ControlEvents args);
+        public delegate void keyEventHandler(object sender, ControlEvents.KeyEventArgs args);
 
         public event keyEventHandler RaiseKeyEvent;
 
@@ -682,12 +694,12 @@ namespace Chess
         /// Runs as long time the <c>GameStates.GameEnded</c> is false. If a a key is pressed it will trigger an event that transmit the <c>ConsoleKeyInfo key</c> to all subscribers.  
         /// </summary>
         public void KeyPresser()
-        { //needs to run on its own thread.
+        {
             while (!GameStates.GameEnded)
             {
                 while (!Console.KeyAvailable) ;
                 ConsoleKeyInfo key = Console.ReadKey(true);
-                OnKeyPress(new ControlEvents(key));
+                OnKeyPress(new ControlEvents.KeyEventArgs(key));
                 while (Console.KeyAvailable)
                     Console.ReadKey(true);
             }
@@ -697,7 +709,7 @@ namespace Chess
         /// Invokes the event RaiseKeyEvent. 
         /// </summary>
         /// <param name="e"></param>
-        protected virtual void OnKeyPress(ControlEvents e)
+        protected virtual void OnKeyPress(ControlEvents.KeyEventArgs e)
         {
             keyEventHandler eventHandler = RaiseKeyEvent;
             if (eventHandler != null)
@@ -2227,13 +2239,15 @@ namespace Chess
             }
         }
 
-        protected void KeyEventHandler(object sender, ControlEvents e)
+        /// <summary>
+        /// If the menu is the active one it will sets its <c>key</c> to <c>e.Key.key</c>.
+        /// </summary>
+        /// <param name="sender">The object that invoked the event.</param>
+        /// <param name="e">The parameter containing the variables and their values of ControlEvents.</param>
+        protected void KeyEventHandler(object sender, ControlEvents.KeyEventArgs e)
         {
             if (isActive)
-            {
-                Debug.WriteLine(e.Key.Key);
                 key = e.Key;
-            }
         }
 
     }
@@ -3602,10 +3616,10 @@ namespace Chess
 
             ChessList.SetChessList(chessPieces, white);
         }
-        protected void KeyEventHandler(object sender, ControlEvents e)
-        {
+        //protected void KeyEventHandler(object sender, ControlEvents e)
+        //{
 
-        }
+        //}
     }
 
     class Player //got to ensure that no spawnlocation is overlapping and deal with it in case there is an overlap. 
@@ -4004,13 +4018,15 @@ namespace Chess
             isActive = true;
         }
 
-        protected void KeyEventHandler(object sender, ControlEvents e)
+        /// <summary>
+        /// If the player is the active one it will sets its <c>key</c> to <c>e.Key.key</c>.
+        /// </summary>
+        /// <param name="sender">The object that invoked the event.</param>
+        /// <param name="e">The parameter containing the variables and their values of ControlEvents.</param>
+        protected void KeyEventHandler(object sender, ControlEvents.KeyEventArgs e)
         {
             if(isActive)
-            {
-                Debug.WriteLine($"{this.GetType().Name} {e.Key.Key}");
                 key = e.Key;
-            }
         }
 
     }
@@ -6240,13 +6256,10 @@ namespace Chess
         /// </summary>
         /// <param name="sender">The object that invoked the event.</param>
         /// <param name="e">The parameter containing the variables and their values of ControlEvents.</param>
-        protected void KeyEventHandler(object sender, ControlEvents e)
+        protected void KeyEventHandler(object sender, ControlEvents.KeyEventArgs e)
         {
             if (isSelected)
-            {
-                Debug.WriteLine($"{this.GetType().Name} {e.Key.Key}");
                 key = e.Key;
-            }
         }
 
     }
