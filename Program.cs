@@ -524,22 +524,31 @@ namespace Chess
     /// </summary>
     public class SubList
     {
-        private static KeyPublisher pub;
-        private SubList()
-        {
-            //pub = new KeyPublisher();
-        }
+        private static KeyPublisher pubKey;
+        private static NetPublisher pubNet;
+        private SubList() { }
         /// <summary>
         /// Get the publisher class instant.
         /// </summary>
-        public static KeyPublisher Pub { get => pub; }
+        public static KeyPublisher PubKey { get => pubKey; }
+        /// <summary>
+        /// 
+        /// </summary>
+        public static NetPublisher PubNet { get => pubNet; }
         /// <summary>
         /// Ensures that the publisher instant is not null if it is null.
         /// </summary>
-        public static void SetClass()
+        public static void SetKeyClass()
         {
-            if(pub == null)
-                pub = new KeyPublisher();
+            if(pubKey == null)
+                pubKey = new KeyPublisher();
+        }
+        /// <summary>
+        /// 
+        /// </summary>
+        public static void SetNetClass()
+        {
+
         }
 
     }
@@ -570,7 +579,7 @@ namespace Chess
         /// <summary>
         /// Null for draw, true for victory, false for defeat.
         /// </summary>
-        public static bool? Won { get => won; set => won = value; }
+        public static bool? Won { get => won; set => won = value; } //rename to VictoryType
         /// <summary>
         /// True if the game has ended, false otherwise. 
         /// </summary>
@@ -662,18 +671,80 @@ namespace Chess
     /// </summary>
     public class ControlEvents : EventArgs
     {
+        /// <summary>
+        /// Class that holds event data of the input control system.
+        /// </summary>
         public class KeyEventArgs
         {
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="key"></param>
             public KeyEventArgs(ConsoleKeyInfo key)
             {
                 Key = key;
             }
+            /// <summary>
+            /// 
+            /// </summary>
             public ConsoleKeyInfo Key { get; set; }
         }
 
+        /// <summary>
+        /// Class that holds event data of the network portion. 
+        /// </summary>
         public class NetworkEventArgs
         {
 
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="lostConnection">True if the connect is lost and the game ends.</param>
+            /// <param name="whiteWon">True if the white player won, false otherwise.</param>
+            /// <param name="otherPlayerSurrendered">True if the game has ended, false otherwise. </param>
+            /// <param name="gameEnded">True if the game has ended, false otherwise. </param>
+            /// <param name="pause">Used to "pause" the game while waiting on data from the other player.</param>
+            /// <param name="won">Null for draw, true for victory, false for defeat.</param>
+            /// <param name="isTurn">True if it is player turn, else false.</param>
+            public NetworkEventArgs(bool? lostConnection = null, bool? whiteWon = false, bool? otherPlayerSurrendered = false, 
+                                    bool? gameEnded = false, bool? pause = false, bool? won = null, bool? isTurn = false)
+            {
+                LostConnection = lostConnection;
+                WhiteWon = whiteWon;
+                OtherPlayerSurrendered = otherPlayerSurrendered;
+                GameEnded = gameEnded;
+                Pause = pause;
+                Won = won;
+                IsTurn = isTurn;
+            }
+            /// <summary>
+            /// True if the connect is lost and the game ends.
+            /// </summary>
+            public bool? LostConnection { get; set; }
+            /// <summary>
+            /// True if the white player won, false otherwise.
+            /// </summary>
+            public bool? WhiteWon { get; set; }
+            /// <summary>
+            /// The other player surrendered while it was not their turn. 
+            /// </summary>
+            public bool? OtherPlayerSurrendered { get; set; }
+            /// <summary>
+            /// True if the game has ended, false otherwise. 
+            /// </summary>
+            public bool? GameEnded { get; set; }
+            /// <summary>
+            /// Used to "pause" the game while waiting on data from the other player.
+            /// </summary>
+            public bool? Pause { get; set; }
+            /// <summary>
+            /// Null for draw, true for victory, false for defeat.
+            /// </summary>
+            public bool? Won { get; set; }
+            /// <summary>
+            /// True if it is player turn, else false.
+            /// </summary>
+            public bool? IsTurn { get; set; }
         }
 
     }
@@ -683,7 +754,45 @@ namespace Chess
     /// </summary>
     public class NetPublisher
     {
+        public delegate void netEventHandler(object sender, ControlEvents.NetworkEventArgs args);
 
+        public event netEventHandler RaiseNetEvent;
+
+        public void GameEnded(bool? gameHasEnded)
+        {
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(gameEnded: gameHasEnded));
+        }
+        public void LostConnection(bool? connectionStatus)
+        {
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(lostConnection: connectionStatus));
+        }
+        public void Won(bool? hasWon)
+        {
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(won: hasWon));
+        }
+        public void Pause(bool? isPaused)
+        {
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(pause: isPaused));
+        }
+        public void OtherPlayerSurrendered(bool? didOtherPlayerSurrender)
+        {
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(otherPlayerSurrendered: didOtherPlayerSurrender));
+        }
+        public void IsTurn(bool? isTurn)
+        {
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(isTurn: isTurn));
+        }
+        public void WhiteWon(bool? didWhiteWin)
+        {
+            OnNetWorkChange(new ControlEvents.NetworkEventArgs(whiteWon: didWhiteWin));
+        }
+
+        protected virtual void OnNetWorkChange(ControlEvents.NetworkEventArgs e)
+        {
+            netEventHandler eventHandler = RaiseNetEvent;
+            if (eventHandler != null)
+                eventHandler.Invoke(this, e);
+        }
     }
 
     /// <summary>
@@ -1563,19 +1672,19 @@ namespace Chess
                                     chePie.NetworkUpdate(captured: true);
                                     if (chessNumber == "2")
                                     {
-                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
+                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
                                     }
                                     else if (chessNumber == "3")
                                     {
-                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
+                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
                                     }
                                     else if (chessNumber == "4")
                                     {
-                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
+                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
                                     }
                                     else if (chessNumber == "5")
                                     {
-                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew, SubList.Pub));
+                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew, SubList.PubKey));
                                     }
                                     break;
                                 }
@@ -1608,8 +1717,8 @@ namespace Chess
         {
             Settings.CVTS.ActivateCVTS();
             Console.CursorVisible = false;
-            SubList.SetClass();
-            SubList.Pub.RaiseKeyEvent += KeyEventHandler;
+            SubList.SetKeyClass();
+            SubList.PubKey.RaiseKeyEvent += KeyEventHandler;
         }
 
         /// <summary>
@@ -1617,7 +1726,7 @@ namespace Chess
         /// </summary>
         public void Run()
         {
-            Thread controlSystem = new Thread(SubList.Pub.KeyPresser);
+            Thread controlSystem = new Thread(SubList.PubKey.KeyPresser);
             controlSystem.Start();
             MainMenu();
         }
@@ -2755,15 +2864,7 @@ namespace Chess
                 IsKingChecked(team);
                 ProtectKing.ProtectEndLocations.Clear();
                 ProtectKing.ProtectingTheKing.Clear();
-                checkmate = CheckmateChecker(!team, out List<string> saveKingList);
-                ProtectKing.Protect = saveKingList;
 
-                if (checkmate) 
-                {
-                    GameStates.WhiteWin = team;
-                    GameStates.Won = true;
-                    return true;
-                }
 
                 for (int i = ChessList.GetList(team).Count - 1; i >= 0; i--) //ensures any promoted pawns are removed from the list.
                 {
@@ -2781,6 +2882,16 @@ namespace Chess
                         ChessList.GetList(!team)[i].SpecialBool = false;
                 }
                 PieceAmountUpdate();
+
+                checkmate = CheckmateChecker(!team, out List<string> saveKingList);
+                ProtectKing.Protect = saveKingList;
+
+                if (checkmate)
+                {
+                    GameStates.WhiteWin = team;
+                    GameStates.Won = true;
+                    return true;
+                }
 
                 draw = Draw(team, team);
                 if (draw)
@@ -3575,8 +3686,8 @@ namespace Chess
         /// </summary>
         private void PlayerSetup()
         {
-            white = new Player(true, SubList.Pub);
-            black = new Player(false, SubList.Pub);
+            white = new Player(true, SubList.PubKey);
+            black = new Player(false, SubList.PubKey);
         }
 
         /// <summary>
@@ -3592,32 +3703,32 @@ namespace Chess
             {
                 ID = String.Format("{0}:6:{1}", team, i + 1);
                 spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
-                chessPieces.Add(new Pawn(colour, white, spawn, ID, SubList.Pub));
+                chessPieces.Add(new Pawn(colour, white, spawn, ID, SubList.PubKey));
             }
             ID = String.Format("{0}:5:{1}", team, 1);
             spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.PubKey));
             ID = String.Format("{0}:5:{1}", team, 2);
             spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, SubList.PubKey));
             ID = String.Format("{0}:4:{1}", team, 1);
             spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.PubKey));
             ID = String.Format("{0}:4:{1}", team, 2);
             spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, SubList.PubKey));
             ID = String.Format("{0}:3:{1}", team, 1);
             spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.PubKey));
             ID = String.Format("{0}:3:{1}", team, 2);
             spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, SubList.PubKey));
             ID = String.Format("{0}:2:{1}", team, 1);
             spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
-            chessPieces.Add(new Queen(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new Queen(colour, white, spawn, ID, SubList.PubKey));
             ID = String.Format("{0}:1:{1}", team, 1);
             spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
-            chessPieces.Add(new King(colour, white, spawn, ID, SubList.Pub));
+            chessPieces.Add(new King(colour, white, spawn, ID, SubList.PubKey));
 
             ChessList.SetChessList(chessPieces, white);
         }
@@ -5033,25 +5144,25 @@ namespace Chess
                     case "knight":
                         //IDParts[1] = "4";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]); //The P is to indicate that the piece used to be a pawn.
-                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID, SubList.Pub));
+                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID, SubList.PubKey));
                         break;
 
                     case "bishop":
                         //IDParts[1] = "3";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID, SubList.Pub));
+                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID, SubList.PubKey));
                         break;
 
                     case "rook":
                         //IDParts[1] = "5";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID, SubList.Pub));
+                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID, SubList.PubKey));
                         break;
 
                     case "queen":
                         //IDParts[1] = "2";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID, SubList.Pub));
+                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID, SubList.PubKey));
                         break;
 
                 }
