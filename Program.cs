@@ -2415,7 +2415,7 @@ namespace Chess
 
         private void NetEventHandler(object sender, ControlEvents.NetworkEventArgs e)
         {
-            Debug.WriteLine(e.GameEnded);
+            Debug.WriteLine(e.GameEnded.ToString());
             GameStates.IsTurn = e.IsTurn != null ? (bool)e.IsTurn : GameStates.IsTurn;
             GameStates.LostConnection = e.LostConnection != null ? e.LostConnection : GameStates.LostConnection;
             GameStates.Pause = e.Pause != null ? (bool)e.Pause : GameStates.Pause;
