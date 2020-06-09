@@ -979,29 +979,38 @@ namespace Chess
                 //and then it it should wait on an answer and gets none, return false. 
 
                 bool isConnected = true;
-                ushort counter = 0;
+                double counter = 0;
                 ushort maxValue = 3000;
                 Thread connectThread = new Thread(new ThreadStart(Run));
                 connectThread.Start();
+                int[] time = new int[] { DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second };
+                DateTime oldTime = DateTime.Now;
                 do
                 {
-                    counter++;
+                    //int hourDifference = DateTime.Now.Hour - time[0];
+                    //int minuteDiffernece = DateTime.Now.Minute - time[1];
+                    //int secondDifference = DateTime.Now.Second - time[2];
+                    DateTime newTime = DateTime.Now;
+                    counter = (newTime - oldTime).TotalMilliseconds;
+                    //counter++;
                     ////isConnected = !Run();
                     //if (!connectThread.ThreadState.Equals(System.Diagnostics.ThreadState.Running))
                     //    connectThread.Start();
                     //else
                     //    isConnected = false;
                     //Thread.Sleep(3000);
+                    Debug.WriteLine(counter);
                     Thread.Sleep(1);
                 } while (!GameStates.GameEnded && isConnected && counter < maxValue);
                 GameStates.LostConnection = isConnected;
+                GameStates.GameEnded = true;
                 Debug.WriteLine("Connection Lost");
                 void Run()
                 {
                     do {
                         counter = 0;
                         isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
-                        Thread.Sleep(maxValue);
+                        Thread.Sleep(maxValue/2);
                     } while (!GameStates.GameEnded && isConnected);
                 }
             }
