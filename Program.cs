@@ -1026,7 +1026,7 @@ namespace Chess
                     Debug.WriteLine("Transmitting map. {0} bytes", mapdataByte.Length);
 
                     //Testing for possible errors
-                    Environment.Exit(1);
+                    //Environment.Exit(1);
 
                     //wait on answer from the receiver
                     networkStream.Read(receptionAnswerByte, 0, 4);  //the reads are used to ensure that the TransmitData is not ahead of ReceiveData. This ensures the next turn is not started before the map and chess pieces are ready.
@@ -1055,17 +1055,19 @@ namespace Chess
                     Debug.WriteLine(e);
                     transmitter.Close(); 
 
-                    GameStates.Won = null;
-                    GameStates.LostConnection = true;
-                    GameStates.GameEnded = true;
+                    //GameStates.Won = null;
+                    //GameStates.LostConnection = true;
+                    //GameStates.GameEnded = true;
+                    Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
                 }
                 catch (Exception e)
                 { //what to do if this is entered?
-                    Console.WriteLine(e);
-                    GameStates.Won = null;
-                    GameStates.LostConnection = true;
-                    GameStates.GameEnded = true;
+                    Debug.WriteLine(e);
+                    //GameStates.Won = null;
+                    //GameStates.LostConnection = true;
+                    //GameStates.GameEnded = true;
+                    Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
                 }
 
@@ -1193,7 +1195,7 @@ namespace Chess
             {
                 Debug.WriteLine("Receiver stopping");
                 receiver.Stop();
-                Debug.WriteLine("Receiver stopped");
+                Debug.WriteLine("Receiver has stopped");
             }
 
             /// <summary>
@@ -1341,15 +1343,14 @@ namespace Chess
                         int type = 0;
                         Converter.Conversion.ByteConverterToInterger(typeOfTransmission, ref type);
 
-                        Debug.WriteLine("Received data: {0}", type);
+                        //Debug.WriteLine("Received data: {0}", type);
 
                         if (type == 1)
                         {//connected client is about to transmit map data
 
                             //receive the size of the mapdata string
-                            while (!networkStream.DataAvailable)
-                            {
-                            }
+                            while (!networkStream.DataAvailable) ;
+
                             networkStream.Read(dataSizeByte, 0, dataSizeByte.Length);
                             Converter.Conversion.ByteConverterToInterger(dataSizeByte, ref dataSize);
                             byte[] data = new byte[dataSize];
@@ -1382,13 +1383,15 @@ namespace Chess
                         }
                         else if (type == 2) //draw //not really needed
                         { //game has ended.
-                            GameStates.GameEnded = true;
-                            GameStates.Won = null;
+                            //GameStates.GameEnded = true;
+                            //GameStates.Won = null;
+                            Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null);
                         }
                         else if (type == 3) //being asked for a draw
                         {
                             Console.Clear();
-                            GameStates.Pause = true;
+                            //GameStates.Pause = true;
+                            Publishers.PubNet.Pause(true);
                             string[] drawOptions = { "Accept Draw", "Decline Draw" };
                             string title = "Other play ask for draw";
                             string answer = Menu.MenuAccess(drawOptions, title);
@@ -1399,9 +1402,10 @@ namespace Chess
                                     //update the turn counter if black player
                                     if (GameStates.PlayerTeam == false)
                                         GameStates.TurnCounter++;
-                                    GameStates.GameEnded = true;
-                                    GameStates.Won = null;
-                                    GameStates.OtherPlayerSurrendered = true; //not the best use since they did not surrender
+                                    //GameStates.GameEnded = true;
+                                    //GameStates.Won = null;
+                                    //GameStates.OtherPlayerSurrendered = true; //not the best use since they did not surrender
+                                    Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null, otherPlayerSurrendered: true);
 
                                     //transmit answer
                                     Transmit.GeneralValueTransmission(30, Transmit.OtherPlayerIpAddress);
@@ -1417,27 +1421,30 @@ namespace Chess
                                     NetworkSupport.RepaintEndLocation((bool)team);
                                     break;
                             }
-                            GameStates.Pause = false;
+                            //GameStates.Pause = false;
+                            Publishers.PubNet.Pause(false);
                         }
                         else if (type == 4) //this player is victory
                         {
                             if ((bool)team == false)
                                 GameStates.TurnCounter++;
-
-                            GameStates.GameEnded = true;
-                            GameStates.Won = true;
+                            Publishers.PubNet.TransmitAnyData(gameEnded: true, won: true);
+                            //GameStates.GameEnded = true;
+                            //GameStates.Won = true;
                         }
                         else if (type == 5) //this player is defeated
                         {
-                            GameStates.GameEnded = true;
-                            GameStates.Won = false;
+                            Publishers.PubNet.TransmitAnyData(gameEnded: true, won: false);
+                            //GameStates.GameEnded = true;
+                            //GameStates.Won = false;
                         }
                         else if (type == 6) //draw by gamerules.
                         {
                             if ((bool)team == false)
                                 GameStates.TurnCounter++;
-                            GameStates.Won = null;
-                            GameStates.GameEnded = true;
+                            //GameStates.Won = null;
+                            //GameStates.GameEnded = true;
+                            Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null);
                         }
                         else if (type == 10) //contacted to ensure there is a connection
                         {
@@ -1448,13 +1455,15 @@ namespace Chess
                         {
                             if ((bool)team == false)
                                 GameStates.TurnCounter++;
-                            GameStates.Pause = false;
-                            GameStates.GameEnded = true;
-                            GameStates.Won = null;
+                            //GameStates.Pause = false;
+                            //GameStates.GameEnded = true;
+                            //GameStates.Won = null;
+                            Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null, pause: false);
                         }
                         else if(type == 31) //draw was denied
                         {
-                            GameStates.Pause = false;
+                            //GameStates.Pause = false;
+                            Publishers.PubNet.Pause(false);
                             Console.Clear();
                             ChessTable.RepaintBoardAndPieces();
                         }
@@ -1462,9 +1471,10 @@ namespace Chess
                         {
                             if (GameStates.PlayerTeam == false)
                                 GameStates.TurnCounter++;
-                            GameStates.GameEnded = true;
-                            GameStates.Won = true;
-                            GameStates.OtherPlayerSurrendered = true;
+                            Publishers.PubNet.TransmitAnyData(gameEnded: true, won: true, otherPlayerSurrendered: true);
+                            //GameStates.GameEnded = true;
+                            //GameStates.Won = true;
+                            //GameStates.OtherPlayerSurrendered = true;
                         }
                         else
                         {//connected client is not about to transmit any registrated data
