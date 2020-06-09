@@ -1343,7 +1343,7 @@ namespace Chess
                         int type = 0;
                         Converter.Conversion.ByteConverterToInterger(typeOfTransmission, ref type);
 
-                        //Debug.WriteLine("Received data: {0}", type);
+                        Debug.WriteLine("Received data: {0}", type);
 
                         if (type == 1)
                         {//connected client is about to transmit map data
@@ -1467,7 +1467,7 @@ namespace Chess
                             Console.Clear();
                             ChessTable.RepaintBoardAndPieces();
                         }
-                        else if (type == 41) //won by the other player surrendered while it was not their turn.
+                        else if (type == 41) //won by the other player surrendered
                         {
                             if (GameStates.PlayerTeam == false)
                                 GameStates.TurnCounter++;
@@ -2415,6 +2415,7 @@ namespace Chess
 
         private void NetEventHandler(object sender, ControlEvents.NetworkEventArgs e)
         {
+            Debug.WriteLine(e.GameEnded);
             GameStates.IsTurn = e.IsTurn != null ? (bool)e.IsTurn : GameStates.IsTurn;
             GameStates.LostConnection = e.LostConnection != null ? e.LostConnection : GameStates.LostConnection;
             GameStates.Pause = e.Pause != null ? (bool)e.Pause : GameStates.Pause;
@@ -4026,7 +4027,7 @@ namespace Chess
                     GameStates.GameEnded = true;
                     GameStates.Won = false; 
                     GameStates.WhiteWin = !white;
-                    if (GameStates.IsOnline && !GameStates.IsTurn)
+                    if (GameStates.IsOnline /*&& !GameStates.IsTurn*/)
                     {
                         if (GameStates.PlayerTeam == false)
                             GameStates.TurnCounter++;
