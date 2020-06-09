@@ -1309,11 +1309,11 @@ namespace Chess
             /// </summary>
             /// <param name="IPaddress">IP addresss to initialise the receiver with.</param>
             /// <returns>Returns true if the receiver is initialised, else false.</returns>
-            public static bool ReceiveSetup(string IPaddress)
+            public static bool ReceiveSetup(string IPaddress, int portNumber = 23000)
             {
                 try
                 { //tires to start up the receiver. 
-                    int port = 23000;
+                    int port = portNumber;
                     IPAddress receiverAddress = IPAddress.Parse(IPaddress);
                     receiver = new TcpListener(receiverAddress, port);
                     return true;
@@ -1341,10 +1341,9 @@ namespace Chess
             {
 
                 //Receive.TurnChanged += Receive_TurnChanged;
-
+                List<Thread> clientThread = new List<Thread>();
                 try
                 {
-                    TcpClient otherPlayer;
 
                     while (!GameStates.GameEnded)
                     {
@@ -1353,17 +1352,44 @@ namespace Chess
                         {
                             if (GameStates.GameEnded) //breaks if the game ends while waiting, e.g. this player ends the game. 
                                 break;
-                        }  
+                        }
                         if (GameStates.GameEnded) //if the game has ended, no reason to do anything else of the loop. //read to see if there is a better way to do this.
                             break;
+                        clientThread.Add(new Thread(new ThreadStart(NonLoopPart)));
+                        clientThread[clientThread.Count - 1].Start();
 
+                    }
+                    //receiver.Stop();
+                }
+                catch (IOException e) //failed read, write or connection closed (forced or not forced).
+                { //this should catch in case of a lost connection, but what to do? Go back to the main menu? Try some times to get a connection and it failes n times, do something else?
+                    Debug.WriteLine(e); //might not be needed with the InnerException, need to read some more up on InnerException
+                    Debug.WriteLine(e.InnerException); //helps with identified which specific error. 
+                    //receiver.Stop();
+                }
+                catch (Exception e) //other.
+                { //what to do. Some of the possible expections are known from testing, e.g. nulls in the new map array (caused by a bug in the code, might want to catch it anyway).
+                    Debug.WriteLine(e);
+                    Debug.WriteLine(e.InnerException);
+                }
+                //finally
+                //{
+                //    //receiver.Stop();
+                //}
+
+                void NonLoopPart()
+                {
+                    TcpClient otherPlayer = null;
+                    NetworkStream networkStream = null;
+                    try
+                    {
                         byte[] tranmissionAnswerByte = new byte[4];
                         byte[] dataSizeByte = new byte[4];
                         ushort dataSize = 0;
 
                         //accept client and connects
                         otherPlayer = receiver.AcceptTcpClient();
-                        NetworkStream networkStream = otherPlayer.GetStream();
+                        networkStream = otherPlayer.GetStream();
 
                         //receive data to know what will happen. 
                         while (!networkStream.DataAvailable) ;
@@ -1412,8 +1438,8 @@ namespace Chess
                         }
                         else if (type == 2) //draw //not really needed
                         { //game has ended.
-                            //GameStates.GameEnded = true;
-                            //GameStates.Won = null;
+                          //GameStates.GameEnded = true;
+                          //GameStates.Won = null;
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null);
                         }
                         else if (type == 3) //being asked for a draw
@@ -1489,7 +1515,7 @@ namespace Chess
                             //GameStates.Won = null;
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null, pause: false);
                         }
-                        else if(type == 31) //draw was denied
+                        else if (type == 31) //draw was denied
                         {
                             //GameStates.Pause = false;
                             Publishers.PubNet.Pause(false);
@@ -1507,33 +1533,29 @@ namespace Chess
                         }
                         else
                         {//connected client is not about to transmit any registrated data
-                            //do something more? 
-                            //networkStream.Flush(); //"... however, because NetworkStream is not buffered, it has no effect on network streams." - https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.flush?view=netcore-3.1
+                         //do something more? 
+                         //networkStream.Flush(); //"... however, because NetworkStream is not buffered, it has no effect on network streams." - https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.flush?view=netcore-3.1
                         }
                         //shutdown connection to client. 
-                        networkStream.Close(); 
-                        otherPlayer.Close();
+                        //networkStream.Close();
+                        //otherPlayer.Close();
                     }
-
-                    //receiver.Stop();
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(e);
+                    }
+                    finally
+                    {
+                        if (otherPlayer != null) //ensures the connection is closed.
+                        {
+                            if (networkStream != null)
+                                networkStream.Close();
+                            otherPlayer.Close();
+                        }
+                    }
                 }
-                catch (IOException e) //failed read, write or connection closed (forced or not forced).
-                { //this should catch in case of a lost connection, but what to do? Go back to the main menu? Try some times to get a connection and it failes n times, do something else?
-                    Debug.WriteLine(e); //might not be needed with the InnerException, need to read some more up on InnerException
-                    Debug.WriteLine(e.InnerException); //helps with identified which specific error. 
-                    //receiver.Stop();
-                }
-                catch (Exception e) //other.
-                { //what to do. Some of the possible expections are known from testing, e.g. nulls in the new map array (caused by a bug in the code, might want to catch it anyway).
-                    Debug.WriteLine(e);
-                    Debug.WriteLine(e.InnerException);
-                }
-                //finally
-                //{
-                //    //receiver.Stop();
-                //}
-
             }
+
 
             //private static void Receive_TurnChanged(string nogetTekst)
             //{
