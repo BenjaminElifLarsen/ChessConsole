@@ -571,7 +571,7 @@ namespace Chess
         private static short turnDrawCounter;
         private static bool nonTurnWin;
         private static bool? playerTeam = null;
-        private static bool? lostConnection;
+        private static bool lostConnection;
 
         /// <summary>
         /// True if it is player turn, else false.
@@ -608,7 +608,7 @@ namespace Chess
         /// <summary>
         /// True if the connect is lost and the game ends.
         /// </summary>
-        public static bool? LostConnection { get => lostConnection; set => lostConnection = value; }
+        public static bool LostConnection { get => lostConnection; set => lostConnection = value; }
         /// <summary>
         /// Sets and gets the number of chespieces. [0,~] is white. [1,~] is black. [~,0] is new value. [~,1] is old value.
         /// </summary>
@@ -973,10 +973,26 @@ namespace Chess
             /// </summary>
             /// <param name="ipAddress">The IP address to contact.</param>
             /// <returns></returns>
-            public static bool StillConnected(string ipAddress)
+            public static void StillConnected(object ipAddress)
             {
-                return GeneralValueTransmission(10, ipAddress,true); //maybe modify GeneralValueTransmission with a bool waitOnAnswer = false;
+                //return GeneralValueTransmission(10, ipAddress,true); //maybe modify GeneralValueTransmission with a bool waitOnAnswer = false;
                 //and then it it should wait on an answer and gets none, return false. 
+                Thread connectThread = new Thread(new ThreadStart(Run));
+                bool isConnected = true;
+                do
+                {
+                    //isConnected = !Run();
+                    if (!connectThread.ThreadState.Equals(System.Diagnostics.ThreadState.Running))
+                        connectThread.Start();
+                    else
+                        isConnected = false;
+                    Thread.Sleep(3000);
+                } while (!GameStates.GameEnded && isConnected);
+                GameStates.LostConnection = isConnected;
+                void Run()
+                {
+                    isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
+                }
             }
 
            
@@ -1652,7 +1668,7 @@ namespace Chess
                                                 string rightRock = newMap[7, chePie.GetMapLocation[1]];
                                                 string leftRockOld = oldMap[0, chePie.GetMapLocation[1]];
                                                 string chosenRock = leftRock != leftRockOld ? leftRock : rightRock; //if true, chosenRock is left rock. Else, chosenRock is right rock.
-                                                //either new locations, of the rocks, will be the same as their old locations if they have not castled.
+                                                //either new locations, of the rooks, will be the same as their old locations if they have not castled.
                                                 //this code can only be reached if the king has moved, and moved using castling, so neither of the rocks have been moved since the last change to the map.
 
                                                 bool chosenRockDirection = leftRock != leftRockOld ? true : false; //if true, chosenRock go left. Else, chosenRock go right
@@ -1778,6 +1794,7 @@ namespace Chess
         public void Run()
         {
             Thread controlSystem = new Thread(Publishers.PubKey.KeyPresser);
+            controlSystem.Name = "Control Thread";
             controlSystem.Start();
             MainMenu();
         }
@@ -2415,9 +2432,9 @@ namespace Chess
 
         private void NetEventHandler(object sender, ControlEvents.NetworkEventArgs e)
         {
-            Debug.WriteLine(e.GameEnded.ToString());
+            Debug.WriteLine($"Ended is {e.GameEnded.ToString()}");
             GameStates.IsTurn = e.IsTurn != null ? (bool)e.IsTurn : GameStates.IsTurn;
-            GameStates.LostConnection = e.LostConnection != null ? e.LostConnection : GameStates.LostConnection;
+            GameStates.LostConnection = e.LostConnection != null ? (bool)e.LostConnection : GameStates.LostConnection;
             GameStates.Pause = e.Pause != null ? (bool)e.Pause : GameStates.Pause;
             if(e.GameEnded == true)
             {
@@ -2718,17 +2735,23 @@ namespace Chess
         private void GameLoopNet(bool starter)
         {
             GameRunTitle();
-            Thread receiveThread = new Thread(Network.Receive.ReceiveGameLoop);
-            receiveThread.Name = "Receiver Thread";
             bool whiteTeam = starter;
             bool firstTurn = starter;
+
+            Thread receiveThread = new Thread(Network.Receive.ReceiveGameLoop);
+            receiveThread.Name = "Receiver Thread";
             receiveThread.Start(starter);
+            Thread connectionThread = new Thread(Network.Transmit.StillConnected);
+            connectionThread.Name = "Connection Checker Thread";
+            connectionThread.Start(Network.Transmit.OtherPlayerIpAddress);
+
             GameStates.IsTurn = starter;
             GameStates.IsOnline = true;
             GameStates.PieceAmount[0, 0] = (byte)ChessList.GetList(true).Count;
             GameStates.PieceAmount[0, 1] = (byte)ChessList.GetList(true).Count;
             GameStates.PieceAmount[1, 0] = (byte)ChessList.GetList(false).Count;
             GameStates.PieceAmount[1, 1] = (byte)ChessList.GetList(false).Count;
+
             if (MapMatrix.LastMoveMap[0, 0] == null)
                 MapMatrix.UpdateOldMap();
             //game loop
@@ -3847,21 +3870,11 @@ namespace Chess
         /// </summary>
         public void ControlOnlyMenu()
         {
-            //ConsoleKeyInfo info = new ConsoleKeyInfo();
             isActive = true;
             while (!GameStates.IsTurn && !GameStates.GameEnded)
-            {
-
                 if((int)key.Key != 0)
-                {
-                    //ConsoleKeyInfo key = Console.ReadKey(true);
                     if (key.Key == ConsoleKey.Escape)
-                    {
-
                         PlayerMenu();
-                    }
-                }
-            }
             isActive = false;
         }
 
