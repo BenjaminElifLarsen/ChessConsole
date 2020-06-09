@@ -992,6 +992,7 @@ namespace Chess
                     //int secondDifference = DateTime.Now.Second - time[2];
                     DateTime newTime = DateTime.Now;
                     counter = (newTime - oldTime).TotalMilliseconds;
+                    oldTime = newTime;
                     //counter++;
                     ////isConnected = !Run();
                     //if (!connectThread.ThreadState.Equals(System.Diagnostics.ThreadState.Running))
