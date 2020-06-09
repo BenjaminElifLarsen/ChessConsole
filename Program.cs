@@ -977,21 +977,32 @@ namespace Chess
             {
                 //return GeneralValueTransmission(10, ipAddress,true); //maybe modify GeneralValueTransmission with a bool waitOnAnswer = false;
                 //and then it it should wait on an answer and gets none, return false. 
-                Thread connectThread = new Thread(new ThreadStart(Run));
+
                 bool isConnected = true;
+                ushort counter = 0;
+                ushort maxValue = 3000;
+                Thread connectThread = new Thread(new ThreadStart(Run));
+                connectThread.Start();
                 do
                 {
-                    //isConnected = !Run();
-                    if (!connectThread.ThreadState.Equals(System.Diagnostics.ThreadState.Running))
-                        connectThread.Start();
-                    else
-                        isConnected = false;
-                    Thread.Sleep(3000);
-                } while (!GameStates.GameEnded && isConnected);
+                    counter++;
+                    ////isConnected = !Run();
+                    //if (!connectThread.ThreadState.Equals(System.Diagnostics.ThreadState.Running))
+                    //    connectThread.Start();
+                    //else
+                    //    isConnected = false;
+                    //Thread.Sleep(3000);
+                    Thread.Sleep(1);
+                } while (!GameStates.GameEnded && isConnected && counter < maxValue);
                 GameStates.LostConnection = isConnected;
+                Debug.WriteLine("Connection Lost");
                 void Run()
                 {
-                    isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
+                    do {
+                        counter = 0;
+                        isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
+                        Thread.Sleep(maxValue);
+                    } while (!GameStates.GameEnded && isConnected);
                 }
             }
 
