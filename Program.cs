@@ -1871,7 +1871,7 @@ namespace Chess
                 "Net Play",
                 "Rules",
                 "Interaction",
-                //"Delegate Test",
+                "Test",
                 "Exit"
             };
 
@@ -1903,12 +1903,17 @@ namespace Chess
                         NetMenu();
                         break;
 
-                    case "Delegate Test":
-                        TestMenu();
+                    case "Test":
+                        TestFindMenuMenu();
                         break;
                 }
 
             } while (true);
+        }
+
+        private void TestFindMenuMenu()
+        {
+            var test = this.GetType().GetMethod("MenuAccess");
         }
 
         /// <summary>
@@ -2458,13 +2463,25 @@ namespace Chess
 
     }
 
+    /// <summary>
+    /// 
+    /// </summary>
     class NetworkUpdateReceiver //rename
     {
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="pub"></param>
         public NetworkUpdateReceiver(NetPublisher pub)
         {
             pub.RaiseNetEvent += NetEventHandler;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
         private void NetEventHandler(object sender, ControlEvents.NetworkEventArgs e)
         {
             Debug.WriteLine($"Ended is {e.GameEnded.ToString()}");
