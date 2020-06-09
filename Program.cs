@@ -956,13 +956,16 @@ namespace Chess
                 catch (Exception e)
                 { //write anything out?
                     Debug.WriteLine(e);
-                    Console.Clear();
-                    Console.WriteLine("Connection could not be established/was lost");
-                    Console.WriteLine("Enter to return too the menu");
-                    while (Console.ReadKey().Key != ConsoleKey.Enter) ;
-                    GameStates.Won = null;
-                    GameStates.LostConnection = true;
-                    GameStates.GameEnded = true;
+                    if (!GameStates.LostConnection)
+                    {
+                        Console.Clear();
+                        Console.WriteLine("Connection could not be established/was lost");
+                        Console.WriteLine("Enter to return too the menu");
+                        while (Console.ReadKey().Key != ConsoleKey.Enter) ;
+                        GameStates.Won = null;
+                        GameStates.LostConnection = true;
+                        GameStates.GameEnded = true;
+                    }
                     return false;
                 }
 
@@ -983,39 +986,28 @@ namespace Chess
                 ushort maxValue = 3000;
                 Thread connectThread = new Thread(new ThreadStart(Run));
                 connectThread.Start();
-                int[] time = new int[] { DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second };
+                //int[] time = new int[] { DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second };
                 DateTime oldTime = DateTime.Now;
                 do
                 {
-                    //int hourDifference = DateTime.Now.Hour - time[0];
-                    //int minuteDiffernece = DateTime.Now.Minute - time[1];
-                    //int secondDifference = DateTime.Now.Second - time[2];
                     DateTime newTime = DateTime.Now;
                     counter = (newTime - oldTime).TotalMilliseconds;
-                    oldTime = newTime;
-                    //counter++;
-                    ////isConnected = !Run();
-                    //if (!connectThread.ThreadState.Equals(System.Diagnostics.ThreadState.Running))
-                    //    connectThread.Start();
-                    //else
-                    //    isConnected = false;
-                    //Thread.Sleep(3000);
-                    Debug.WriteLine(counter);
+
                     Thread.Sleep(1);
                 } while (!GameStates.GameEnded && isConnected && counter < maxValue);
                 GameStates.LostConnection = isConnected;
                 GameStates.GameEnded = true;
-                Debug.WriteLine("Connection Lost");
+                if (GameStates.PlayerTeam == false)
+                    GameStates.TurnCounter++;
                 void Run()
                 {
                     do {
-                        counter = 0;
+                        oldTime = DateTime.Now;
                         isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
                         Thread.Sleep(maxValue/2);
                     } while (!GameStates.GameEnded && isConnected);
                 }
             }
-
            
             //public static void TransmitSetup()
             //{ //might need a try catch
@@ -2672,49 +2664,35 @@ namespace Chess
             bool noCapture;
             bool pawnChange = false;
             if (ChessList.GetList(true).Count == 1 && ChessList.GetList(false).Count == 1)
-            {
                 return true;
-            }
+
             if (newMove) 
-            {
                 if(MapMatrix.LastMoveMap[0, 0] != null)
                     for (int n = 0; n < 8; n++)
                     {
-
                         for (int m = 0; m < 8; m++)
                         { //check if any pawns has been changed. 
                             string newFelt = MapMatrix.Map[m, n];
                             string oldFelt = MapMatrix.LastMoveMap[m, n];
                             if(newFelt != oldFelt)
-                            {
                                 if(oldFelt != "")
                                     if (oldFelt.Split(':')[1] == "6")
-                                    {
                                         pawnChange = true;
-                                    }
-                            }
                         }
                     }
-                
 
-            }
             if (updatePieces)
             {
                 if (GameStates.PieceAmount[0, 0] == GameStates.PieceAmount[0, 1] && GameStates.PieceAmount[1, 0] == GameStates.PieceAmount[1, 1])
-                {
                     noCapture = true;
-                }
                 else
                     noCapture = false;
 
                 if (noCapture && !pawnChange)
-                {
                     GameStates.TurnDrawCounter++;
-                }
                 else
-                {
                     GameStates.TurnDrawCounter = 0;
-                }
+
                 if (GameStates.TurnDrawCounter == 70)
                     return true;
             }
@@ -2725,12 +2703,19 @@ namespace Chess
         {
             Console.Title = Settings.GetTitle + ": Game Ended";
             string endMessage = null;
-            if (GameStates.Won == null)
-                endMessage = "The Game Ended in a Draw";
+            if (!GameStates.LostConnection)
+            {
+                if (GameStates.Won == null)
+                    endMessage = "The Game Ended in a Draw";
+                else
+                {
+                    string firstPart = GameStates.WhiteWin ? "White" : "Black";
+                    endMessage = $"{firstPart} Player Won";
+                }
+            }
             else
             {
-                string firstPart = GameStates.WhiteWin ? "White" : "Black" ; 
-                endMessage = $"{firstPart} Player Won";
+                endMessage = "The Connection was lost";
             }
             Console.CursorTop = Settings.MenuOffset[1];
             Console.WriteLine($"{"".PadLeft(Settings.MenuTitleOffset[0])}{Settings.CVTS.BrightWhiteForeground}{Settings.CVTS.Underscore}Game Finished{Settings.CVTS.Underscore_Off}{Environment.NewLine}" +
