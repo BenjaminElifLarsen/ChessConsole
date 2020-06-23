@@ -370,6 +370,19 @@ namespace Chess
         /// If true square/piece can be highlighted else not. It will still highlight empty squares if false. 
         /// </summary>
         public static bool CanHighLight { get => canHighlight; set => canHighlight = value; }
+        /// <summary>
+        /// Sets the size of the squares. Maximum value is 10, minimum value is 1.
+        /// </summary>
+        public static byte SetSquareSize { set
+            {
+                if (value > 10)
+                    squareSize = 10;
+                else if (value < 1)
+                    squareSize = 1;
+                else
+                    squareSize = value;
+            } 
+        }
 
         /// <summary>
         /// Console Virtual Terminal Sequences
@@ -859,11 +872,11 @@ namespace Chess
         public event keyEventHandler RaiseKeyEvent;
 
         /// <summary>
-        /// Runs as long time the <c>GameStates.GameEnded</c> is false. If a a key is pressed it will trigger an event that transmit the <c>ConsoleKeyInfo key</c> to all subscribers.  
+        /// Runs as long time the program is running. If a a key is pressed it will trigger an event that transmit the <c>ConsoleKeyInfo key</c> to all subscribers.  
         /// </summary>
         public void KeyPresser()
         {
-            while (!GameStates.GameEnded)
+            while (true) //!GameStates.GameEnded
             {
                 while (!Console.KeyAvailable) ;
                 ConsoleKeyInfo key = Console.ReadKey(true);
@@ -1871,7 +1884,7 @@ namespace Chess
                 "Net Play",
                 "Rules",
                 "Interaction",
-                "Test",
+                "Settings",
                 "Exit"
             };
 
@@ -1903,17 +1916,55 @@ namespace Chess
                         NetMenu();
                         break;
 
-                    case "Test":
-                        TestFindMenuMenu();
+                    case "Settings":
+                        SettingMenu();
                         break;
                 }
 
             } while (true);
         }
 
-        private void TestFindMenuMenu()
+        /// <summary>
+        /// Settings menu. 
+        /// </summary>
+        private void SettingMenu()
         {
-            var test = this.GetType().GetMethod("MenuAccess");
+            bool run = true;
+            string title = "Settings Menu";
+            string[] options =
+            {
+                "Square Size",
+                "Back"
+            }; 
+            Console.Title = Settings.GetTitle + ": " + title;
+            do {
+                string option = Interact(options, title);
+                Console.Clear();
+                switch (option)
+                {
+                    case "Square Size":
+                            Settings.SetSquareSize = GetByte();
+                        break;
+
+                    case "Back":
+                        run = false;
+                        break;
+                }
+            }while(run) ;
+
+            byte GetByte()
+            {
+                byte value;
+                string writtenValue = "";
+                Console.WriteLine("Enter a square size. Value is limited to minimum of 1 and maximum of 10. \nDefault is 5. Enter to confirm value.");
+                Console.CursorVisible = true;
+                do
+                {
+                    writtenValue = Console.ReadLine();
+                } while (!Byte.TryParse(writtenValue, out value));
+                Console.CursorVisible = false;
+                return value;
+            }
         }
 
         /// <summary>
@@ -2367,6 +2418,7 @@ namespace Chess
             byte currentLocation = 0;
             string answer = null;
             isActive = true;
+            Console.Clear();
             do
             {
                 Display(options, currentLocation, Settings.MenuColour, Settings.MenuColourHovered, Settings.MenuOffset, title, Settings.MenuColourTitle, Settings.MenuTitleOffset);
