@@ -7,6 +7,7 @@ using System.Net.Sockets;
 using System.Runtime.InteropServices;
 using System.Threading;
 using System.Reflection;
+using System.Security.Cryptography;
 
 namespace Chess
 {   //https://www.chessvariants.com/d.chess/chess.html
@@ -375,13 +376,24 @@ namespace Chess
         /// </summary>
         public static byte SetSquareSize { set
             {
-                if (value > 10)
-                    squareSize = 10;
+                if (value > 9)
+                    squareSize = 9;
                 else if (value < 1)
                     squareSize = 1;
                 else
                     squareSize = value;
             } 
+        }
+
+        /// <summary>
+        /// Updates the screen size and chess writing locations (pawns' promotions and chech location).
+        /// </summary>
+        public static void UpdateScreen()
+        {
+            windowSize = new int[] { squareSize * 8 + 9 + 2 * edgeSize + offset[0] * 2 + windowSizeModifer[0], squareSize * 8 + 9 + 2 * edgeSize + offset[1] * 2 + windowSizeModifer[1] };
+            writeLocationCheckHeader = new int[,] { { extraSpacing + windowSize[0] - windowSizeModifer[0], 10 + extraSpacing }, { extraSpacing + windowSize[0] - windowSizeModifer[0] + 8, 10 + extraSpacing } };
+            writeLocationCheck = new int[,] { { writeLocationCheckHeader[0, 0], writeLocationCheckHeader[0, 1] + 2 }, { writeLocationCheckHeader[1, 0], writeLocationCheckHeader[1, 1] + 2 } };
+            writeLocationPromotion = new int[] { offset[0] + edgeSize + 2, windowSize[1] - windowSizeModifer[1] };
         }
 
         /// <summary>
@@ -539,15 +551,21 @@ namespace Chess
     {
         private static KeyPublisher pubKey;
         private static NetPublisher pubNet;
+        private static CapturePublisher pubCapture;
+
         private Publishers() { }
         /// <summary>
-        /// Get the publisher class instant.
+        /// Get the key publisher class instant.
         /// </summary>
         public static KeyPublisher PubKey { get => pubKey; }
         /// <summary>
-        /// 
+        /// Gets the network publisher class instant.
         /// </summary>
         public static NetPublisher PubNet { get => pubNet; }
+        /// <summary>
+        /// Gets the capture publisher class instant.
+        /// </summary>
+        public static CapturePublisher PubCapture { get => pubCapture; }
         /// <summary>
         /// Ensures that the publisher instant is not null if it is null.
         /// </summary>
@@ -564,7 +582,14 @@ namespace Chess
             if (pubNet == null)
                 pubNet = new NetPublisher();
         }
-
+        /// <summary>
+        /// 
+        /// </summary>
+        public static void SetCaptureClass()
+        {
+            if (pubCapture == null)
+                pubCapture = new CapturePublisher();
+        }
     }
 
     /// <summary>
@@ -691,9 +716,9 @@ namespace Chess
         public class KeyEventArgs
         {
             /// <summary>
-            /// 
+            /// Base constructor for the consoleKey event data.
             /// </summary>
-            /// <param name="key"></param>
+            /// <param name="key">The ConsoleKeyInfo to be transmitted.</param>
             public KeyEventArgs(ConsoleKeyInfo key)
             {
                 Key = key;
@@ -702,6 +727,25 @@ namespace Chess
             /// 
             /// </summary>
             public ConsoleKeyInfo Key { get; set; }
+        }
+
+        /// <summary>
+        /// Class that holds event data for capture of pieces.
+        /// </summary>
+        public class CaptureEventArgs
+        {
+            /// <summary>
+            /// 
+            /// </summary>
+            /// <param name="ID"></param>
+            public CaptureEventArgs(string ID)
+            {
+                this.ID = ID;
+            }
+            /// <summary>
+            /// 
+            /// </summary>
+            public string ID { get; set; }
         }
 
         /// <summary>
@@ -895,6 +939,26 @@ namespace Chess
             keyEventHandler eventHandler = RaiseKeyEvent;
             if (eventHandler != null)
                 eventHandler.Invoke(this, e);
+        }
+    }
+
+    public class CapturePublisher
+    {
+        public delegate void captureEventHandler(object sender, ControlEvents.CaptureEventArgs args);
+
+        public event captureEventHandler RaiseCaptureEvent;
+
+        public void Capture(string ID)
+        {
+            OnCapture(new ControlEvents.CaptureEventArgs(ID));
+        }
+
+        protected virtual void OnCapture(ControlEvents.CaptureEventArgs e)
+        {
+            captureEventHandler captureEventHandler = RaiseCaptureEvent;
+            var test = captureEventHandler.GetInvocationList();
+            if (captureEventHandler != null)
+                captureEventHandler.Invoke(this, e);
         }
     }
 
@@ -1787,19 +1851,19 @@ namespace Chess
                                     chePie.NetworkUpdate(captured: true);
                                     if (chessNumber == "2")
                                     {
-                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
+                                        ChessList.GetList(!team).Add(new Queen(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey, Publishers.PubCapture));
                                     }
                                     else if (chessNumber == "3")
                                     {
-                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
+                                        ChessList.GetList(!team).Add(new Bishop(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey, Publishers.PubCapture));
                                     }
                                     else if (chessNumber == "4")
                                     {
-                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
+                                        ChessList.GetList(!team).Add(new Knight(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey, Publishers.PubCapture));
                                     }
                                     else if (chessNumber == "5")
                                     {
-                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey));
+                                        ChessList.GetList(!team).Add(new Rook(colour, !team, new int[] { x, y }, feltIDNew, Publishers.PubKey, Publishers.PubCapture));
                                     }
                                     break;
                                 }
@@ -1833,6 +1897,7 @@ namespace Chess
             Publishers.SetKeyClass();
             Publishers.PubKey.RaiseKeyEvent += KeyEventHandler;
             Publishers.SetNetClass();
+            Publishers.SetCaptureClass();
             NetworkUpdateReceiver networkUpdateReceiver = new NetworkUpdateReceiver(Publishers.PubNet);
         }
 
@@ -1943,7 +2008,8 @@ namespace Chess
                 switch (option)
                 {
                     case "Square Size":
-                            Settings.SetSquareSize = GetByte();
+                            Settings.SetSquareSize = GetNewSize();
+                            Settings.UpdateScreen();
                         break;
 
                     case "Back":
@@ -1952,15 +2018,38 @@ namespace Chess
                 }
             }while(run) ;
 
-            byte GetByte()
+            byte GetNewSize()
             {
                 byte value;
                 string writtenValue = "";
-                Console.WriteLine("Enter a square size. Value is limited to minimum of 1 and maximum of 10. \nDefault is 5. Enter to confirm value.");
+                string[] text = String.Format("Enter a square size. Value is limited to minimum of 1 and maximum of 9. {1} Default is 5. Current value is {0}. {1} Enter to confirm value.", Settings.SquareSize, Environment.NewLine).Split(' ');
+                string textOut = "";
+                ushort length = 0;
+                foreach(string word in text) //ensures the text does not go off the screen.
+                {
+                    length += (ushort)(word.Length + 1);
+                    if (length < Settings.WindowSize[0] && word[0] != Environment.NewLine[0])
+                        textOut += word + " ";
+                    else if( word[0] != Environment.NewLine[0])
+                    {
+                        length = (ushort)(word.Length + 1);
+                        textOut += Environment.NewLine + word + " ";
+                    }
+                    else if(word[0] == Environment.NewLine[0])
+                    {
+                        length = 0;
+                        textOut += Environment.NewLine;
+                    }
+                }
+                Console.WriteLine(textOut);
                 Console.CursorVisible = true;
+                int yLocation = Console.CursorTop;
                 do
                 {
                     writtenValue = Console.ReadLine();
+                    Console.CursorTop = yLocation;
+                    Console.Write("".PadLeft(Settings.WindowSize[0]));
+                    Console.CursorLeft = 0;
                 } while (!Byte.TryParse(writtenValue, out value));
                 Console.CursorVisible = false;
                 return value;
@@ -1972,16 +2061,16 @@ namespace Chess
         /// </summary>
         private void TestMenu()
         {
-            Console.Clear();
-            DelegateTest DT = new DelegateTest();
+            //Console.Clear();
+            //DelegateTest DT = new DelegateTest();
 
-            DT.WriteOut("Test");
-            DT.MathTest(2, 5, 1.1f, -5.2f, 5, 1, -10, 3);
+            //DT.WriteOut("Test");
+            //DT.MathTest(2, 5, 1.1f, -5.2f, 5, 1, -10, 3);
 
-            double result = DT.MathCalculator(5, 2, 5, 1, 2, 5);
-            DT.WriteOut(DT.MathCalculator(5, -2, 1, 5, 2, -0.1).ToString());
-            DT.WriteOutEvent();
-            while (Console.ReadKey().Key != ConsoleKey.Enter) ;
+            //double result = DT.MathCalculator(5, 2, 5, 1, 2, 5);
+            //DT.WriteOut(DT.MathCalculator(5, -2, 1, 5, 2, -0.1).ToString());
+            //DT.WriteOutEvent();
+            //while (Console.ReadKey().Key != ConsoleKey.Enter) ;
 
         }
 
@@ -2183,7 +2272,7 @@ namespace Chess
             {
                 Debug.WriteLine(e); //this block is also entered if something else goes wrong, e.g. System.NullReferenceException and index size
                 Console.WriteLine("Interaction.txt could not be found.");
-                Console.WriteLine("{0}Enter to return.", Environment.NewLine);
+                Console.WriteLine("{0}{1} to return.", Environment.NewLine, Settings.SelectKey);
             }
             PrintOutMenuExit();
         }
@@ -2211,7 +2300,7 @@ namespace Chess
             catch
             {
                 Console.WriteLine("Rules.txt could not be found.");
-                Console.WriteLine("Enter to return.");
+                Console.WriteLine("{0}{1} to return.", Environment.NewLine, Settings.SelectKey);
             }
             PrintOutMenuExit();
         }
@@ -2274,7 +2363,7 @@ namespace Chess
                             addToString = "".PadLeft(offset[0]);
                             isOffset = true;
                         } 
-                        else if (wordChar[0] == Settings.KeywordBrackets[0] && wordChar[wordChar.Length - endPoint] == Settings.KeywordBrackets[1]) //consider having {, }, [ and ] as settings.
+                        else if (wordChar[0] == Settings.KeywordBrackets[0] && wordChar[wordChar.Length - endPoint] == Settings.KeywordBrackets[1]) 
                         {
                             char[] property = new char[wordChar.Length - (1 + endPoint)];
                             for (int i = 1; i < wordChar.Length - endPoint; i++)
@@ -3886,32 +3975,32 @@ namespace Chess
             {
                 ID = String.Format("{0}:6:{1}", team, i + 1);
                 spawn = new int[] { spawnLocations[i, 0], spawnLocations[i, 1] };
-                chessPieces.Add(new Pawn(colour, white, spawn, ID, Publishers.PubKey));
+                chessPieces.Add(new Pawn(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             }
             ID = String.Format("{0}:5:{1}", team, 1);
             spawn = new int[] { spawnLocations[8, 0], spawnLocations[8, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             ID = String.Format("{0}:5:{1}", team, 2);
             spawn = new int[] { spawnLocations[15, 0], spawnLocations[15, 1] };
-            chessPieces.Add(new Rook(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new Rook(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             ID = String.Format("{0}:4:{1}", team, 1);
             spawn = new int[] { spawnLocations[9, 0], spawnLocations[9, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             ID = String.Format("{0}:4:{1}", team, 2);
             spawn = new int[] { spawnLocations[14, 0], spawnLocations[14, 1] };
-            chessPieces.Add(new Knight(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new Knight(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             ID = String.Format("{0}:3:{1}", team, 1);
             spawn = new int[] { spawnLocations[10, 0], spawnLocations[10, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             ID = String.Format("{0}:3:{1}", team, 2);
             spawn = new int[] { spawnLocations[13, 0], spawnLocations[13, 1] };
-            chessPieces.Add(new Bishop(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new Bishop(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             ID = String.Format("{0}:2:{1}", team, 1);
             spawn = new int[] { spawnLocations[11, 0], spawnLocations[11, 1] };
-            chessPieces.Add(new Queen(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new Queen(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
             ID = String.Format("{0}:1:{1}", team, 1);
             spawn = new int[] { spawnLocations[12, 0], spawnLocations[12, 1] };
-            chessPieces.Add(new King(colour, white, spawn, ID, Publishers.PubKey));
+            chessPieces.Add(new King(colour, white, spawn, ID, Publishers.PubKey, Publishers.PubCapture));
 
             ChessList.SetChessList(chessPieces, white);
         }
@@ -4339,7 +4428,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public King(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
+        public King(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub, CapturePublisher capPub) : base(colour_, team_, spawnLocation_, ID, keyPub, capPub)
         {
             Design = new string[]
             {
@@ -4931,7 +5020,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Queen(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
+        public Queen(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub, CapturePublisher capPub) : base(colour_, team_, spawnLocation_, ID, keyPub, capPub)
         {
             Design = new string[]
             {
@@ -5041,7 +5130,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Pawn(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
+        public Pawn(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub, CapturePublisher capPub) : base(colour_, team_, spawnLocation_, ID, keyPub, capPub)
         {
             Design = new string[]
             {
@@ -5317,25 +5406,25 @@ namespace Chess
                     case "knight":
                         //IDParts[1] = "4";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]); //The P is to indicate that the piece used to be a pawn.
-                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID, Publishers.PubKey));
+                        ChessList.GetList(team).Add(new Knight(colour, team, mapLocation, newID, Publishers.PubKey, Publishers.PubCapture));
                         break;
 
                     case "bishop":
                         //IDParts[1] = "3";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID, Publishers.PubKey));
+                        ChessList.GetList(team).Add(new Bishop(colour, team, mapLocation, newID, Publishers.PubKey, Publishers.PubCapture));
                         break;
 
                     case "rook":
                         //IDParts[1] = "5";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID, Publishers.PubKey));
+                        ChessList.GetList(team).Add(new Rook(colour, team, mapLocation, newID, Publishers.PubKey, Publishers.PubCapture));
                         break;
 
                     case "queen":
                         //IDParts[1] = "2";
                         newID = String.Format("{0}:{1}:{2}P", IDParts[0], IDParts[1], IDParts[2]);
-                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID, Publishers.PubKey));
+                        ChessList.GetList(team).Add(new Queen(colour, team, mapLocation, newID, Publishers.PubKey, Publishers.PubCapture));
                         break;
 
                 }
@@ -5377,7 +5466,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Rook(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
+        public Rook(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub, CapturePublisher capPub) : base(colour_, team_, spawnLocation_, ID, keyPub, capPub)
         {
             Design = new string[]
             {
@@ -5561,7 +5650,7 @@ namespace Chess
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
 
-        public Bishop(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
+        public Bishop(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub, CapturePublisher capPub) : base(colour_, team_, spawnLocation_, ID, keyPub, capPub)
         {
             Design = new string[]
             {
@@ -5656,7 +5745,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece.</param>
         /// <param name="spawnLocation_">The start location of the chess piece.</param>
         /// <param name="ID">The ID of the chess piece.</param>
-        public Knight(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub) : base(colour_, team_, spawnLocation_, ID, keyPub)
+        public Knight(byte[] colour_, bool team_, int[] spawnLocation_, string ID, KeyPublisher keyPub, CapturePublisher capPub) : base(colour_, team_, spawnLocation_, ID, keyPub, capPub)
         {
             Design = new string[]
             {
@@ -5778,7 +5867,7 @@ namespace Chess
         protected string id;
         protected bool hasBeenTaken = false;
         protected bool isSelected = false;
-        protected byte squareSize = Settings.SquareSize;
+        //protected byte squareSize = Settings.SquareSize;
         protected List<int[,]> possibleEndLocations = null;
         protected string teamIcon; //come up with a better name
         protected bool couldMove;
@@ -5799,7 +5888,7 @@ namespace Chess
         /// <param name="team_">The team of the chess piece, true for white, false for black.</param>
         /// <param name="mapLocation_">The start location on the map.</param>
         /// <param name="ID">The ID of the chess piece. The constructor does nothing to ensure the ID is unique.</param>
-        public ChessPiece(byte[] colour_, bool team_, int[] mapLocation_, string ID, KeyPublisher keyPub)
+        public ChessPiece(byte[] colour_, bool team_, int[] mapLocation_, string ID, KeyPublisher keyPub, CapturePublisher capPub)
         {
             Colour = colour_;
             SetTeam(team_);
@@ -5809,6 +5898,8 @@ namespace Chess
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
             teamIcon = ID.Split(':')[0];
             keyPub.RaiseKeyEvent += KeyEventHandler;
+            capPub.RaiseCaptureEvent -= CaptureEventHandler; //might help
+            capPub.RaiseCaptureEvent += CaptureEventHandler;
         }
 
         /// <summary>
@@ -5823,11 +5914,15 @@ namespace Chess
         {
             set
             {
+                Debug.WriteLine(ID + " set before: " + location[0] + " " +  location[1]);
                 location = value;
+                Debug.WriteLine(ID + " set after: " + location[0] + " " + location[1]);
             }
             get
             {
+                Debug.WriteLine(ID + " get before: " + location[0] + " " + location[1]);
                 int[] loc = new int[2] { location[0], location[1] };
+                Debug.WriteLine(ID + " get after: " + location[0] + " " + location[1]);
                 return loc;
             }
 
@@ -5914,9 +6009,9 @@ namespace Chess
         /// </summary>
         public void DesignResizer()
         {
-            if (Settings.ChesspieceDesignSize > squareSize)
+            if (Settings.ChesspieceDesignSize > Settings.SquareSize)
             {
-                string[] resizedDesign = new string[squareSize];
+                string[] resizedDesign = new string[Settings.SquareSize];
 
                 if (resizedDesign.Length > 1) 
                 {
@@ -5974,8 +6069,8 @@ namespace Chess
                         charArray = nonDECArray;
                     }
 
-                    char[] newDesign = new char[squareSize];
-                    byte mostImportLocation = mostImportantDesignPart[0] < squareSize ? mostImportantDesignPart[0] : (byte)(newDesign.Length - 1);
+                    char[] newDesign = new char[Settings.SquareSize];
+                    byte mostImportLocation = mostImportantDesignPart[0] < Settings.SquareSize ? mostImportantDesignPart[0] : (byte)(newDesign.Length - 1);
                     newDesign[mostImportLocation] = charArray[mostImportantDesignPart[0]];
                     byte rightAmountOfChars = (byte)(charLength - (mostImportantDesignPart[0]+1)); //the +1 is to make up with the difference in array length and indexes.
                     byte leftAmountOfChars = (byte)(charLength - 1 - rightAmountOfChars); //the -1 is to subtract the important char. 
@@ -6144,13 +6239,14 @@ namespace Chess
             if (feltID != "")
                 if (teamIcon != feltID.Split(':')[0])
                 {
-                    foreach (ChessPiece chessHostile in ChessList.GetList(!team))
-                    {
-                        if (chessHostile.GetID == feltID)
-                        {
-                            chessHostile.Captured();
-                        }
-                    }
+                    Publishers.PubCapture.Capture(feltID);
+                    //foreach (ChessPiece chessHostile in ChessList.GetList(!team))
+                    //{
+                    //    if (chessHostile.GetID == feltID)
+                    //    {
+                    //        chessHostile.Captured();
+                    //    }
+                    //}
                 }
         }
 
@@ -6323,7 +6419,7 @@ namespace Chess
         /// </summary>
         protected void LocationUpdate()
         {
-            Location = new int[2] { mapLocation[0] * squareSize + (mapLocation[0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0], mapLocation[1] * squareSize + (mapLocation[1] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1] };
+            Location = new int[2] { mapLocation[0] * Settings.SquareSize + (mapLocation[0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0], mapLocation[1] * Settings.SquareSize + (mapLocation[1] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1] };
         }
 
         /// <summary>
@@ -6356,8 +6452,8 @@ namespace Chess
         protected byte[] PaintCalculations(out int drawLocationX, out int drawLocationY, int[] mapLoc)
         {
             int designSize = Design.Length;
-            drawLocationX = (int)Location[0] + (int)(squareSize - designSize) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
-            drawLocationY = (int)Location[1] + (int)(squareSize - designSize) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+            drawLocationX = Location[0] + (int)(Settings.SquareSize - designSize) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
+            drawLocationY = Location[1] + (int)(Settings.SquareSize - designSize) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
             int locationForColour = (mapLoc[0] + mapLoc[1]) % 2; //if zero, background colour is "white", else background colour is "black".
             byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
             return colours;
@@ -6424,15 +6520,17 @@ namespace Chess
             }
         }
 
-
         /// <summary>
         /// Set a chesspeice set to be captured so it can be removed from the game and removes its visual representation. 
         /// </summary>
-        public void Captured()
+        public void Captured() //consider making a delegate/event with this. If a piece capture another, send out an event with the captured piece's ID, all pieces are subscribed to the event. 
         {//call by another piece, the one that captures this piece. 
+            Debug.WriteLine("Captured Function 1 " + this.ID + ": " + location[0] + " " + location[1]);
             hasBeenTaken = true;
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = "";
+            Debug.WriteLine("Captured Function 2 " + this.ID + ": " + location[0] + " " + location[1]);
             RemoveDraw(mapLocation);
+            Publishers.PubCapture.RaiseCaptureEvent -= CaptureEventHandler;
         }
 
         /// <summary>
@@ -6500,7 +6598,6 @@ namespace Chess
             {
                 PaintBackground(Settings.SelectMoveSquareColour, end);
             }
-
         }
 
         /// <summary>
@@ -6551,271 +6648,287 @@ namespace Chess
                 key = e.Key;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        protected void CaptureEventHandler(object sender, ControlEvents.CaptureEventArgs e)
+        {
+            Debug.WriteLine("Captured Event " + this.ID + ": " + location[0] + " " + location[1]);
+            if (e.ID == ID)
+            {
+                Debug.WriteLine("Captured Event Before " + this.ID + ": " + location[0] + " " + location[1]);
+                Captured();
+                Debug.WriteLine("Captured Event After " + this.ID +": " + location[0] + " " + location[1]);
+            }
+        }
+
     }
 
 
 
-    public class DelegateTest
-    {
-        private delegate void StringOut(string s);
-        private delegate double ReturnOut(params double[] values);
-        private delegate void ArrayOut<T>(params T[][] arrays);
-        StringOut stringOut;
-        ReturnOut returnOut;
-        ArrayOut<string> typeOut;
-        ArrayOut<int> typeIntOut;
-        //ArrayOut test;
-        //private static event StringOut stringOutTest;
-        Publisher pub;
-        List<Subscriber> subs = new List<Subscriber>();
-        public DelegateTest()
-        {
-            stringOut = StringWritter;
-            stringOut += StringMehWritter;
-            stringOut += StringFancyWritter;
-            returnOut = MathCal;
-            typeOut = OutDotPrintLine;
-            typeIntOut = OutDotPrintLine<int>;
+    //public class DelegateTest
+    //{
+    //    private delegate void StringOut(string s);
+    //    private delegate double ReturnOut(params double[] values);
+    //    private delegate void ArrayOut<T>(params T[][] arrays);
+    //    StringOut stringOut;
+    //    ReturnOut returnOut;
+    //    ArrayOut<string> typeOut;
+    //    ArrayOut<int> typeIntOut;
+    //    //ArrayOut test;
+    //    //private static event StringOut stringOutTest;
+    //    Publisher pub;
+    //    List<Subscriber> subs = new List<Subscriber>();
+    //    public DelegateTest()
+    //    {
+    //        stringOut = StringWritter;
+    //        stringOut += StringMehWritter;
+    //        stringOut += StringFancyWritter;
+    //        returnOut = MathCal;
+    //        typeOut = OutDotPrintLine;
+    //        typeIntOut = OutDotPrintLine<int>;
 
-            pub = new Publisher();
-            subs.Add(new Subscriber("sub1", pub));
-            subs.Add(new Subscriber("sub2", pub));
+    //        pub = new Publisher();
+    //        subs.Add(new Subscriber("sub1", pub));
+    //        subs.Add(new Subscriber("sub2", pub));
 
-        }
+    //    }
 
-        public void Print<T>(params T[][] arrays)
-        {
+    //    public void Print<T>(params T[][] arrays)
+    //    {
 
-            //if (typeof(T) == typeof(int))
-                //typeIntOut(Array.ConvertAll(arrays, item => (int)item); //https://stackoverflow.com/questions/2068120/c-sharp-cast-entire-array
-            //else if
-        }
+    //        //if (typeof(T) == typeof(int))
+    //            //typeIntOut(Array.ConvertAll(arrays, item => (int)item); //https://stackoverflow.com/questions/2068120/c-sharp-cast-entire-array
+    //        //else if
+    //    }
 
-        private void OutDotPrintLine<T>(params T[][] arrays)
-        {
-            foreach (T[] array in arrays)
-            {
-                foreach (T item in array)
-                {
-                    Console.Write(item.ToString() + "");
-                }
-                Console.WriteLine();
-            }
-        }
+    //    private void OutDotPrintLine<T>(params T[][] arrays)
+    //    {
+    //        foreach (T[] array in arrays)
+    //        {
+    //            foreach (T item in array)
+    //            {
+    //                Console.Write(item.ToString() + "");
+    //            }
+    //            Console.WriteLine();
+    //        }
+    //    }
 
-        public double MathCalculator(params double[] values)
-        {
-            double result = returnOut(values);
-            stringOut(result.ToString());
-            return result;
-        }
+    //    public double MathCalculator(params double[] values)
+    //    {
+    //        double result = returnOut(values);
+    //        stringOut(result.ToString());
+    //        return result;
+    //    }
 
-        private double MathCal(params double[] values)
-        {
-            double result = 0;
-            foreach (double value in values)
-            {
-                result += value;
-            }
-            return result;
-        } 
+    //    private double MathCal(params double[] values)
+    //    {
+    //        double result = 0;
+    //        foreach (double value in values)
+    //        {
+    //            result += value;
+    //        }
+    //        return result;
+    //    } 
 
-        public void WriteOutEvent()
-        {
-            pub.Test();
-            pub.ArrowTest();
-        }
+    //    public void WriteOutEvent()
+    //    {
+    //        pub.Test();
+    //        pub.ArrowTest();
+    //    }
 
-        public void WriteOut(string message)
-        {
-            stringOut(message);
-        }
+    //    public void WriteOut(string message)
+    //    {
+    //        stringOut(message);
+    //    }
         
-        public void MathTest(params float[] values)
-        {
-            Math(stringOut, values);
-        }
+    //    public void MathTest(params float[] values)
+    //    {
+    //        Math(stringOut, values);
+    //    }
 
-        private void Math(StringOut callBack, params float[] values)
-        {
-            float total = 0;
-            foreach (float value in values)
-            {
-                total += value;
-                callBack(value.ToString());
-            }
-            callBack($"Total is {total}. Average is {total/values.Length}");
-        }
+    //    private void Math(StringOut callBack, params float[] values)
+    //    {
+    //        float total = 0;
+    //        foreach (float value in values)
+    //        {
+    //            total += value;
+    //            callBack(value.ToString());
+    //        }
+    //        callBack($"Total is {total}. Average is {total/values.Length}");
+    //    }
 
-        private void StringWritter(string s)
-        {
-            Console.WriteLine(s);
-        }
+    //    private void StringWritter(string s)
+    //    {
+    //        Console.WriteLine(s);
+    //    }
 
-        private void StringMehWritter(string s)
-        {
-            Console.WriteLine("Meh... " + s);
-        }
+    //    private void StringMehWritter(string s)
+    //    {
+    //        Console.WriteLine("Meh... " + s);
+    //    }
 
-        private void StringFancyWritter(string s)
-        {
-            Console.WriteLine(Settings.CVTS.BrightRedForeground + s + Settings.CVTS.Reset);
-        }
-
-
-        public class Event : EventArgs
-        {
-            public Event(string s)
-            {
-                Message = s;
-            }
-            public Event(params double[] values)
-            {
-                Values = values;
-            }
-            public Event(ConsoleKeyInfo key)
-            {
-                Key = key;
-            }
-            public double[] Values { get; set; }
-            public string Message { get; set; }
-            public ConsoleKeyInfo Key { get; set; }
-        }
+    //    private void StringFancyWritter(string s)
+    //    {
+    //        Console.WriteLine(Settings.CVTS.BrightRedForeground + s + Settings.CVTS.Reset);
+    //    }
 
 
-        public class Publisher
-        {
-            public event EventTest StringEvent;
-
-            public delegate void EventTest(object sender, Event args);
-
-            public event EventHandler<Event> StringEvent2;
-
-            public event EventTest ValueEvent;
-
-            public event EventHandler<Event> KeyEvent;
-
-
-            public void Test()
-            {
-                OnEventTest(new Event("Event Ran"));
-                OnEventTest(new Event(5, 2, 1));
-                //OnEventTest(new Event(5, -2, 1));
-            }
-
-            public void ArrowTest()
-            {
-                bool test = false;
-                do
-                {
-                    while (!Console.KeyAvailable) ;
-                    ConsoleKeyInfo key = Console.ReadKey(); //have a list of ConsoleKeys for the reworked movement system
-                    if (key.Key == ConsoleKey.DownArrow || key.Key == ConsoleKey.UpArrow || key.Key == ConsoleKey.LeftArrow || key.Key == ConsoleKey.RightArrow || key.Key == ConsoleKey.Escape || key.Key == ConsoleKey.Enter)
-                        onArrowKeyPress(new Event(key));
-
-                } while (!test);
-            }
-
-            protected virtual void onArrowKeyPress(Event e)
-            {
-                EventHandler<Event> eventHandler = KeyEvent;
-                if(eventHandler != null)
-                {
-                    eventHandler.Invoke(this, e);
-                }
-            }
-
-            protected virtual void OnEventTest(Event e)
-            {
-                EventHandler<Event> testEvent = StringEvent2;
-                var eValues = e.GetType().GetProperties();
-                if (testEvent != null)
-                {
-                    for (int n = 0; n < eValues.Length; n++)
-                    {
-                        string type = eValues[n].PropertyType.Name;
-
-                        if (type == "Double[]")
-                        {
-                            if (eValues[n].GetValue(e) != null)
-                            {
-                                double result = 0;
-                                double[] values = (double[])e.GetType().GetProperty(eValues[n].Name).GetValue(e);
-                                foreach (double value in values)
-                                {
-                                    result += value;
-                                }
-                                e.Values = new double[] { result };
-                                //e.Message += $"Result is {result}"; //
-                                testEvent.Invoke(this, e);
-                            }
-                        }
-                        else if (type == "String")
-                        {
-                            if (eValues[n].GetValue(e) != null) //even if Message is null, since Values is before it will add the results to Message and thus after Message is no longer null
-                            {
-                                e.Message += $" at {DateTime.Now}";
-                                testEvent.Invoke(this, e);
-                            }
-                        }
-
-                    }
-                }
-            }
-        }
+    //    public class Event : EventArgs
+    //    {
+    //        public Event(string s)
+    //        {
+    //            Message = s;
+    //        }
+    //        public Event(params double[] values)
+    //        {
+    //            Values = values;
+    //        }
+    //        public Event(ConsoleKeyInfo key)
+    //        {
+    //            Key = key;
+    //        }
+    //        public double[] Values { get; set; }
+    //        public string Message { get; set; }
+    //        public ConsoleKeyInfo Key { get; set; }
+    //    }
 
 
-        public class Subscriber
-        {
-            private readonly string ID;
-            private int[] direction;
-            public Subscriber(string ID, Publisher Pub)
-            {
-                Random rnd = new Random();
-                this.ID = ID;
-                Pub.StringEvent2 += HandleString2Event;
-                Pub.KeyEvent += KeyEvent;
-                direction = new int[2] {rnd.Next(-5,5), rnd.Next(-10,10) };
-            }
+    //    public class Publisher
+    //    {
+    //        public event EventTest StringEvent;
 
-            protected void KeyEvent(object sender, Event e)
-            {
-                Console.CursorLeft = 0;
-                ConsoleKey key = e.Key.Key;
-                Console.WriteLine($"{ID} recieved {key.ToString()}");
-                if (key == ConsoleKey.DownArrow)
-                    direction[1]++;
-                else if (key == ConsoleKey.UpArrow)
-                    direction[1]--;
-                else if (key == ConsoleKey.RightArrow)
-                    direction[0]++;
-                else if (key == ConsoleKey.LeftArrow)
-                    direction[0]--;
-                //Console.CursorLeft = 0; //without this one, sub 1 will write at index 1 instead of index 0 for some reason. The formatted string does not contain an empty space
-                Console.WriteLine($"{ID}'s Coordinates: {direction[0]} {direction[1]}"); //and both subs places the cursor the same location on the next line
-                //found out of why, pressing a key will still "write" to the console and thus move the cursor
-            }
+    //        public delegate void EventTest(object sender, Event args);
 
-            protected void HandleString2Event(object sender, Event e)
-            {
-                var eProperties = e.GetType().GetProperties();
-                for (int n = 0; n < eProperties.Length; n++)
-                {
-                    if(eProperties[n].GetValue(e) != null)
-                    {
-                        string type = eProperties[n].PropertyType.Name;
-                        if (type == "String")
-                            Console.WriteLine($"{ID} received this message: {e.Message}");
-                        else if (type == "Double[]")
-                            Console.WriteLine($"{ID} received this value: {e.Values[0]}");
-                    }
-                }
-            }
+    //        public event EventHandler<Event> StringEvent2;
 
-        }
+    //        public event EventTest ValueEvent;
+
+    //        public event EventHandler<Event> KeyEvent;
 
 
+    //        public void Test()
+    //        {
+    //            OnEventTest(new Event("Event Ran"));
+    //            OnEventTest(new Event(5, 2, 1));
+    //            //OnEventTest(new Event(5, -2, 1));
+    //        }
 
-    }
+    //        public void ArrowTest()
+    //        {
+    //            bool test = false;
+    //            do
+    //            {
+    //                while (!Console.KeyAvailable) ;
+    //                ConsoleKeyInfo key = Console.ReadKey(); //have a list of ConsoleKeys for the reworked movement system
+    //                if (key.Key == ConsoleKey.DownArrow || key.Key == ConsoleKey.UpArrow || key.Key == ConsoleKey.LeftArrow || key.Key == ConsoleKey.RightArrow || key.Key == ConsoleKey.Escape || key.Key == ConsoleKey.Enter)
+    //                    onArrowKeyPress(new Event(key));
+
+    //            } while (!test);
+    //        }
+
+    //        protected virtual void onArrowKeyPress(Event e)
+    //        {
+    //            EventHandler<Event> eventHandler = KeyEvent;
+    //            if(eventHandler != null)
+    //            {
+    //                eventHandler.Invoke(this, e);
+    //            }
+    //        }
+
+    //        protected virtual void OnEventTest(Event e)
+    //        {
+    //            EventHandler<Event> testEvent = StringEvent2;
+    //            var eValues = e.GetType().GetProperties();
+    //            if (testEvent != null)
+    //            {
+    //                for (int n = 0; n < eValues.Length; n++)
+    //                {
+    //                    string type = eValues[n].PropertyType.Name;
+
+    //                    if (type == "Double[]")
+    //                    {
+    //                        if (eValues[n].GetValue(e) != null)
+    //                        {
+    //                            double result = 0;
+    //                            double[] values = (double[])e.GetType().GetProperty(eValues[n].Name).GetValue(e);
+    //                            foreach (double value in values)
+    //                            {
+    //                                result += value;
+    //                            }
+    //                            e.Values = new double[] { result };
+    //                            //e.Message += $"Result is {result}"; //
+    //                            testEvent.Invoke(this, e);
+    //                        }
+    //                    }
+    //                    else if (type == "String")
+    //                    {
+    //                        if (eValues[n].GetValue(e) != null) //even if Message is null, since Values is before it will add the results to Message and thus after Message is no longer null
+    //                        {
+    //                            e.Message += $" at {DateTime.Now}";
+    //                            testEvent.Invoke(this, e);
+    //                        }
+    //                    }
+
+    //                }
+    //            }
+    //        }
+    //    }
+
+
+    //    public class Subscriber
+    //    {
+    //        private readonly string ID;
+    //        private int[] direction;
+    //        public Subscriber(string ID, Publisher Pub)
+    //        {
+    //            Random rnd = new Random();
+    //            this.ID = ID;
+    //            Pub.StringEvent2 += HandleString2Event;
+    //            Pub.KeyEvent += KeyEvent;
+    //            direction = new int[2] {rnd.Next(-5,5), rnd.Next(-10,10) };
+    //        }
+
+    //        protected void KeyEvent(object sender, Event e)
+    //        {
+    //            Console.CursorLeft = 0;
+    //            ConsoleKey key = e.Key.Key;
+    //            Console.WriteLine($"{ID} recieved {key.ToString()}");
+    //            if (key == ConsoleKey.DownArrow)
+    //                direction[1]++;
+    //            else if (key == ConsoleKey.UpArrow)
+    //                direction[1]--;
+    //            else if (key == ConsoleKey.RightArrow)
+    //                direction[0]++;
+    //            else if (key == ConsoleKey.LeftArrow)
+    //                direction[0]--;
+    //            //Console.CursorLeft = 0; //without this one, sub 1 will write at index 1 instead of index 0 for some reason. The formatted string does not contain an empty space
+    //            Console.WriteLine($"{ID}'s Coordinates: {direction[0]} {direction[1]}"); //and both subs places the cursor the same location on the next line
+    //            //found out of why, pressing a key will still "write" to the console and thus move the cursor
+    //        }
+
+    //        protected void HandleString2Event(object sender, Event e)
+    //        {
+    //            var eProperties = e.GetType().GetProperties();
+    //            for (int n = 0; n < eProperties.Length; n++)
+    //            {
+    //                if(eProperties[n].GetValue(e) != null)
+    //                {
+    //                    string type = eProperties[n].PropertyType.Name;
+    //                    if (type == "String")
+    //                        Console.WriteLine($"{ID} received this message: {e.Message}");
+    //                    else if (type == "Double[]")
+    //                        Console.WriteLine($"{ID} received this value: {e.Values[0]}");
+    //                }
+    //            }
+    //        }
+
+    //    }
+
+
+
+    //}
 
 }
