@@ -31,7 +31,7 @@ namespace Chess
         /// <summary>
         /// Null for draw, true for victory, false for defeat.
         /// </summary>
-        public static bool? Won { get => won; set => won = value; } //rename to VictoryType
+        public static bool? VictoryType { get => won; set => won = value; } 
         /// <summary>
         /// True if the game has ended, false otherwise. 
         /// </summary>

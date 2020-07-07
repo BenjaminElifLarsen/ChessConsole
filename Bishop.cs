@@ -27,12 +27,6 @@ namespace Chess
             };
             mostImportantDesignPart = new byte[] { 1, 2 };
             DesignResizer();
-            //Design = new string[]
-            //{ //changes the length of the first string so code needs to be changed to either use the amount of strings in the array or something else. Also the code that control the paint location
-            //    $"_{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Plus_Minus}{Settings.CVTS.DEC.DEC_Deactive}_",
-            //    "|O|",
-            //    "-B-"
-            //};
             Draw();
             directions = new int[][]
                         {

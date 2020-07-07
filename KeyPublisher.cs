@@ -18,7 +18,7 @@ namespace Chess
         /// </summary>
         public void KeyPresser()
         {
-            while (true) //!GameStates.GameEnded
+            while (true)
             {
                 while (!Console.KeyAvailable) ;
                 ConsoleKeyInfo key = Console.ReadKey(true);

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 
 namespace Chess
@@ -15,7 +14,6 @@ namespace Chess
         private sbyte moveDirection;
         private Dictionary<string, byte> promotions = new Dictionary<string, byte>(4);
         // https://docs.microsoft.com/en-us/dotnet/standard/generics/covariance-and-contravariance
-        // https://stackoverflow.com/questions/210601/accessing-a-property-of-derived-class-from-the-base-class-in-c-sharp
 
         /// <summary>
         /// The constructor for the pawn chess piece. 
@@ -33,7 +31,6 @@ namespace Chess
                 "-P-"
             };
             moveDirection = team ? (sbyte)-1 : (sbyte)1;
-            //teamString = team ? "+" : "-";
             mostImportantDesignPart = new byte[] { 1, 2 };
             DesignResizer();
             Draw();
@@ -83,7 +80,7 @@ namespace Chess
                                 }
                                 else
                                 {
-                                    firstTurn = false; //firstTurn ? false : false;
+                                    firstTurn = false; 
                                     couldMove = true;
                                     oldMapLocation = new int[2] { mapLocation[0], mapLocation[1] };
                                     mapLocation = new int[2] { cursorLocation[0], cursorLocation[1] };
@@ -124,9 +121,6 @@ namespace Chess
                 possibleEndLocations = null;
                 couldMove = false;
             }
-            //RemoveDisplayPossibleMove();
-            //possibleEndLocations = null;
-
         }
 
         /// <summary>
@@ -139,21 +133,15 @@ namespace Chess
             if (captured)
             {
                 Captured();
-                Debug.WriteLine("{0} Captured", ID);
             }
             else if (newLocation != null)
             {
-                Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
                 if (Math.Abs(newLocation[1] - mapLocation[1]) == 2)
                     specialBool = true;
                 RemoveDraw(mapLocation);
-                Debug.WriteLine("Visuals Removed");
                 mapLocation = newLocation;
-                Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
                 LocationUpdate();
-                Debug.WriteLine("Location Updated");
                 Draw();
-                Debug.WriteLine("Visuals Repainted");
             }
             else if (repaintLocation)
             {
@@ -161,8 +149,6 @@ namespace Chess
                 SquareHighLight(true, cursorLocation);
             }
         }
-
-
 
         /// <summary>
         /// Overriden control function of the base class. Checks if the chess piece is ready for a promotion. 
@@ -213,10 +199,8 @@ namespace Chess
                     LocationCheck(-1);
                 if (mapLocation[0] != 7) //check square to the right side
                     LocationCheck(1);
-                //if (firstTurn)
-                //{
+
                 EnPassant();
-                //}
             }
 
             void LocationCheck(sbyte direction) //find a better name
@@ -266,7 +250,7 @@ namespace Chess
                 bool chosen = false;
                 string command = "Write to Select: ";
                 string answer = "";
-                //How to select? Arrowkeys? Numberkeys? Written?
+
                 DisplayPromotions();
                 Console.SetCursorPosition(Settings.PromotionWriteLocation[0], Settings.PromotionWriteLocation[1] + 2);
                 Console.Write(command);

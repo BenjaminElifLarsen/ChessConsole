@@ -14,15 +14,16 @@ namespace Chess
         public event netEventHandler RaiseNetEvent;
 
         /// <summary>
-        /// 
+        /// Used to inform all subscribesr of multiple parameters at ones. 
+        /// Invokes an event with all parameters with default values of null.
         /// </summary>
-        /// <param name="lostConnection"></param>
-        /// <param name="whiteWon"></param>
-        /// <param name="otherPlayerSurrendered"></param>
-        /// <param name="gameEnded"></param>
-        /// <param name="pause"></param>
-        /// <param name="won"></param>
-        /// <param name="isTurn"></param>
+        /// <param name="lostConnection">Null if it should be ignored in the invokement, true if the connection is lost, false if the connection is still present.</param>
+        /// <param name="whiteWon">Null if it should be ignored in the invokement, true if white won else false.</param>
+        /// <param name="otherPlayerSurrendered">Null if it should be ignored in the invokement, true if the other player ended the game else, false if they did not.</param>
+        /// <param name="gameEnded">Null if it should be ignored in the invokement, true if the game has ended else false.</param>
+        /// <param name="pause">>Null if it should be ignored in the invokement, true if the game is paused, false if it is not.</param>
+        /// <param name="won">Null if the game ended in a draw, true if the player has won, false if the player has lost.</param>
+        /// <param name="isTurn">Null if it should be ignored in the invokement, true if its the player's turn else false.</param>
         public void TransmitAnyData(bool? lostConnection = null, bool? whiteWon = null, bool? otherPlayerSurrendered = null,
                                     bool? gameEnded = null, bool? pause = null, bool? won = null, bool? isTurn = null)
         {

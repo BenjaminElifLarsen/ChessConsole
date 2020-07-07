@@ -42,15 +42,6 @@ namespace Chess
         static TcpClient transmitter = null;
         static TcpListener receiver = null;
 
-        //public Network()
-        //{
-        //    //Receive reTest = new Receive();
-        //    //Transmit trTest = new Transmit();
-        //    Receive.ReceiveSetup();
-
-        //    //Transmit.TransmitSetup();
-        //}
-
         /// <summary>
         /// Class for transmitting data.
         /// </summary>
@@ -93,7 +84,7 @@ namespace Chess
                         Console.WriteLine("Connection could not be established/was lost");
                         Console.WriteLine("Enter to return too the menu");
                         while (Console.ReadKey().Key != ConsoleKey.Enter) ;
-                        GameStates.Won = null;
+                        GameStates.VictoryType = null;
                         GameStates.LostConnection = true;
                         GameStates.GameEnded = true;
                     }
@@ -109,15 +100,11 @@ namespace Chess
             /// <returns></returns>
             public static void StillConnected(object ipAddress)
             {
-                //return GeneralValueTransmission(10, ipAddress,true); //maybe modify GeneralValueTransmission with a bool waitOnAnswer = false;
-                //and then it it should wait on an answer and gets none, return false. 
-
                 bool isConnected = true;
                 double counter = 0;
                 ushort maxValue = 3000;
                 Thread connectThread = new Thread(new ThreadStart(Run));
                 connectThread.Start();
-                //int[] time = new int[] { DateTime.Now.Hour, DateTime.Now.Minute, DateTime.Now.Second };
                 DateTime oldTime = DateTime.Now;
                 do
                 {
@@ -141,13 +128,7 @@ namespace Chess
                 }
             }
 
-            //public static void TransmitSetup()
-            //{ //might need a try catch
-            //    Int32 port = 23000;
-            //    IPAddress transmitterAddress = IPAddress.Parse("127.0.0.1");
-            //    transmitter = new TcpClient("localhost", port);
-            //    //https://docs.microsoft.com/en-us/dotnet/api/system.net.networkinformation.tcpconnectioninformation?redirectedfrom=MSDN&view=netcore-3.1
-
+            //https://docs.microsoft.com/en-us/dotnet/api/system.net.networkinformation.tcpconnectioninformation?redirectedfrom=MSDN&view=netcore-3.1
 
             /// <summary>
             /// Transmit the map data to the IP address stored in <c>OtherPlayerIpAddress</c>.
@@ -186,9 +167,6 @@ namespace Chess
 
                     Debug.WriteLine("Transmitting map. {0} bytes", mapdataByte.Length);
 
-                    //Testing for possible errors
-                    //Environment.Exit(1);
-
                     //wait on answer from the receiver
                     networkStream.Read(receptionAnswerByte, 0, 4);  //the reads are used to ensure that the TransmitData is not ahead of ReceiveData. This ensures the next turn is not started before the map and chess pieces are ready.
                     Converter.Conversion.ByteConverterToInterger(receptionAnswerByte, ref receptionAnswer);
@@ -216,18 +194,13 @@ namespace Chess
                     Debug.WriteLine(e);
                     transmitter.Close();
 
-                    //GameStates.Won = null;
-                    //GameStates.LostConnection = true;
-                    //GameStates.GameEnded = true;
                     Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
                 }
                 catch (Exception e)
                 { //what to do if this is entered?
                     Debug.WriteLine(e);
-                    //GameStates.Won = null;
-                    //GameStates.LostConnection = true;
-                    //GameStates.GameEnded = true;
+
                     Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
                 }
@@ -323,7 +296,6 @@ namespace Chess
                     networkStream.Close();
                     transmitter.Close();
 
-                    //return
                     return true;
                 }
                 catch (Exception e)
@@ -430,42 +402,6 @@ namespace Chess
                     data = Connection(); //maybe thread this. 
                 }
 
-                ////accepts the client and gets its stream. 
-                //TcpClient client = receiver.AcceptTcpClient(); //consider putting anything after the while(...) above into a nested function that can be called via a thread. 
-                ////Make it such that it got a bool that if true will make it read from the data stream first before running the rest of the code. 
-                ////if the data is 1, ignore it, else it is the joiner and thus it needs to run the rest of the code. 
-                //NetworkStream networkStream = client.GetStream();
-                //byte[] receivedData;
-
-                ////writes to the client so it knows a connection has been established.
-                //networkStream.Write(new byte[] { 0 }, 0, 1);
-
-                ////reads data that states the length of the string that is going to be transmitted
-                //receivedData = new byte[4];
-                //networkStream.Read(receivedData, 0, receivedData.Length);
-                //uint dataLength = 0;
-                //Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
-
-                ////writes an answer so the transmitter knows it can transmit the string byte array.
-                //networkStream.Write(new byte[] { 1 }, 0, 1);
-
-                ////reads string data sent by the client 
-                //receivedData = new byte[dataLength];
-                //networkStream.Read(receivedData, 0, receivedData.Length);
-
-                ////converts it to a string
-                //string data = Converter.Conversion.ByteArrayToASCII(receivedData);
-
-                //Debug.WriteLine("Received: " + data);
-
-                ////writes an answer back, so the transmitter knows it can stop.
-                //networkStream.Write(new byte[] { 2 }, 0, 1);
-
-                ////close connections
-                //networkStream.Close();
-                //client.Close();
-
-                ////returns the string 
                 return data;
 
                 string Connection()
@@ -526,7 +462,7 @@ namespace Chess
             public static bool ReceiveSetup(string IPaddress, int portNumber = 23000)
             {
                 try
-                { //tires to start up the receiver. 
+                { //tries to start up the receiver. 
                     int port = portNumber;
                     IPAddress receiverAddress = IPAddress.Parse(IPaddress);
                     receiver = new TcpListener(receiverAddress, port);
@@ -573,7 +509,6 @@ namespace Chess
                         clientThread[clientThread.Count - 1].Start();
 
                     }
-                    //receiver.Stop();
                 }
                 catch (IOException e) //failed read, write or connection closed (forced or not forced).
                 { //this should catch in case of a lost connection, but what to do? Go back to the main menu? Try some times to get a connection and it failes n times, do something else?
@@ -586,10 +521,6 @@ namespace Chess
                     Debug.WriteLine(e);
                     Debug.WriteLine(e.InnerException);
                 }
-                //finally
-                //{
-                //    //receiver.Stop();
-                //}
 
                 void NonLoopPart()
                 {
@@ -647,19 +578,15 @@ namespace Chess
                             Converter.Conversion.ValueToBitArrayQuick(1, out tranmissionAnswerByte);
                             networkStream.Write(tranmissionAnswerByte, 0, tranmissionAnswerByte.Length);
 
-                            //GameStates.IsTurn = true;
                             Publishers.PubNet.IsTurn(true);
                         }
                         else if (type == 2) //draw //not really needed
-                        { //game has ended.
-                          //GameStates.GameEnded = true;
-                          //GameStates.Won = null;
+                        { 
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null);
                         }
                         else if (type == 3) //being asked for a draw
                         {
                             Console.Clear();
-                            //GameStates.Pause = true;
                             Publishers.PubNet.Pause(true);
                             string[] drawOptions = { "Accept Draw", "Decline Draw" };
                             string title = "Other play ask for draw";
@@ -671,9 +598,6 @@ namespace Chess
                                     //update the turn counter if black player
                                     if (GameStates.PlayerTeam == false)
                                         GameStates.TurnCounter++;
-                                    //GameStates.GameEnded = true;
-                                    //GameStates.Won = null;
-                                    //GameStates.OtherPlayerSurrendered = true; //not the best use since they did not surrender
                                     Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null, otherPlayerSurrendered: true);
 
                                     //transmit answer
@@ -690,7 +614,6 @@ namespace Chess
                                     NetworkSupport.RepaintEndLocation((bool)team);
                                     break;
                             }
-                            //GameStates.Pause = false;
                             Publishers.PubNet.Pause(false);
                         }
                         else if (type == 4) //this player is victory
@@ -698,21 +621,15 @@ namespace Chess
                             if ((bool)team == false)
                                 GameStates.TurnCounter++;
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: true);
-                            //GameStates.GameEnded = true;
-                            //GameStates.Won = true;
                         }
                         else if (type == 5) //this player is defeated
                         {
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: false);
-                            //GameStates.GameEnded = true;
-                            //GameStates.Won = false;
                         }
                         else if (type == 6) //draw by gamerules.
                         {
                             if ((bool)team == false)
                                 GameStates.TurnCounter++;
-                            //GameStates.Won = null;
-                            //GameStates.GameEnded = true;
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null);
                         }
                         else if (type == 10) //contacted to ensure there is a connection
@@ -724,14 +641,10 @@ namespace Chess
                         {
                             if ((bool)team == false)
                                 GameStates.TurnCounter++;
-                            //GameStates.Pause = false;
-                            //GameStates.GameEnded = true;
-                            //GameStates.Won = null;
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null, pause: false);
                         }
                         else if (type == 31) //draw was denied
                         {
-                            //GameStates.Pause = false;
                             Publishers.PubNet.Pause(false);
                             Console.Clear();
                             ChessTable.RepaintBoardAndPieces();
@@ -741,18 +654,9 @@ namespace Chess
                             if (GameStates.PlayerTeam == false)
                                 GameStates.TurnCounter++;
                             Publishers.PubNet.TransmitAnyData(gameEnded: true, won: true, otherPlayerSurrendered: true);
-                            //GameStates.GameEnded = true;
-                            //GameStates.Won = true;
-                            //GameStates.OtherPlayerSurrendered = true;
                         }
-                        else
-                        {//connected client is not about to transmit any registrated data
-                         //do something more? 
                          //networkStream.Flush(); //"... however, because NetworkStream is not buffered, it has no effect on network streams." - https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream.flush?view=netcore-3.1
-                        }
-                        //shutdown connection to client. 
-                        //networkStream.Close();
-                        //otherPlayer.Close();
+
                     }
                     catch (Exception e)
                     {

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 
 namespace Chess
@@ -386,20 +385,14 @@ namespace Chess
             if (captured)
             {
                 Captured();
-                Debug.WriteLine("{0} Captured", ID);
             }
             else if (newLocation != null)
             {
                 hasMoved = true;
-                Debug.WriteLine("Old Location: {0} {1}", mapLocation[0], mapLocation[1]);
                 RemoveDraw(mapLocation);
-                Debug.WriteLine("Visuals Removed");
                 mapLocation = newLocation;
-                Debug.WriteLine("New Location: {0} {1}", mapLocation[0], mapLocation[1]);
                 LocationUpdate();
-                Debug.WriteLine("Location Updated");
                 Draw();
-                Debug.WriteLine("Visuals Repainted");
             }
             else if (repaintLocation)
             {

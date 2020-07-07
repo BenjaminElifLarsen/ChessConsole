@@ -9,10 +9,9 @@ namespace Chess
     /// </summary>
     public class MapMatrix
     {
-        //all test variables and functions should be removed when the NetworkSupport and Network are fully working and well tested. 
         private static string[,] map = new string[8, 8];
         private static bool mapPrepared = false;
-        private static string[,] testMap = new string[8, 8]; //for testing purposes only.
+        private static string[,] oldMap = new string[8, 8]; //for testing purposes only.
         private MapMatrix() { }
 
         /// <summary>
@@ -43,17 +42,20 @@ namespace Chess
         /// <summary>
         /// Updates the old version of the map with the data of the current map.
         /// </summary>
-        public static void UpdateOldMap() //for testing only. 
+        public static void UpdateOldMap() 
         {
             for (int n = 0; n < 8; n++)
             {
                 for (int m = 0; m < 8; m++)
                 {
-                    testMap[n, m] = map[n, m];
+                    oldMap[n, m] = map[n, m];
                 }
             }
-            //return testMap;
         }
-        public static string[,] LastMoveMap { get => testMap; } //for testing only. 
+
+        /// <summary>
+        /// Returns the map of the last move.
+        /// </summary>
+        public static string[,] LastMoveMap { get => oldMap; }
     }
 }

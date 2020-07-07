@@ -207,7 +207,7 @@ namespace Chess
                         {
                             case "Accept Draw":
                                 GameStates.GameEnded = true;
-                                GameStates.Won = null;
+                                GameStates.VictoryType = null;
                                 break;
 
                             case "Decline Draw":
@@ -221,7 +221,7 @@ namespace Chess
 
                 case "Surrender":
                     GameStates.GameEnded = true;
-                    GameStates.Won = false;
+                    GameStates.VictoryType = false;
                     GameStates.WhiteWin = !white;
                     if (GameStates.IsOnline /*&& !GameStates.IsTurn*/)
                     {

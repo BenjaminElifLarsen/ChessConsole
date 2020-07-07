@@ -12,10 +12,7 @@ namespace Chess
         private ChessList() { }
         private static List<ChessPiece> chessListBlack = new List<ChessPiece>();
         private static List<ChessPiece> chessListWhite = new List<ChessPiece>();
-        //public static void SetChessListBlack(List<ChessPiece> list)
-        //{
-        //    chessListBlack = list;
-        //}
+
         /// <summary>
         /// Sets the chess pieces.
         /// </summary>
@@ -28,6 +25,7 @@ namespace Chess
             else
                 chessListBlack = list;
         }
+
         /// <summary>
         /// Returns a list depending on <paramref name="team"/>.
         /// </summary>
@@ -37,6 +35,7 @@ namespace Chess
         {
             return team == false ? chessListBlack : chessListWhite;
         }
+
         /// <summary>
         /// Empty both player chess piece lists. 
         /// </summary>

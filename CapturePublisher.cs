@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Text;
 
 namespace Chess
@@ -30,8 +29,6 @@ namespace Chess
         protected virtual void OnCapture(ControlEvents.CaptureEventArgs e)
         {
             captureEventHandler captureEventHandler = RaiseCaptureEvent;
-            var test = captureEventHandler.GetInvocationList();
-            Debug.WriteLine("" + test.Length);
             if (captureEventHandler != null)
                 captureEventHandler.Invoke(this, e);
         }

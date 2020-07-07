@@ -44,7 +44,7 @@ namespace Chess
         /// Calculates end locations and if legal add them to a list. 
         /// </summary>
         protected override void EndLocations()
-        { //there must be a better way to do this...
+        { 
             possibleEndLocations = new List<int[,]>();
             sbyte[] potenieltLocation = { -2, -1 }; //2 down left
             if (mapLocation[0] + potenieltLocation[0] >= 0 && mapLocation[1] + potenieltLocation[1] >= 0)

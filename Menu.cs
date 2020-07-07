@@ -150,7 +150,7 @@ namespace Chess
             byte GetNewSize()
             {
                 byte value;
-                string writtenValue = "";
+                string writtenValue;
                 string[] text = String.Format("Enter a square size. Value is limited to minimum of 1 and maximum of 9. {1} Default is 5. Current value is {0}. {1} Enter to confirm value.", Settings.SquareSize, Environment.NewLine).Split(' ');
                 string textOut = "";
                 ushort length = 0;
@@ -190,16 +190,6 @@ namespace Chess
         /// </summary>
         private void TestMenu()
         {
-            //Console.Clear();
-            //DelegateTest DT = new DelegateTest();
-
-            //DT.WriteOut("Test");
-            //DT.MathTest(2, 5, 1.1f, -5.2f, 5, 1, -10, 3);
-
-            //double result = DT.MathCalculator(5, 2, 5, 1, 2, 5);
-            //DT.WriteOut(DT.MathCalculator(5, -2, 1, 5, 2, -0.1).ToString());
-            //DT.WriteOutEvent();
-            //while (Console.ReadKey().Key != ConsoleKey.Enter) ;
 
         }
 
@@ -307,11 +297,14 @@ namespace Chess
             {
                 string ipAddress;
                 //ensure it is a proper address.
-                //set up and start the receiver
                 string ownIpAddress = Network.NetworkSupport.LocalAddress;
+
+                //sets up and starts the receiver
                 Network.Receive.ReceiveSetup(ownIpAddress);
                 Network.Receive.Start();
+
                 GameStates.NetSearch.Searching = true;
+
                 do
                 {
                     Console.Clear();
@@ -341,7 +334,7 @@ namespace Chess
                     //send ready data.
                     Network.Transmit.GeneralDataTransmission("ready", ipAddress, true);
 
-                    //starts game, string colour parameters that decide whoes get the first turn.
+                    //starts game, the string colour parameter decides who get the first turn.
                     bool firstMove = colour == "White" ? true : false;
                     GameStates.PlayerTeam = firstMove;
                     Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
@@ -406,6 +399,9 @@ namespace Chess
             PrintOutMenuExit();
         }
 
+        /// <summary>
+        /// Function that is used to prevent the exiting of the PrintOut() until the Settings.SelectKey is pressed. 
+        /// </summary>
         private void PrintOutMenuExit()
         {
             isActive = true;
@@ -504,18 +500,12 @@ namespace Chess
                                 property[0] = (char)((int)property[0] - 32);
                             string findProperty = new string(property);
                             Type setting = typeof(Settings);
-                            //Settings setting = new Settings(true);
-                            //addToString = setting.GetType().GetProperty(find).GetValue(setting).ToString();
                             try
                             {
 
                                 if (setting.GetProperty(findProperty).PropertyType.Name == "ConsoleKey")
                                     addToString = !isCapitalised ? setting.GetProperty(findProperty).GetValue(setting).ToString().ToLower() : setting.GetProperty(findProperty).GetValue(setting).ToString();
-                                //else if(setting.GetProperty(findProperty).PropertyType.Name == "Byte[]")
-                                //{
-                                //    byte[] offset = (byte[])setting.GetProperty(findProperty).GetValue(setting);
-                                //    addToString = "".PadLeft(offset[0] - 1);
-                                //}
+
                             }
                             catch (Exception e)
                             {
@@ -580,7 +570,7 @@ namespace Chess
                         newStr += " ";
                         stringLength += addToString.Length + 1;
                     }
-                    //Debug.WriteLine("String Width (word added): " + stringLength);
+
                     void SpecialEndSign(string wordToCheck)
                     {
 
@@ -630,8 +620,7 @@ namespace Chess
         /// <param name="options">String array of options.</param>
         /// <returns>Returns the selected option.</returns>
         private static string Interact(string[] options, string title = null)
-        { //used to move around in the displayed options. All it should do is being a function that checks if up/down key arrows are pressed and then 
-          //increase or decrease a variable used for the hoveredOverOption in Display().
+        { 
             Debug.WriteLine(GameStates.IsInMenu);
             Debug.WriteLine(title + ": Pre while");
             while (GameStates.IsInMenu) ;
@@ -662,7 +651,6 @@ namespace Chess
 
             bool Move()
             {
-                //ConsoleKeyInfo keyInfo = Console.ReadKey(true);
                 while ((int)key.Key == 0) ;
                 if (key.Key == Settings.UpKey && currentLocation > 0)
                 {
@@ -693,7 +681,6 @@ namespace Chess
             byte yOffSetSupport = 0;
             if (title != null)
             {
-                //Debug.WriteLine($"Title should be {title}");
                 if (titleOffset == null)
                 {
                     yOffSetSupport++;
@@ -722,9 +709,7 @@ namespace Chess
 
             void Paint(string option, byte[] colour)
             {
-                //Debug.WriteLine($"Printed out: {option}");
                 Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}" + Settings.CVTS.Reset, option);
-                //Thread.Sleep(1000);
             }
         }
 

@@ -21,7 +21,7 @@ namespace Chess
         protected bool isSelected = false;
         //protected byte squareSize = Settings.SquareSize;
         protected List<int[,]> possibleEndLocations = null;
-        protected string teamIcon; //come up with a better name
+        protected string teamIcon; 
         protected bool couldMove;
         protected bool specialBool;
         protected bool canPromoted;
@@ -94,7 +94,7 @@ namespace Chess
         /// <summary>
         /// Gets and set the ID of the chesspiece. //maybe have some code that ensures the ID is unique 
         /// </summary>
-        protected string ID { get => id; set => id = value; } //maybe split into two. Set being protected and the Get being public 
+        protected string ID { get => id; set => id = value; } 
 
         /// <summary>
         /// Returns the ID of the chess piece.
@@ -384,16 +384,7 @@ namespace Chess
             string feltID = MapMatrix.Map[locationToCheck[0], locationToCheck[1]];
             if (feltID != "")
                 if (teamIcon != feltID.Split(':')[0])
-                {
                     Publishers.PubCapture.Capture(feltID);
-                    //foreach (ChessPiece chessHostile in ChessList.GetList(!team))
-                    //{
-                    //    if (chessHostile.GetID == feltID)
-                    //    {
-                    //        chessHostile.Captured();
-                    //    }
-                    //}
-                }
         }
 
         /// <summary>
@@ -405,15 +396,8 @@ namespace Chess
         {
             cursorLocation = currentLocation;
             SquareHighLight(true, currentLocation);
-            //ConsoleKeyInfo keyInfo = new ConsoleKeyInfo();
-            //while (Console.KeyAvailable) //this should flush the keys
-            //{
-            //    Console.ReadKey(true);
-            //}
 
-            while (/*!Console.KeyAvailable*/ (int)key.Key == 0 && !GameStates.GameEnded) ;
-            //if (!GameStates.GameEnded) 
-            //    keyInfo = Console.ReadKey(true); //consider moving this and its variable into the if-statment below
+            while ((int)key.Key == 0 && !GameStates.GameEnded) ;
 
             while (GameStates.Pause) ;
 
@@ -451,7 +435,6 @@ namespace Chess
                     return true;
                 }
                 cursorLocation = currentLocation;
-                //SquareHighLight(true, currentLocation);
                 key = new ConsoleKeyInfo();
                 return false;
             }
@@ -598,8 +581,8 @@ namespace Chess
         protected byte[] PaintCalculations(out int drawLocationX, out int drawLocationY, int[] mapLoc)
         {
             int designSize = Design.Length;
-            drawLocationX = Location[0] + (int)(Settings.SquareSize - designSize) / 2; //consider a better way for this calculation, since if squareSize - designSize[n] does not equal an even number
-            drawLocationY = Location[1] + (int)(Settings.SquareSize - designSize) / 2; //there will be lost of precision and the piece might be drawned at a slightly off location
+            drawLocationX = Location[0] + (int)(Settings.SquareSize - designSize) / 2; 
+            drawLocationY = Location[1] + (int)(Settings.SquareSize - designSize) / 2; 
             int locationForColour = (mapLoc[0] + mapLoc[1]) % 2; //if zero, background colour is "white", else background colour is "black".
             byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
             return colours;
@@ -611,7 +594,7 @@ namespace Chess
         protected void PaintForeground()
         {
             byte[] colours = PaintCalculations(out int drawLocationX, out int drawLocationY, mapLocation);
-            for (int i = 0; i < design.Length; i++) //why does all the inputs, length, count and so on use signed variable types... 
+            for (int i = 0; i < design.Length; i++) 
             {
                 Console.SetCursorPosition(drawLocationX, drawLocationY + i);
                 Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + colours[0] + ";" + colours[1] + ";" + colours[2] + "m" + Settings.CVTS.ExtendedForegroundColour_RGB + colour[0] + ";" + colour[1] + ";" + colour[2] + "m{0}" + Settings.CVTS.Reset, design[i], colours);
@@ -624,7 +607,7 @@ namespace Chess
         protected void PaintBoth(bool otherPlayer = false)
         {
             byte[] backColours = PaintCalculations(out int drawLocationX, out int drawLocationY, mapLocation);
-            byte[] colours;// = Settings.SelectPieceColour;
+            byte[] colours;
             if (!otherPlayer)
                 colours = Settings.SelectPieceColour;
             else
@@ -669,7 +652,7 @@ namespace Chess
         /// Set a chesspeice set to be captured so it can be removed from the game and removes its visual representation. 
         /// </summary>
         public void Captured()
-        {//call by another piece, the one that captures this piece. 
+        { 
             hasBeenTaken = true;
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = "";
             RemoveDraw(mapLocation);

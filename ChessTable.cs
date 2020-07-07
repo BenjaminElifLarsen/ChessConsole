@@ -12,8 +12,6 @@ namespace Chess
     {
         private Player white;
         private Player black;
-        //private int[,] whiteSpawnLocation;
-        //private int[,] blackSpawnLocation;
         private int[] windowsSize = new int[2];
 
         public ChessTable()
@@ -63,7 +61,7 @@ namespace Chess
         /// Sets up the board and paint the outlines. 
         /// </summary>
         private static void BoardSetup()
-        {//8 squares in each direction. Each piece is 3*3 currently, each square is 5*5 currently. 
+        {
             Console.CursorVisible = false;
             ushort distance = (ushort)(9 + 8 * Settings.SquareSize);
             string[] letters = { "a", "b", "c", "d", "e", "f", "g", "h" };
@@ -199,7 +197,6 @@ namespace Chess
             }
         }
 
-
         /// <summary>
         /// Function that checks if the game has reached a draw. It wil lalso update the draw turn counter.
         /// </summary>
@@ -251,7 +248,7 @@ namespace Chess
             string endMessage = null;
             if (!GameStates.LostConnection)
             {
-                if (GameStates.Won == null)
+                if (GameStates.VictoryType == null)
                     endMessage = "The Game Ended in a Draw";
                 else
                 {
@@ -310,21 +307,18 @@ namespace Chess
             //game loop
             do
             {
-                //byte counter = 0;
-                //bool connectionExist;
                 if (GameStates.IsTurn) //only true when Network.Receive.ReceiveMapData has received map data from the other player' transmitter
                 {
                     GameStates.GameEnded = PlayerControlNet(starter);
                     GameStates.IsTurn = false;
                     if (GameStates.GameEnded && GameStates.LostConnection == false)
                     { //transmit a signal to the other player' receiver to let them know the game has ended. 
-                        if (GameStates.Won == null && !GameStates.OtherPlayerSurrendered)
+                        if (GameStates.VictoryType == null && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(6, Network.Transmit.OtherPlayerIpAddress); //Draw  //5 is loss for the other player, 4 is victory for the other player. 
-                        else if (GameStates.Won == true && !GameStates.OtherPlayerSurrendered)
+                        else if (GameStates.VictoryType == true && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(5, Network.Transmit.OtherPlayerIpAddress); //other player lost
-                        else if (GameStates.Won == false && !GameStates.OtherPlayerSurrendered)
+                        else if (GameStates.VictoryType == false && !GameStates.OtherPlayerSurrendered)
                             Network.Transmit.GeneralValueTransmission(4, Network.Transmit.OtherPlayerIpAddress); //other player won
-                        //Network.Receive.Stop();
                     }
                 }
                 else //not this computer's turn to move. 
@@ -420,11 +414,11 @@ namespace Chess
                 if (checkmate == true || draw || otherPlayerCheckMate == true)
                 {
                     if (draw)
-                        GameStates.Won = null;
+                        GameStates.VictoryType = null;
                     else if (checkmate == true) //this one would never be true as otherPlayerCheckMate will be true before this one can be true. 
-                        GameStates.Won = false;
+                        GameStates.VictoryType = false;
                     else if (otherPlayerCheckMate == true)
-                        GameStates.Won = true;
+                        GameStates.VictoryType = true;
                     return true;
                 }
                 if (!GameStates.GameEnded)
@@ -528,14 +522,14 @@ namespace Chess
                 if (checkmate)
                 {
                     GameStates.WhiteWin = team;
-                    GameStates.Won = true;
+                    GameStates.VictoryType = true;
                     return true;
                 }
 
                 draw = Draw(team, team);
                 if (draw)
                 {
-                    GameStates.Won = null;
+                    GameStates.VictoryType = null;
                     return true;
                 }
                 return false;
@@ -666,7 +660,6 @@ namespace Chess
                         hostileDiffernece = new int[] { hostileLocation[0] - pawn.GetMapLocation[0], hostileLocation[1] - pawn.GetMapLocation[1] };
                         if (keepKingSafe)
                             protectingPieces.Add(pawn.GetID);
-                        //if it is true, remove the (..., true) and just add it to the list in this if-statement.
                     }
 
                     if (mov[0] == 0 && keepKingSafe) //this means that the king is either above or below the pawn and thus can move. 
@@ -743,8 +736,6 @@ namespace Chess
                                     shouldCheck = false;
                                     break;
                                 }
-
-                                //shouldCheck = true;
                             }
                         }
                         else
@@ -752,7 +743,6 @@ namespace Chess
                     } while (shouldCheck);
                     return foundPiece;
                 }
-
             }
 
             void Protecting(ChessPiece pieces)
@@ -792,7 +782,6 @@ namespace Chess
                         toCheckFor.Add("2");
                         toCheckFor.Add("5");
                     }
-                    //int[] loc_ = new int[] { chepie.GetMapLocation[0], chepie.GetMapLocation[1] };
 
                     List<int[,]> endLocations = new List<int[,]>();
                     bool needToCheckOtherDirection = CheckFelts(mov, toCheckFor); //true if it find a hostile pice
@@ -808,7 +797,6 @@ namespace Chess
 
                                 CheckFelts(mov, toCheckFor, addLocationToDic: true);
                                 CheckFelts(new int[] { -mov[0], -mov[1] }, toCheckFor, addLocationToDic: true);
-                                //ProtectKing.ProtectingTheKing.Add(pieces.GetID, endLocations);
                                 break;
                             }
                         }
@@ -848,8 +836,8 @@ namespace Chess
                                                 if (addLocationToDic)
                                                     endLocations.Add(new int[,] { { loc_[0], loc_[1] } });
                                                 foundPiece = true;
-                                                shouldCheck = false; //maybe add a bool foundHostile and later if try, go through a similar loop, but add each location  
-                                                break; //if the piece can move in that direction //if foundHostile is true, check the other direction for any piece
+                                                shouldCheck = false;  
+                                                break; 
                                             }
                                         }
                                         shouldCheck = false;
@@ -859,8 +847,6 @@ namespace Chess
                                         shouldCheck = false;
                                         break;
                                     }
-
-                                    //shouldCheck = true;
                                 }
                                 else if (addLocationToDic && id == "")
                                 {
@@ -1029,7 +1015,6 @@ namespace Chess
                         if (feltID != "")
                             break;
                         KnightCanReach(newLocation, ref endLocations);
-                        //return true;
                         distance++;
                     }
                 }
@@ -1056,7 +1041,7 @@ namespace Chess
             }
 
             bool PawnCheck(int[] ownLocation, bool hasMoved, out List<int[,]> endLocations)
-            { //changes this one so it returns depends on endLocations to allow for multiple locations rather than one. 
+            { 
                 int direction = team ? -1 : 1;
                 int[] locationDifference = new int[] { ownLocation[0] - locations[0][0], ownLocation[1] - locations[0][1] };
                 endLocations = new List<int[,]>();
@@ -1141,7 +1126,7 @@ namespace Chess
             }
 
             bool QRBCheck(int[][] directions, int[] ownLocation, out List<int[,]> endLocations)
-            { //queen could save king, should have been able to take the hostile piece and stand between it and the king. However, it could only capture the hostile piece.
+            { 
                 endLocations = new List<int[,]>();
                 foreach (int[] dir in directions)
                 {
@@ -1175,8 +1160,8 @@ namespace Chess
                         else if (kingHostileDifference[0] < 0)//right
                             movement[0] = 1;
                         else
-                            movement[0] = 0; //this if-else statement and the one below, does not seem to work that well when the hostile piece is between the piece running this code and the king. 
-                                             //then again, this code should not be reached in that case and most likely only the bug that is causing it to be reached
+                            movement[0] = 0; 
+
                         if (kingHostileDifference[1] > 0)//up
                             movement[1] = -1;
                         else if (kingHostileDifference[1] < 0)//down
@@ -1192,7 +1177,6 @@ namespace Chess
                             if (feltID != "")
                                 break;
                             CanReach(dir, ownLocation, newLocation, ref endLocations);
-                            //return true;
                             distance++;
                         }
                     }
@@ -1208,7 +1192,7 @@ namespace Chess
                 bool index1Sign; bool index2Sign; bool diagonal; bool straight;
 
                 int[] locationDifference = new int[] { ownLocation[0] - toEndOnLocation[0], ownLocation[1] - toEndOnLocation[1] };  //negative right/down, positve left/up
-                if (locationDifference[0] != 0 && dir[0] != 0) //find a way to make this look better
+                if (locationDifference[0] != 0 && dir[0] != 0) 
                 {
                     int sign = locationDifference[0] / dir[0];
                     index1Sign = sign > 0 ? false : true; //if above zero, the signs are the same. Different signs will give a negative result. The piece can only reach the toEndOnLocation if the signs are different. 
@@ -1261,8 +1245,8 @@ namespace Chess
 
                     int[] currentLocation = new int[] { ownLocation[0], ownLocation[1] };
                     int locationsRemaining = Math.Abs(locationDifference[0]) > Math.Abs(locationDifference[1]) ? Math.Abs(locationDifference[0]) : Math.Abs(locationDifference[1]);
-                    string feltID = ""; //maybe have a setting for the default value on the map
-                    while (locationsRemaining != 0) //rewrite all of this, also write better comments for the future
+                    string feltID = ""; 
+                    while (locationsRemaining != 0) //write better comments for the future
                     {
                         currentLocation[0] += dir[0];
                         currentLocation[1] += dir[1];
@@ -1334,9 +1318,5 @@ namespace Chess
 
             ChessList.SetChessList(chessPieces, white);
         }
-        //protected void KeyEventHandler(object sender, ControlEvents e)
-        //{
-
-        //}
     }
 }

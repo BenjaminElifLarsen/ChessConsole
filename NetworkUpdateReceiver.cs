@@ -8,7 +8,7 @@ namespace Chess
     /// <summary>
     /// 
     /// </summary>
-    class NetworkUpdateReceiver //rename
+    class NetworkUpdateReceiver 
     {
         /// <summary>
         /// 
@@ -33,7 +33,7 @@ namespace Chess
             if (e.GameEnded == true)
             {
                 GameStates.WhiteWin = e.WhiteWon != null ? (bool)e.WhiteWon : GameStates.WhiteWin;
-                GameStates.Won = e.Won;
+                GameStates.VictoryType = e.Won;
                 GameStates.OtherPlayerSurrendered = e.OtherPlayerSurrendered != null ? (bool)e.OtherPlayerSurrendered : GameStates.OtherPlayerSurrendered;
                 GameStates.GameEnded = e.GameEnded != null ? (bool)e.GameEnded : GameStates.GameEnded;
             }
