@@ -1394,7 +1394,7 @@ namespace Chess
                 while (data == null) {
                     //wats on a requist for connection
                     while (!receiver.Pending()) ;
-                        Connection(); //maybe thread this. 
+                        data = Connection(); //maybe thread this. 
                 }
 
                 ////accepts the client and gets its stream. 
