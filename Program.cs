@@ -103,6 +103,10 @@ namespace Chess
         /// </summary>
         public static void RemoveAllPieces()
         {
+            foreach (ChessPiece chePie in chessListBlack)
+                chePie.RemoveSubscriptions();
+            foreach (ChessPiece chePie in chessListWhite)
+                chePie.RemoveSubscriptions();
             chessListBlack = null;
             chessListWhite = null;
         }
@@ -567,7 +571,7 @@ namespace Chess
         /// </summary>
         public static CapturePublisher PubCapture { get => pubCapture; }
         /// <summary>
-        /// Ensures that the publisher instant is not null if it is null.
+        /// Ensures that the key publisher instant is not null if it is null.
         /// </summary>
         public static void SetKeyClass()
         {
@@ -575,7 +579,7 @@ namespace Chess
                 pubKey = new KeyPublisher();
         }
         /// <summary>
-        /// 
+        /// Ensures that the net publisher instant is not null if it is null.
         /// </summary>
         public static void SetNetClass()
         {
@@ -583,7 +587,7 @@ namespace Chess
                 pubNet = new NetPublisher();
         }
         /// <summary>
-        /// 
+        /// Ensures that the capture publisher instant is not null if it is null.
         /// </summary>
         public static void SetCaptureClass()
         {
@@ -593,7 +597,7 @@ namespace Chess
     }
 
     /// <summary>
-    /// 
+    /// Contains all the game states. 
     /// </summary>
     public class GameStates
     {
@@ -724,7 +728,7 @@ namespace Chess
                 Key = key;
             }
             /// <summary>
-            /// 
+            /// Gets and sets the consoleKeyInfo key. 
             /// </summary>
             public ConsoleKeyInfo Key { get; set; }
         }
@@ -735,15 +739,15 @@ namespace Chess
         public class CaptureEventArgs
         {
             /// <summary>
-            /// 
+            /// Base constructor for the string ID event data.
             /// </summary>
-            /// <param name="ID"></param>
+            /// <param name="ID">The ID to be transmitted.</param>
             public CaptureEventArgs(string ID)
             {
                 this.ID = ID;
             }
             /// <summary>
-            /// 
+            /// Get and sets the string ID
             /// </summary>
             public string ID { get; set; }
         }
@@ -948,15 +952,24 @@ namespace Chess
 
         public event captureEventHandler RaiseCaptureEvent;
 
+        /// <summary>
+        /// Should be called with the <paramref name="ID"/> of a captured piece to ensure the captured piece is removed.
+        /// </summary>
+        /// <param name="ID">The ID of the captured piece.</param>
         public void Capture(string ID)
         {
             OnCapture(new ControlEvents.CaptureEventArgs(ID));
         }
 
+        /// <summary>
+        /// Invokes the event RaiseCaptureEvent.
+        /// </summary>
+        /// <param name="e"></param>
         protected virtual void OnCapture(ControlEvents.CaptureEventArgs e)
         {
             captureEventHandler captureEventHandler = RaiseCaptureEvent;
             var test = captureEventHandler.GetInvocationList();
+            Debug.WriteLine(""+test.Length);
             if (captureEventHandler != null)
                 captureEventHandler.Invoke(this, e);
         }
@@ -5893,7 +5906,7 @@ namespace Chess
             Colour = colour_;
             SetTeam(team_);
             MapLocation = mapLocation_;
-            this.ID = ID; //String.Format("{0}n:{1}", team, i); team = team_ == true ? "-" : "+"; n being the chesspiece type
+            this.ID = ID; 
             LocationUpdate();
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = ID;
             teamIcon = ID.Split(':')[0];
@@ -5905,7 +5918,7 @@ namespace Chess
         /// <summary>
         /// Returns a bool that indicate if this piece has been captured by another player's piece. 
         /// </summary>
-        public bool BeenCaptured { get => hasBeenTaken; } //use by other code to see if the piece have been "taken" and should be removed from game. 
+        public bool BeenCaptured { get => hasBeenTaken; } //use by other code to see if the piece have been "captured" and should be removed from game. 
 
         /// <summary>
         /// Gets and sets the location of the chesspiece on the console.  
@@ -5914,15 +5927,11 @@ namespace Chess
         {
             set
             {
-                Debug.WriteLine(ID + " set before: " + location[0] + " " +  location[1]);
                 location = value;
-                Debug.WriteLine(ID + " set after: " + location[0] + " " + location[1]);
             }
             get
             {
-                Debug.WriteLine(ID + " get before: " + location[0] + " " + location[1]);
                 int[] loc = new int[2] { location[0], location[1] };
-                Debug.WriteLine(ID + " get after: " + location[0] + " " + location[1]);
                 return loc;
             }
 
@@ -6145,7 +6154,6 @@ namespace Chess
                 Captured();
                 Debug.WriteLine($"{ID} Captured");
             }
-                //Taken();
             else if (newLocation != null)
             {
                     Debug.WriteLine("Old Location: {0} {1}", mapLocation[0],mapLocation[1]);
@@ -6491,7 +6499,6 @@ namespace Chess
             }
         }
 
-
         /// <summary>
         /// Removes the visual identication of a chesspiece at its current location.
         /// </summary>
@@ -6523,14 +6530,12 @@ namespace Chess
         /// <summary>
         /// Set a chesspeice set to be captured so it can be removed from the game and removes its visual representation. 
         /// </summary>
-        public void Captured() //consider making a delegate/event with this. If a piece capture another, send out an event with the captured piece's ID, all pieces are subscribed to the event. 
+        public void Captured() 
         {//call by another piece, the one that captures this piece. 
-            Debug.WriteLine("Captured Function 1 " + this.ID + ": " + location[0] + " " + location[1]);
             hasBeenTaken = true;
             MapMatrix.Map[mapLocation[0], mapLocation[1]] = "";
-            Debug.WriteLine("Captured Function 2 " + this.ID + ": " + location[0] + " " + location[1]);
             RemoveDraw(mapLocation);
-            Publishers.PubCapture.RaiseCaptureEvent -= CaptureEventHandler;
+            RemoveSubscriptions();
         }
 
         /// <summary>
@@ -6649,19 +6654,23 @@ namespace Chess
         }
 
         /// <summary>
-        /// 
+        /// If a piece shares the ID with the value in <paramref name="e"/> it will runs its capture code. 
         /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
+        /// <param name="sender">The object that invoked the event.</param>
+        /// <param name="e">The parameter containing the variables and their values of ControlEvents.CaptureEventArgs</param>
         protected void CaptureEventHandler(object sender, ControlEvents.CaptureEventArgs e)
         {
-            Debug.WriteLine("Captured Event " + this.ID + ": " + location[0] + " " + location[1]);
             if (e.ID == ID)
-            {
-                Debug.WriteLine("Captured Event Before " + this.ID + ": " + location[0] + " " + location[1]);
                 Captured();
-                Debug.WriteLine("Captured Event After " + this.ID +": " + location[0] + " " + location[1]);
-            }
+        }
+
+        /// <summary>
+        /// Removes all subscriptions.
+        /// </summary>
+        public void RemoveSubscriptions()
+        {
+            Publishers.PubCapture.RaiseCaptureEvent -= CaptureEventHandler;
+            Publishers.PubKey.RaiseKeyEvent -= KeyEventHandler;
         }
 
     }
