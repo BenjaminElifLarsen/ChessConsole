@@ -1447,6 +1447,7 @@ namespace Chess
                         networkStream.Read(receivedData, 0, receivedData.Length);
                         uint response = 0;
                         Converter.Conversion.ByteConverterToInterger(receivedData, ref response);
+                        Debug.WriteLine(response.ToString());
                         if (response == 1)
                             return null;
                     }
