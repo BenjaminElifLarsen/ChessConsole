@@ -1249,7 +1249,7 @@ namespace Chess
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
             public static bool GeneralDataTransmission(string data, string ipAddress)
             {
-                Debug.WriteLine("Transmission: {0}", data);
+                Debug.WriteLine("Transmission: " + data);
                 try
                 {
                     byte[] reply = new byte[1];
@@ -1386,7 +1386,7 @@ namespace Chess
                 //converts it to a string
                 string data = Converter.Conversion.ByteArrayToASCII(receivedData);
 
-                Debug.WriteLine("Received: {0}",data);
+                Debug.WriteLine("Received: " + data);
 
                 //writes an answer back, so the transmitter knows it can stop.
                 networkStream.Write(new byte[] { 2 }, 0, 1);
@@ -2520,9 +2520,13 @@ namespace Chess
         /// <returns>Returns the selected option.</returns>
         private static string Interact(string[] options, string title = null)
         { //used to move around in the displayed options. All it should do is being a function that checks if up/down key arrows are pressed and then 
-            //increase or decrease a variable used for the hoveredOverOption in Display().
+          //increase or decrease a variable used for the hoveredOverOption in Display().
+            Debug.WriteLine(GameStates.IsInMenu);
+            Debug.WriteLine(title + ": Pre while");
             while (GameStates.IsInMenu) ;
+            Debug.WriteLine(title + ": Post while");
             GameStates.IsInMenu = true;
+            Debug.WriteLine(GameStates.IsInMenu);
             bool selected = false;
             byte currentLocation = 0;
             string answer = null;
@@ -2542,6 +2546,7 @@ namespace Chess
             } while (!selected);
             isActive = false;
             GameStates.IsInMenu = false;
+            Debug.WriteLine(title + ": Closing");
             return answer;
 
             bool Move()
