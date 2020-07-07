@@ -6087,7 +6087,6 @@ namespace Chess
 
                 if (resizedDesign.Length > 1) 
                 {
-                    //figure out if there are strings above and/or below the most significant string
                     byte belowStringAmount = (byte)(design.Length - (mostImportantDesignPart[1] + 1)); //the amount of strings below
                     byte aboveStringAmount = (byte)(design.Length - belowStringAmount - 1); //the -1 is the most important string
                     sbyte direction = belowStringAmount >= aboveStringAmount ? (sbyte)1 : (sbyte)-1;
