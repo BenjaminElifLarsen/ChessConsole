@@ -614,6 +614,7 @@ namespace Chess
         private static bool nonTurnWin;
         private static bool? playerTeam = null;
         private static bool lostConnection;
+        private static bool isInMenu;
 
         /// <summary>
         /// True if it is player turn, else false.
@@ -651,6 +652,10 @@ namespace Chess
         /// True if the connect is lost and the game ends.
         /// </summary>
         public static bool LostConnection { get => lostConnection; set => lostConnection = value; }
+        /// <summary>
+        /// True if a menu is running, else false.
+        /// </summary>
+        public static bool IsInMenu { get => isInMenu; set => isInMenu = value; }
         /// <summary>
         /// Sets and gets the number of chespieces. [0,~] is white. [1,~] is black. [~,0] is new value. [~,1] is old value.
         /// </summary>
@@ -2516,6 +2521,8 @@ namespace Chess
         private static string Interact(string[] options, string title = null)
         { //used to move around in the displayed options. All it should do is being a function that checks if up/down key arrows are pressed and then 
             //increase or decrease a variable used for the hoveredOverOption in Display().
+            while (GameStates.IsInMenu) ;
+            GameStates.IsInMenu = true;
             bool selected = false;
             byte currentLocation = 0;
             string answer = null;
@@ -2534,6 +2541,7 @@ namespace Chess
                 key = new ConsoleKeyInfo();
             } while (!selected);
             isActive = false;
+            GameStates.IsInMenu = false;
             return answer;
 
             bool Move()
@@ -3460,43 +3468,7 @@ namespace Chess
                         }
                         ProtectKing.ProtectingTheKing.Add(pieces.GetID, endLocations);
                     }
-                    //bool foundHostile = false;
-                    //bool shouldCheck = true;
-                    //do
-                    //{
-                    //    loc_[0] += mov[0];
-                    //    loc_[1] += mov[1];
-                    //    if ((loc_[0] <= 7 && loc_[0] >= 0) && (loc_[1] <= 7 && loc_[1] >= 0))
-                    //    {
-                    //        string id = MapMatrix.Map[loc_[0], loc_[1]];
-                    //        if (id != "")
-                    //        {
-                    //            string[] IDparts = id.Split(':');
-                    //            if (IDparts[0] != chepie.GetID.Split(':')[0])
-                    //            {
-                    //                foreach (string checkFor in toCheckFor)
-                    //                {
-                    //                    if (checkFor == IDparts[1])
-                    //                    {
-                    //                        protectingPieces.Add(chepie.GetID);
-                    //                        foundHostile = true;
-                    //                        shouldCheck = false; //maybe add a bool foundHostile and later if try, go through a similar loop, but add each location  
-                    //                        break; //if the piece can move in that direction //if foundHostile is true, check the other direction for any piece
-                    //                    }
-                    //                }
-                    //            }
-                    //            else
-                    //            {
-                    //                shouldCheck = false;
-                    //                break;
-                    //            }
 
-                    //            //shouldCheck = true;
-                    //        }
-                    //    }
-                    //    else
-                    //        shouldCheck = false;
-                    //} while (shouldCheck);
                     bool CheckFelts(int[] mov_, List<string> lookFor, bool addToList = false, bool addLocationToDic = false)
                     { //does not work with pawn movement
                         int[] loc_ = new int[] { pieces.GetMapLocation[0], pieces.GetMapLocation[1] };
@@ -3568,7 +3540,7 @@ namespace Chess
         /// <returns>True if the king is checkmated, else false</returns>
         private bool CheckmateChecker(bool team)
         {
-            return CheckmateChecker(team, out List<string> canProtectKing);
+            return CheckmateChecker(team, out _);
         }
 
         /// <summary>
@@ -3883,7 +3855,6 @@ namespace Chess
                     return true;
                 else
                     return false;
-
             }
 
             bool CanReach(int[] dir, int[] ownLocation, int[] toEndOnLocation, ref List<int[,]> endLocations)
