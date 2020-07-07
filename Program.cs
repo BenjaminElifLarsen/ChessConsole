@@ -1254,7 +1254,7 @@ namespace Chess
             /// </summary>
             /// <param name="data">String to transmit.</param>
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
-            public static bool GeneralDataTransmission(string data, string ipAddress)
+            public static bool GeneralDataTransmission(string data, string ipAddress, bool sentResponse = false)
             {
                 Debug.WriteLine("Transmission: " + data);
                 try
@@ -1264,6 +1264,12 @@ namespace Chess
                     //connect to server
                     TransmitSetup(ipAddress);
                     NetworkStream networkStream = transmitter.GetStream();
+
+                    if (sentResponse)
+                    {
+                        Converter.Conversion.ValueToBitArrayQuick(2, out byte[] byteArray);
+                        networkStream.Write(byteArray, 0, byteArray.Length);
+                    }
 
                     //read data
                     networkStream.Read(reply, 0, reply.Length);
@@ -1374,7 +1380,7 @@ namespace Chess
             /// Waits on a client to connect and transmit data. The data is then converted into a ASCII string. //rewrite
             /// </summary>
             /// <returns>Returns an ASCII string received from a client.</returns>
-            public static string GeneralDataReception()
+            public static string GeneralDataReception(bool WaitOnResponse = false)
             {
                 /* Client connect to server. 
                  * Waits on answer from the server
@@ -1383,45 +1389,99 @@ namespace Chess
                  * Receiver transmit an answer and the function returns the string. 
                  * Client reads the answer and the function returns "true"
                  */
+                string data = null;
 
-                //wats on a requist for connection
-                while (!receiver.Pending()) ;
+                while (data == null) {
+                    //wats on a requist for connection
+                    while (!receiver.Pending()) ;
+                        Connection(); //maybe thread this. 
+                }
 
-                //accepts the client and gets its stream. 
-                TcpClient client = receiver.AcceptTcpClient();
-                NetworkStream networkStream = client.GetStream();
-                byte[] receivedData;
+                ////accepts the client and gets its stream. 
+                //TcpClient client = receiver.AcceptTcpClient(); //consider putting anything after the while(...) above into a nested function that can be called via a thread. 
+                ////Make it such that it got a bool that if true will make it read from the data stream first before running the rest of the code. 
+                ////if the data is 1, ignore it, else it is the joiner and thus it needs to run the rest of the code. 
+                //NetworkStream networkStream = client.GetStream();
+                //byte[] receivedData;
 
-                //writes to the client so it knows a connection has been established.
-                networkStream.Write(new byte[] { 0 }, 0, 1);
+                ////writes to the client so it knows a connection has been established.
+                //networkStream.Write(new byte[] { 0 }, 0, 1);
 
-                //reads data that states the length of the string that is going to be transmitted
-                receivedData = new byte[4];
-                networkStream.Read(receivedData, 0, receivedData.Length);
-                uint dataLength = 0;
-                Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
-                
-                //writes an answer so the transmitter knows it can transmit the string byte array.
-                networkStream.Write(new byte[] { 1 }, 0, 1);
+                ////reads data that states the length of the string that is going to be transmitted
+                //receivedData = new byte[4];
+                //networkStream.Read(receivedData, 0, receivedData.Length);
+                //uint dataLength = 0;
+                //Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
 
-                //reads string data sent by the client 
-                receivedData = new byte[dataLength];
-                networkStream.Read(receivedData, 0, receivedData.Length);
+                ////writes an answer so the transmitter knows it can transmit the string byte array.
+                //networkStream.Write(new byte[] { 1 }, 0, 1);
 
-                //converts it to a string
-                string data = Converter.Conversion.ByteArrayToASCII(receivedData);
+                ////reads string data sent by the client 
+                //receivedData = new byte[dataLength];
+                //networkStream.Read(receivedData, 0, receivedData.Length);
 
-                Debug.WriteLine("Received: " + data);
+                ////converts it to a string
+                //string data = Converter.Conversion.ByteArrayToASCII(receivedData);
 
-                //writes an answer back, so the transmitter knows it can stop.
-                networkStream.Write(new byte[] { 2 }, 0, 1);
+                //Debug.WriteLine("Received: " + data);
 
-                //close connections
-                networkStream.Close();
-                client.Close();
+                ////writes an answer back, so the transmitter knows it can stop.
+                //networkStream.Write(new byte[] { 2 }, 0, 1);
 
-                //returns the string 
+                ////close connections
+                //networkStream.Close();
+                //client.Close();
+
+                ////returns the string 
                 return data;
+
+                string Connection()
+                {
+                    TcpClient client = receiver.AcceptTcpClient();
+                    NetworkStream networkStream = client.GetStream();
+                    byte[] receivedData;
+
+                    if (WaitOnResponse)
+                    {
+                        receivedData = new byte[4];
+                        networkStream.Read(receivedData, 0, receivedData.Length);
+                        uint response = 0;
+                        Converter.Conversion.ByteConverterToInterger(receivedData, ref response);
+                        if (response == 1)
+                            return null;
+                    }
+
+                    //writes to the client so it knows a connection has been established.
+                    networkStream.Write(new byte[] { 0 }, 0, 1);
+
+                    //reads data that states the length of the string that is going to be transmitted
+                    receivedData = new byte[4];
+                    networkStream.Read(receivedData, 0, receivedData.Length);
+                    uint dataLength = 0;
+                    Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
+
+                    //writes an answer so the transmitter knows it can transmit the string byte array.
+                    networkStream.Write(new byte[] { 1 }, 0, 1);
+
+                    //reads string data sent by the client 
+                    receivedData = new byte[dataLength];
+                    networkStream.Read(receivedData, 0, receivedData.Length);
+
+                    //converts it to a string
+                    string data = Converter.Conversion.ByteArrayToASCII(receivedData);
+
+                    Debug.WriteLine("Received: " + data);
+
+                    //writes an answer back, so the transmitter knows it can stop.
+                    networkStream.Write(new byte[] { 2 }, 0, 1);
+
+                    //close connections
+                    networkStream.Close();
+                    client.Close();
+
+                    //returns the string 
+                    return data;
+                }
             }
 
             /// <summary>
@@ -2194,7 +2254,7 @@ namespace Chess
                     Network.Transmit.GeneralDataTransmission(colour, ipAddressJoiner);
 
                     //wait on response from the player joined to ensure they are ready.
-                    string response = Network.Receive.GeneralDataReception();
+                    string response = Network.Receive.GeneralDataReception(true);
 
                     //starts game, string colour parameters that decide whoes get the first turn.
                     if (response == "ready")
@@ -2253,7 +2313,7 @@ namespace Chess
                     string colour = colourHost == "White" ? "Black" : "White";
 
                     //send ready data.
-                    Network.Transmit.GeneralDataTransmission("ready", ipAddress);
+                    Network.Transmit.GeneralDataTransmission("ready", ipAddress, true);
 
                     //starts game, string colour parameters that decide whoes get the first turn.
                     bool firstMove = colour == "White" ? true : false;
