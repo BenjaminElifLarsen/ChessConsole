@@ -1039,13 +1039,20 @@ namespace Chess
             /// </summary>
             /// <param name="IPaddress">The IP address to connect too.</param>
             /// <returns>Returns true if it can connect to <paramref name="IPaddress"/>, else false.</returns>
-            public static bool TransmitSetup(string IPaddress)
+            public static bool TransmitSetup(string IPaddress, bool transmit = false)
             {
                 try
                 {
                     int port = 23000;
                     IPAddress transmitterAddress = IPAddress.Parse(IPaddress);
                     transmitter = new TcpClient(IPaddress, port);
+                    if (transmit)
+                    {
+                        NetworkStream networkStream = transmitter.GetStream();
+                        Converter.Conversion.ValueToBitArrayQuick(2, out byte[] dataArray);
+                        networkStream.Write(dataArray, 0, dataArray.Length);
+                        networkStream.Close();
+                    }
                     return true;
                 }
                 catch (Exception e)
@@ -1327,20 +1334,38 @@ namespace Chess
             /// If the search for a player is aborted, it will return null.
             /// </summary>
             /// <returns>Returns the IP address of the client. If the search for a player is aborted, returns null.</returns>
-            public static string GetConnectionIpAddress() 
+            public static string GetConnectionIpAddress(bool waitOnResponse = false) 
             {
-                while (!receiver.Pending() && !GameStates.NetSearch.Abort)
-                {
+                bool received = true;
+                while(received) { 
+                    while (!receiver.Pending() && !GameStates.NetSearch.Abort)
+                    {
 
-                }
-                if (!GameStates.NetSearch.Abort)
-                {
-                    TcpClient client = receiver.AcceptTcpClient();
-                    string endPoint = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
-                    client.Close();
-                    GameStates.NetSearch.Searching = false;
-                    Debug.WriteLine(endPoint);
-                    return endPoint;
+                    }
+                    if (!GameStates.NetSearch.Abort)
+                    {
+                        TcpClient client = receiver.AcceptTcpClient();
+                        string endPoint = ((IPEndPoint)client.Client.RemoteEndPoint).Address.ToString();
+                        if (waitOnResponse)
+                        {
+                            NetworkStream networkStream = client.GetStream();
+                            byte[] dataArray = new byte[4];
+                            networkStream.Read(dataArray, 0, dataArray.Length);
+                            int data = 0;
+                            Converter.Conversion.ByteConverterToInterger(dataArray, ref data);
+                            if (data == 1)
+                                received = false;
+                            else
+                                received = true;
+                            networkStream.Close();
+                        }
+                        client.Close();
+                        if (received) { 
+                            GameStates.NetSearch.Searching = false;
+                            Debug.WriteLine(endPoint);
+                            return endPoint;
+                        }
+                    }
                 }
                 return null;
             }
@@ -2148,7 +2173,7 @@ namespace Chess
 
                 //waits on the joiner to connect to the receiver so their IP-address is arquired to ensure data can be transmitted to their receiver.  
                 //Network.Receive.GetConnectionIpAddress() loops until Network.Transmit.TransmitSetup(ipAddress) in Join() has ran or GameStates.NetSeach.Abort is true.
-                string ipAddressJoiner = Network.Receive.GetConnectionIpAddress();
+                string ipAddressJoiner = Network.Receive.GetConnectionIpAddress(true);
 
                 //if not aborted, run the rest of the set-up.
                 if (!GameStates.NetSearch.Abort)
@@ -2216,7 +2241,7 @@ namespace Chess
                         GameStates.NetSearch.Abort = true;
                     Network.Transmit.OtherPlayerIpAddress = ipAddress;
                     Console.CursorVisible = false;
-                } while (!GameStates.NetSearch.Abort && !Network.Transmit.TransmitSetup(ipAddress)); //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
+                } while (!GameStates.NetSearch.Abort && !Network.Transmit.TransmitSetup(ipAddress,true)); //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
 
                 if (!GameStates.NetSearch.Abort)
                 {
