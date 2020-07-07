@@ -1493,7 +1493,7 @@ namespace Chess
                         int type = 0;
                         Converter.Conversion.ByteConverterToInterger(typeOfTransmission, ref type);
 
-                        Debug.WriteLine("Received data: {0}", type);
+                        Debug.WriteLine("Received data: " + type);
 
                         if (type == 1)
                         {//connected client is about to transmit map data
@@ -2958,6 +2958,7 @@ namespace Chess
             connectionThread.Start(Network.Transmit.OtherPlayerIpAddress);
 
             GameStates.IsTurn = starter;
+            GameStates.LostConnection = false; //added for testing. 
             GameStates.IsOnline = true;
             GameStates.PieceAmount[0, 0] = (byte)ChessList.GetList(true).Count;
             GameStates.PieceAmount[0, 1] = (byte)ChessList.GetList(true).Count;
