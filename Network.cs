@@ -113,8 +113,8 @@ namespace Chess
 
                     Thread.Sleep(1);
                 } while (!GameStates.GameEnded && isConnected && counter < maxValue);
-                GameStates.LostConnection = isConnected;
-                GameStates.GameEnded = true;
+                GameStates.LostConnection = isConnected; //perhaps have a if(!GameStates.GameEnded) above, maybe it could help? Hard to say, not fully sure what is causing the connection lost upon start
+                GameStates.GameEnded = true; //also needs to call the events instead of calling the variables directly. Forgot about this function when I made the switch.
                 if (GameStates.PlayerTeam == false)
                     GameStates.TurnCounter++;
                 void Run()
@@ -123,6 +123,7 @@ namespace Chess
                     {
                         oldTime = DateTime.Now;
                         isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
+                        Debug.WriteLine(isConnected.ToString());
                         Thread.Sleep(maxValue / 2);
                     } while (!GameStates.GameEnded && isConnected);
                 }
@@ -591,29 +592,30 @@ namespace Chess
                             string[] drawOptions = { "Accept Draw", "Decline Draw" };
                             string title = "Other play ask for draw";
                             string answer = Menu.MenuAccess(drawOptions, title);
-                            switch (answer)
-                            { //the transmitter answer will need to be transmitted by the GeneralValueTransmission since the ReceiveGameLoop will receive the data
-                                case "Accept Draw":
+                            if(!GameStates.LostConnection)
+                                switch (answer)
+                                { //the transmitter answer will need to be transmitted by the GeneralValueTransmission since the ReceiveGameLoop will receive the data
+                                    case "Accept Draw":
 
-                                    //update the turn counter if black player
-                                    if (GameStates.PlayerTeam == false)
-                                        GameStates.TurnCounter++;
-                                    Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null, otherPlayerSurrendered: true);
+                                        //update the turn counter if black player
+                                        if (GameStates.PlayerTeam == false)
+                                            GameStates.TurnCounter++;
+                                        Publishers.PubNet.TransmitAnyData(gameEnded: true, won: null, otherPlayerSurrendered: true);
 
-                                    //transmit answer
-                                    Transmit.GeneralValueTransmission(30, Transmit.OtherPlayerIpAddress);
-                                    break;
+                                        //transmit answer
+                                        Transmit.GeneralValueTransmission(30, Transmit.OtherPlayerIpAddress);
+                                        break;
 
-                                case "Decline Draw":
-                                    //transmit answer
-                                    Transmit.GeneralValueTransmission(31, Transmit.OtherPlayerIpAddress);
+                                    case "Decline Draw":
+                                        //transmit answer
+                                        Transmit.GeneralValueTransmission(31, Transmit.OtherPlayerIpAddress);
 
-                                    //redraw map and pieces.
-                                    Console.Clear();
-                                    ChessTable.RepaintBoardAndPieces();
-                                    NetworkSupport.RepaintEndLocation((bool)team);
-                                    break;
-                            }
+                                        //redraw map and pieces.
+                                        Console.Clear();
+                                        ChessTable.RepaintBoardAndPieces();
+                                        NetworkSupport.RepaintEndLocation((bool)team);
+                                        break;
+                                }
                             Publishers.PubNet.Pause(false);
                         }
                         else if (type == 4) //this player is victory
