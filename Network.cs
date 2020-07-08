@@ -39,7 +39,7 @@ namespace Chess
          * https://www.codeproject.com/Articles/10649/An-Introduction-to-Socket-Programming-in-NET-using
          * https://www.c-sharpcorner.com/article/socket-programming-in-C-Sharp/
          */
-        static TcpClient transmitter = null;
+        //static TcpClient transmitter = null;
         static TcpListener receiver = null;
 
         /// <summary>
@@ -59,7 +59,7 @@ namespace Chess
             /// </summary>
             /// <param name="IPaddress">The IP address to connect too.</param>
             /// <returns>Returns true if it can connect to <paramref name="IPaddress"/>, else false.</returns>
-            public static bool TransmitSetup(string IPaddress, bool transmit = false)
+            public static bool TransmitSetup(string IPaddress, out TcpClient transmitter, bool transmit = false)
             {
                 try
                 {
@@ -88,6 +88,7 @@ namespace Chess
                         GameStates.LostConnection = true;
                         GameStates.GameEnded = true;
                     }
+                    transmitter = null;
                     return false;
                 }
 
@@ -136,6 +137,7 @@ namespace Chess
             /// </summary>
             public static bool TransmitMapData(string ipAddress)
             {
+                TcpClient transmitter = null;
                 //should it only allow IPv4 or also IPv6?
                 try //is it better to use Socket or TcpListiner/TcpClient?
                 { // https://docs.microsoft.com/en-us/dotnet/api/system.net.sockets.networkstream?view=netcore-3.1
@@ -147,7 +149,7 @@ namespace Chess
                     short receptionAnswer = -1;
 
                     //contacts the receiver of the other player. 
-                    TransmitSetup(ipAddress);
+                    TransmitSetup(ipAddress, out transmitter);
 
                     //converts the map to a string.
                     string mapData = NetworkSupport.MapToStringConvertion();
@@ -193,7 +195,8 @@ namespace Chess
                 catch (ObjectDisposedException e) //this should only be entered if the receiver has been shut down... I think
                 {
                     Debug.WriteLine(e);
-                    transmitter.Close();
+                    if(transmitter != null)
+                        transmitter.Close();
 
                     Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
@@ -201,7 +204,8 @@ namespace Chess
                 catch (Exception e)
                 { //what to do if this is entered?
                     Debug.WriteLine(e);
-
+                    if (transmitter != null)
+                        transmitter.Close();
                     Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
                 }
@@ -220,16 +224,18 @@ namespace Chess
             /// If <paramref name="waitOnAnswer"/> is true, it will return true if it receives an answer back, else it will return false.</returns>
             public static bool GeneralValueTransmission(int data, string ipAddress, bool waitOnAnswer = false)
             {
+                TcpClient transmitter = null;
                 Debug.WriteLine("Data transmission: " + data);
                 bool returnValue;
                 try
                 {
-                    TransmitSetup(ipAddress);
+                    TransmitSetup(ipAddress, out transmitter);
                     Converter.Conversion.ValueToBitArrayQuick(data, out byte[] dataArray);
                     NetworkStream networkStream = transmitter.GetStream();
                     networkStream.Write(dataArray, 0, dataArray.Length);
                     if (waitOnAnswer)
                     {
+                        
                         byte[] returnData = new byte[4];
                         int answer = 0;
                         networkStream.Read(returnData, 0, 4);
@@ -248,6 +254,8 @@ namespace Chess
                 catch
                 {
                     returnValue = false;
+                    if (transmitter != null)
+                        transmitter.Close();
                     return returnValue;
                 }
 
@@ -260,13 +268,14 @@ namespace Chess
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
             public static bool GeneralDataTransmission(string data, string ipAddress, bool sentResponse = false)
             {
+                TcpClient transmitter = null;
                 Debug.WriteLine("Transmission: " + data);
                 try
                 {
                     byte[] reply = new byte[1];
 
                     //connect to server
-                    TransmitSetup(ipAddress);
+                    TransmitSetup(ipAddress, out transmitter);
                     NetworkStream networkStream = transmitter.GetStream();
 
                     if (sentResponse)

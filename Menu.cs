@@ -321,7 +321,7 @@ namespace Chess
                         GameStates.NetSearch.Abort = true;
                     Network.Transmit.OtherPlayerIpAddress = ipAddress;
                     Console.CursorVisible = false;
-                } while (!GameStates.NetSearch.Abort && !Network.Transmit.TransmitSetup(ipAddress, true)); //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
+                } while (!GameStates.NetSearch.Abort && !Network.Transmit.TransmitSetup(ipAddress, out _, true)); //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
 
                 if (!GameStates.NetSearch.Abort)
                 {
