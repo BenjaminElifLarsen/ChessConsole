@@ -65,7 +65,7 @@ namespace Chess
                 {
                     int port = 23000;
                     IPAddress transmitterAddress = IPAddress.Parse(IPaddress);
-                    transmitter = new TcpClient(IPaddress, port);
+                    transmitter = new TcpClient(IPaddress, port); 
                     if (transmit)
                     {
                         NetworkStream networkStream = transmitter.GetStream();
@@ -82,7 +82,7 @@ namespace Chess
                     {
                         Console.Clear();
                         Console.WriteLine("Connection could not be established/was lost");
-                        Console.WriteLine("{0} to return too the menu", Settings.SelectKey);
+                        Console.WriteLine("{0} to return to the menu", Settings.SelectKey);
                         while (Console.ReadKey().Key != Settings.SelectKey) ;
                         GameStates.VictoryType = null;
                         GameStates.LostConnection = true;
@@ -113,8 +113,8 @@ namespace Chess
 
                     Thread.Sleep(1);
                 } while (!GameStates.GameEnded && isConnected && counter < maxValue);
-                GameStates.LostConnection = isConnected; //perhaps have a if(!GameStates.GameEnded) above, maybe it could help? Hard to say, not fully sure what is causing the connection lost upon start
-                GameStates.GameEnded = true; //also needs to call the events instead of calling the variables directly. Forgot about this function when I made the switch.
+                GameStates.LostConnection = isConnected; 
+                GameStates.GameEnded = true; //needs to call the events instead of calling the variables directly. Forgot about this function when I made the switch.
                 if (GameStates.PlayerTeam == false)
                     GameStates.TurnCounter++;
                 void Run()
@@ -123,7 +123,7 @@ namespace Chess
                     {
                         oldTime = DateTime.Now;
                         isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
-                        Debug.WriteLine("Connection lost: " + isConnected.ToString());
+                        Debug.WriteLine("Connection active: " + isConnected.ToString());
                         Thread.Sleep(maxValue / 2);
                     } while (!GameStates.GameEnded && isConnected);
                 }
@@ -166,7 +166,7 @@ namespace Chess
                     Converter.Conversion.ValueToBitArrayQuick(mapdataByte.Length, out mapdataByteSize);
                     networkStream.Write(mapdataByteSize, 0, mapdataByteSize.Length);
 
-                    Debug.WriteLine("Transmitting map. {0} bytes", mapdataByte.Length);
+                    Debug.WriteLine($"Transmitting map. {mapdataByte.Length} bytes");
 
                     //wait on answer from the receiver
                     networkStream.Read(receptionAnswerByte, 0, 4);  //the reads are used to ensure that the TransmitData is not ahead of ReceiveData. This ensures the next turn is not started before the map and chess pieces are ready.
@@ -220,7 +220,7 @@ namespace Chess
             /// If <paramref name="waitOnAnswer"/> is true, it will return true if it receives an answer back, else it will return false.</returns>
             public static bool GeneralValueTransmission(int data, string ipAddress, bool waitOnAnswer = false)
             {
-                Debug.WriteLine("Data transmission: {0}", data);
+                Debug.WriteLine("Data transmission: " + data);
                 bool returnValue;
                 try
                 {
@@ -418,7 +418,7 @@ namespace Chess
                             networkStream.Read(receivedData, 0, receivedData.Length);
                             uint response = 0;
                             Converter.Conversion.ByteConverterToInterger(receivedData, ref response);
-                            Debug.WriteLine(response.ToString());
+                            Debug.WriteLine("Connection Response: " + response.ToString());
                             if (response == 1)
                                 return null;
                         }
@@ -431,7 +431,7 @@ namespace Chess
                         networkStream.Read(receivedData, 0, receivedData.Length);
                         uint dataLength = 0;
                         Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
-                        Debug.WriteLine("Data length is: " + receivedData.Length);
+                        Debug.WriteLine("Data length is: " + dataLength);
 
                         //writes an answer so the transmitter knows it can transmit the string byte array.
                         networkStream.Write(new byte[] { 1 }, 0, 1);

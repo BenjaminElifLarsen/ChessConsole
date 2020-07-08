@@ -275,7 +275,7 @@ namespace Chess
 
                         //starts game, string colour parameters that decide whoes get the first turn.
                         if (response == "ready")
-                        { //what if the response is not "ready"? It would mean there is some unalignment in the transmission and reception of data. So, firstly bugfixing. Else, return to the main menu
+                        { 
                             bool firstMove = colour == "White" ? true : false;
                             GameStates.PlayerTeam = firstMove;
                             Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
@@ -343,6 +343,10 @@ namespace Chess
                             GameStates.PlayerTeam = firstMove;
                             Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
                             Start(firstMove);
+                        }
+                        else
+                        {
+                            ErrorHandling();
                         }
                     }
                     else
