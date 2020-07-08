@@ -82,8 +82,8 @@ namespace Chess
                     {
                         Console.Clear();
                         Console.WriteLine("Connection could not be established/was lost");
-                        Console.WriteLine("Enter to return too the menu");
-                        while (Console.ReadKey().Key != ConsoleKey.Enter) ;
+                        Console.WriteLine("{0} to return too the menu", Settings.SelectKey);
+                        while (Console.ReadKey().Key != Settings.SelectKey) ;
                         GameStates.VictoryType = null;
                         GameStates.LostConnection = true;
                         GameStates.GameEnded = true;
@@ -123,7 +123,7 @@ namespace Chess
                     {
                         oldTime = DateTime.Now;
                         isConnected = GeneralValueTransmission(10, (string)ipAddress, true);
-                        Debug.WriteLine(isConnected.ToString());
+                        Debug.WriteLine("Connection lost: " + isConnected.ToString());
                         Thread.Sleep(maxValue / 2);
                     } while (!GameStates.GameEnded && isConnected);
                 }
@@ -291,7 +291,7 @@ namespace Chess
                     networkStream.Write(stringByte, 0, stringByte.Length);
 
                     //read data
-                    networkStream.Read(reply, 0, reply.Length);
+                    networkStream.Read(reply, 0, reply.Length); //have while loops that runs as long time there is no data to read and if anything goes wrong can return false.
 
                     //shut down
                     networkStream.Close();
@@ -431,6 +431,7 @@ namespace Chess
                         networkStream.Read(receivedData, 0, receivedData.Length);
                         uint dataLength = 0;
                         Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
+                        Debug.WriteLine("Data length is: " + receivedData.Length);
 
                         //writes an answer so the transmitter knows it can transmit the string byte array.
                         networkStream.Write(new byte[] { 1 }, 0, 1);
@@ -438,6 +439,7 @@ namespace Chess
                         //reads string data sent by the client 
                         receivedData = new byte[dataLength];
                         networkStream.Read(receivedData, 0, receivedData.Length);
+                        Debug.WriteLine("Received data length is: " + receivedData.Length);
 
                         //converts it to a string
                         string data = Converter.Conversion.ByteArrayToASCII(receivedData);
