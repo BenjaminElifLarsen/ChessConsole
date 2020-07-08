@@ -267,23 +267,24 @@ namespace Chess
                     Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Conneting{Settings.CVTS.Reset}");
 
                     //transmit the colour
-                    Network.Transmit.GeneralDataTransmission(colour, ipAddressJoiner);
+                    bool couldSend = Network.Transmit.GeneralDataTransmission(colour, ipAddressJoiner);
 
-                    //wait on response from the player joined to ensure they are ready.
-                    string response = Network.Receive.GeneralDataReception(true);
+                    if (couldSend) { 
+                        //wait on response from the player joined to ensure they are ready.
+                        string response = Network.Receive.GeneralDataReception(true);
 
-                    //starts game, string colour parameters that decide whoes get the first turn.
-                    if (response == "ready")
-                    { //what if the response is not "ready"? It would mean there is some unalignment in the transmission and reception of data. So, firstly bugfixing. Else, return to the main menu
-                        bool firstMove = colour == "White" ? true : false;
-                        GameStates.PlayerTeam = firstMove;
-                        Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
-                        Start(firstMove);
-                    }
-                    else
-                    {
-                        Console.WriteLine(response);
-                        Console.ReadKey();
+                        //starts game, string colour parameters that decide whoes get the first turn.
+                        if (response == "ready")
+                        { //what if the response is not "ready"? It would mean there is some unalignment in the transmission and reception of data. So, firstly bugfixing. Else, return to the main menu
+                            bool firstMove = colour == "White" ? true : false;
+                            GameStates.PlayerTeam = firstMove;
+                            Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
+                            Start(firstMove);
+                        }
+                        else
+                        {
+                            ErrorHandling();
+                        }
                     }
                 }//if aborted, skip the rest
                 else
@@ -329,22 +330,44 @@ namespace Chess
 
                     //gets the colour the host is using and selects the other
                     string colourHost = Network.Receive.GeneralDataReception();
-                    string colour = colourHost == "White" ? "Black" : "White";
+                    if(colourHost == "White" || colourHost == "Black")
+                    {
+                        string colour = colourHost == "White" ? "Black" : "White";
 
-                    //send ready data.
-                    Network.Transmit.GeneralDataTransmission("ready", ipAddress, true);
+                        //send ready data.
+                        bool couldSend = Network.Transmit.GeneralDataTransmission("ready", ipAddress, true);
 
-                    //starts game, the string colour parameter decides who get the first turn.
-                    bool firstMove = colour == "White" ? true : false;
-                    GameStates.PlayerTeam = firstMove;
-                    Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
-                    Start(firstMove);
+                        if (couldSend) { 
+                            //starts game, the string colour parameter decides who get the first turn.
+                            bool firstMove = colour == "White" ? true : false;
+                            GameStates.PlayerTeam = firstMove;
+                            Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Game Starting{Settings.CVTS.Reset}");
+                            Start(firstMove);
+                        }
+                    }
+                    else
+                    {
+                        ErrorHandling();
+                    }
                 }
                 else
                 {
                     Network.Receive.Stop();
                     GameStates.Reset();
                 }
+
+            }
+
+            void ErrorHandling()
+            {
+                Network.Receive.Stop();
+                GameStates.Reset();
+                Console.Clear();
+                Console.WriteLine("An error occured. Press {0} to go back.", Settings.SelectKey);
+                isActive = true;
+                while (key.Key != Settings.SelectKey) ;
+                isActive = false;
+                key = new ConsoleKeyInfo();
 
             }
 

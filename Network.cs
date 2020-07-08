@@ -407,51 +407,58 @@ namespace Chess
 
                 string Connection()
                 {
-                    TcpClient client = receiver.AcceptTcpClient();
-                    NetworkStream networkStream = client.GetStream();
-                    byte[] receivedData;
+                    try { 
+                        TcpClient client = receiver.AcceptTcpClient();
+                        NetworkStream networkStream = client.GetStream();
+                        byte[] receivedData;
 
-                    if (WaitOnResponse)
-                    {
+                        if (WaitOnResponse)
+                        {
+                            receivedData = new byte[4];
+                            networkStream.Read(receivedData, 0, receivedData.Length);
+                            uint response = 0;
+                            Converter.Conversion.ByteConverterToInterger(receivedData, ref response);
+                            Debug.WriteLine(response.ToString());
+                            if (response == 1)
+                                return null;
+                        }
+
+                        //writes to the client so it knows a connection has been established.
+                        networkStream.Write(new byte[] { 0 }, 0, 1);
+
+                        //reads data that states the length of the string that is going to be transmitted
                         receivedData = new byte[4];
                         networkStream.Read(receivedData, 0, receivedData.Length);
-                        uint response = 0;
-                        Converter.Conversion.ByteConverterToInterger(receivedData, ref response);
-                        Debug.WriteLine(response.ToString());
-                        if (response == 1)
-                            return null;
+                        uint dataLength = 0;
+                        Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
+
+                        //writes an answer so the transmitter knows it can transmit the string byte array.
+                        networkStream.Write(new byte[] { 1 }, 0, 1);
+
+                        //reads string data sent by the client 
+                        receivedData = new byte[dataLength];
+                        networkStream.Read(receivedData, 0, receivedData.Length);
+
+                        //converts it to a string
+                        string data = Converter.Conversion.ByteArrayToASCII(receivedData);
+
+                        Debug.WriteLine("Received: " + data);
+
+                        //writes an answer back, so the transmitter knows it can stop.
+                        networkStream.Write(new byte[] { 2 }, 0, 1);
+
+                        //close connections
+                        networkStream.Close();
+                        client.Close();
+
+                        //returns the string 
+                        return data;
                     }
-
-                    //writes to the client so it knows a connection has been established.
-                    networkStream.Write(new byte[] { 0 }, 0, 1);
-
-                    //reads data that states the length of the string that is going to be transmitted
-                    receivedData = new byte[4];
-                    networkStream.Read(receivedData, 0, receivedData.Length);
-                    uint dataLength = 0;
-                    Converter.Conversion.ByteConverterToInterger(receivedData, ref dataLength);
-
-                    //writes an answer so the transmitter knows it can transmit the string byte array.
-                    networkStream.Write(new byte[] { 1 }, 0, 1);
-
-                    //reads string data sent by the client 
-                    receivedData = new byte[dataLength];
-                    networkStream.Read(receivedData, 0, receivedData.Length);
-
-                    //converts it to a string
-                    string data = Converter.Conversion.ByteArrayToASCII(receivedData);
-
-                    Debug.WriteLine("Received: " + data);
-
-                    //writes an answer back, so the transmitter knows it can stop.
-                    networkStream.Write(new byte[] { 2 }, 0, 1);
-
-                    //close connections
-                    networkStream.Close();
-                    client.Close();
-
-                    //returns the string 
-                    return data;
+                    catch (Exception e)
+                    {
+                        Debug.WriteLine(""+e);
+                        return "error";
+                    }
                 }
             }
 
