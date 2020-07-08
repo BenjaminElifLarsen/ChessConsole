@@ -68,6 +68,7 @@ namespace Chess
                     transmitter = new TcpClient(IPaddress, port); 
                     if (transmit)
                     {
+                        Debug.WriteLine("Transmit Setup Receive");
                         NetworkStream networkStream = transmitter.GetStream();
                         Converter.Conversion.ValueToBitArrayQuick(2, out byte[] dataArray);
                         networkStream.Write(dataArray, 0, dataArray.Length);
@@ -229,27 +230,32 @@ namespace Chess
                 bool returnValue;
                 try
                 {
-                    TransmitSetup(ipAddress, out transmitter);
-                    Converter.Conversion.ValueToBitArrayQuick(data, out byte[] dataArray);
-                    NetworkStream networkStream = transmitter.GetStream();
-                    networkStream.Write(dataArray, 0, dataArray.Length);
-                    if (waitOnAnswer)
+                    bool setupCorrectly = TransmitSetup(ipAddress, out transmitter);
+                    if (setupCorrectly)
                     {
-                        
-                        byte[] returnData = new byte[4];
-                        int answer = 0;
-                        networkStream.Read(returnData, 0, 4);
-                        Converter.Conversion.ByteConverterToInterger(returnData, ref answer);
-                        if (answer == 1)
-                            returnValue = true;
+                        Converter.Conversion.ValueToBitArrayQuick(data, out byte[] dataArray);
+                        NetworkStream networkStream = transmitter.GetStream();
+                        networkStream.Write(dataArray, 0, dataArray.Length);
+                        if (waitOnAnswer)
+                        {
+
+                            byte[] returnData = new byte[4];
+                            int answer = 0;
+                            networkStream.Read(returnData, 0, 4);
+                            Converter.Conversion.ByteConverterToInterger(returnData, ref answer);
+                            if (answer == 1)
+                                returnValue = true;
+                            else
+                                returnValue = false;
+                        }
                         else
-                            returnValue = false;
+                            returnValue = true;
+                        networkStream.Close();
+                        transmitter.Close();
+                        return returnValue;
                     }
                     else
-                        returnValue = true;
-                    networkStream.Close();
-                    transmitter.Close();
-                    return returnValue;
+                        return false;
                 }
                 catch
                 {
@@ -280,7 +286,7 @@ namespace Chess
 
                     if (sentResponse)
                     {
-                        Converter.Conversion.ValueToBitArrayQuick(2, out byte[] byteArray);
+                        Converter.Conversion.ValueToBitArrayQuick(9, out byte[] byteArray);
                         networkStream.Write(byteArray, 0, byteArray.Length);
                     }
 
@@ -289,8 +295,7 @@ namespace Chess
 
                     //transmit data string length
                     byte[] stringByte = Converter.Conversion.ASCIIToByteArray(data);
-                    byte[] stringByteLengthByte;
-                    Converter.Conversion.ValueToBitArrayQuick(stringByte.Length, out stringByteLengthByte);
+                    Converter.Conversion.ValueToBitArrayQuick(stringByte.Length, out byte[] stringByteLengthByte);
                     networkStream.Write(stringByteLengthByte, 0, stringByteLengthByte.Length);
 
                     //read data
@@ -310,6 +315,8 @@ namespace Chess
                 }
                 catch (Exception e)
                 {
+                    if (transmitter != null)
+                        transmitter.Close();
                     Debug.WriteLine(e);
                     return false;
                 }
@@ -428,7 +435,7 @@ namespace Chess
                             uint response = 0;
                             Converter.Conversion.ByteConverterToInterger(receivedData, ref response);
                             Debug.WriteLine("Connection Response: " + response.ToString());
-                            if (response == 1)
+                            if (response != 9)
                                 return null;
                         }
 

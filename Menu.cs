@@ -305,7 +305,7 @@ namespace Chess
                 Network.Receive.Start();
 
                 GameStates.NetSearch.Searching = true;
-
+                Debug.WriteLine("Join Function");
                 do
                 {
                     Console.Clear();
@@ -322,9 +322,10 @@ namespace Chess
                     Network.Transmit.OtherPlayerIpAddress = ipAddress;
                     Console.CursorVisible = false;
                 } while (!GameStates.NetSearch.Abort && !Network.Transmit.TransmitSetup(ipAddress, out _, true)); //starts up the transmitter to ensure the host' receiver can get the joiner' IP address and give it to host' transmitter. 
-
+                Debug.WriteLine("TransmitSetup has run or abort");
                 if (!GameStates.NetSearch.Abort)
                 {
+                    Debug.WriteLine("Search not aborted");
                     //function is run to allows the host' transmitter to get the ip address of the client' receiver. Port is known in the code, just the IP-address that is missing... can be better explained...
                     Console.WriteLine($"{Settings.CVTS.BrightWhiteForeground}Connecting{Settings.CVTS.Reset}");
 
