@@ -649,12 +649,12 @@ namespace Chess
         /// <returns>Returns the selected option.</returns>
         private static string Interact(string[] options, string title = null)
         { 
-            Debug.WriteLine(GameStates.IsInMenu);
+            Debug.WriteLine("Is active: " + GameStates.IsInMenu);
             Debug.WriteLine(title + ": Pre while");
             while (GameStates.IsInMenu) ;
             Debug.WriteLine(title + ": Post while");
             GameStates.IsInMenu = true;
-            Debug.WriteLine(GameStates.IsInMenu);
+            Debug.WriteLine("Is active: " + GameStates.IsInMenu);
             bool selected = false;
             byte currentLocation = 0;
             string answer = null;

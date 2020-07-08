@@ -43,7 +43,7 @@ namespace Chess
         {
             bool kingcheck;
             BoardSetup();
-            foreach (ChessPiece chePie in ChessList.GetList(true))
+            foreach (ChessPiece chePie in ChessList.GetList(true)) //could have a delagate and event for this. 
             {
                 chePie.IsHoveredOn(false); //this function is not meant for this, but it works regarding replainting the pieces. 
                 if (chePie is King king)
@@ -96,7 +96,6 @@ namespace Chess
             for (int k = 1; k < distance - 1; k++) //vertical lines
                 for (int i = 0; i < distance; i += 1 + Settings.SquareSize)
                 {
-
                     float intersectX = (float)Math.Floor(i / (double)(Settings.SquareSize + Settings.Spacing));
                     float intersectY = k % (float)(Settings.SquareSize + Settings.Spacing);
                     Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, k + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
@@ -108,8 +107,8 @@ namespace Chess
                         Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Left + Settings.CVTS.DEC.DEC_Deactive}");
                     else //intersection at the right side. 
                         Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Right + Settings.CVTS.DEC.DEC_Deactive}");
-
                 }
+
             for (int k = 0; k < distance; k += 1 + Settings.SquareSize) //horizontal lines
                 for (int i = 1; i < distance - 1; i++)
                 {
@@ -126,8 +125,6 @@ namespace Chess
                         Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Bottom + Settings.CVTS.DEC.DEC_Deactive}");
                     else //intersection all other places.
                         Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + Settings.CVTS.DEC.DEC_Intersection_Full + Settings.CVTS.DEC.DEC_Deactive}");
-
-
                 }
 
             for (int k = 0; k < numbers.Length; k++) //numbers

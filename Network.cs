@@ -106,6 +106,7 @@ namespace Chess
                 double counter = 0;
                 ushort maxValue = 3000;
                 Thread connectThread = new Thread(new ThreadStart(Run));
+                connectThread.Name = "Connection Checker Run";
                 connectThread.Start();
                 DateTime oldTime = DateTime.Now;
                 do
@@ -532,8 +533,8 @@ namespace Chess
                         if (GameStates.GameEnded) //if the game has ended, no reason to do anything else of the loop. //read to see if there is a better way to do this.
                             break;
                         clientThread.Add(new Thread(new ThreadStart(NonLoopPart)));
+                        clientThread[clientThread.Count - 1].Name = $"Client Thread  {clientThread.Count-1}";
                         clientThread[clientThread.Count - 1].Start();
-
                     }
                 }
                 catch (IOException e) //failed read, write or connection closed (forced or not forced).

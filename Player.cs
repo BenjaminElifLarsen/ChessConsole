@@ -57,7 +57,11 @@ namespace Chess
             while (!GameStates.IsTurn && !GameStates.GameEnded)
                 if ((int)key.Key != 0)
                     if (key.Key == ConsoleKey.Escape)
+                    {
                         PlayerMenu();
+                        key = new ConsoleKeyInfo();
+                    }
+
             isActive = false;
         }
 
@@ -194,7 +198,7 @@ namespace Chess
                         Console.Clear();
                         Console.SetCursorPosition(Settings.MenuTitleOffset[0], Settings.MenuTitleOffset[1]);
                         Console.WriteLine("Waiting on answer");
-                        while (GameStates.Pause) ;
+                        while (GameStates.Pause && !GameStates.LostConnection) ;
                         ChessTable.GameRunTitle();
                     }
                     else
