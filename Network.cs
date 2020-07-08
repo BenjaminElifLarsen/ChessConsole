@@ -260,10 +260,10 @@ namespace Chess
                 }
                 catch
                 {
-                    returnValue = false;
+                    //returnValue = false;
                     if (transmitter != null)
                         transmitter.Close();
-                    return returnValue;
+                    return false;
                 }
 
             }
@@ -283,36 +283,43 @@ namespace Chess
 
                     //connect to server
                     TransmitSetup(ipAddress, out transmitter);
-                    NetworkStream networkStream = transmitter.GetStream();
+                    if(transmitter != null) { 
+                        NetworkStream networkStream = transmitter.GetStream();
 
-                    if (sentResponse)
-                    {
-                        Converter.Conversion.ValueToBitArrayQuick(9, out byte[] byteArray);
-                        networkStream.Write(byteArray, 0, byteArray.Length);
+                        if (sentResponse)
+                        {
+                            Converter.Conversion.ValueToBitArrayQuick(9, out byte[] byteArray);
+                            networkStream.Write(byteArray, 0, byteArray.Length);
+                        }
+
+                        //read data
+                        networkStream.Read(reply, 0, reply.Length);
+
+                        //transmit data string length
+                        byte[] stringByte = Converter.Conversion.ASCIIToByteArray(data);
+                        Converter.Conversion.ValueToBitArrayQuick(stringByte.Length, out byte[] stringByteLengthByte);
+                        networkStream.Write(stringByteLengthByte, 0, stringByteLengthByte.Length);
+
+                        //read data
+                        networkStream.Read(reply, 0, reply.Length);
+
+                        //transmit string byte array
+                        networkStream.Write(stringByte, 0, stringByte.Length);
+
+                        //read data
+                        networkStream.Read(reply, 0, reply.Length); //have while loops that runs as long time there is no data to read and if anything goes wrong can return false.
+
+                        //shut down
+                        networkStream.Close();
+                        transmitter.Close();
+
+                        return true;
                     }
-
-                    //read data
-                    networkStream.Read(reply, 0, reply.Length);
-
-                    //transmit data string length
-                    byte[] stringByte = Converter.Conversion.ASCIIToByteArray(data);
-                    Converter.Conversion.ValueToBitArrayQuick(stringByte.Length, out byte[] stringByteLengthByte);
-                    networkStream.Write(stringByteLengthByte, 0, stringByteLengthByte.Length);
-
-                    //read data
-                    networkStream.Read(reply, 0, reply.Length);
-
-                    //transmit string byte array
-                    networkStream.Write(stringByte, 0, stringByte.Length);
-
-                    //read data
-                    networkStream.Read(reply, 0, reply.Length); //have while loops that runs as long time there is no data to read and if anything goes wrong can return false.
-
-                    //shut down
-                    networkStream.Close();
-                    transmitter.Close();
-
-                    return true;
+                    else
+                    {
+                        Debug.WriteLine("Transmitter was null");
+                        return false;
+                    }
                 }
                 catch (Exception e)
                 {
@@ -533,18 +540,23 @@ namespace Chess
                         if (GameStates.GameEnded) //if the game has ended, no reason to do anything else of the loop. //read to see if there is a better way to do this.
                             break;
                         clientThread.Add(new Thread(new ThreadStart(NonLoopPart)));
-                        clientThread[clientThread.Count - 1].Name = $"Client Thread  {clientThread.Count-1}";
-                        clientThread[clientThread.Count - 1].Start();
+                        clientThread[clientThread.Count - 1].Name = $"Client Thread {clientThread.Count-1}";
+                        clientThread[clientThread.Count - 1].Start(); 
+                        for (int i = clientThread.Count-1; i >= 0; i--)
+                            if (!clientThread[i].IsAlive)
+                                clientThread.RemoveAt(clientThread.Count - 1);
+                        Debug.WriteLine("Thread count: " + clientThread.Count);
                     }
+                    
                 }
                 catch (IOException e) //failed read, write or connection closed (forced or not forced).
-                { //this should catch in case of a lost connection, but what to do? Go back to the main menu? Try some times to get a connection and it failes n times, do something else?
+                { 
                     Debug.WriteLine(e); //might not be needed with the InnerException, need to read some more up on InnerException
                     Debug.WriteLine(e.InnerException); //helps with identified which specific error. 
                     //receiver.Stop();
                 }
                 catch (Exception e) //other.
-                { //what to do. Some of the possible expections are known from testing, e.g. nulls in the new map array (caused by a bug in the code, might want to catch it anyway).
+                { 
                     Debug.WriteLine(e);
                     Debug.WriteLine(e.InnerException);
                 }
@@ -698,6 +710,7 @@ namespace Chess
                                 networkStream.Close();
                             otherPlayer.Close();
                         }
+                        Debug.WriteLine(Thread.CurrentThread.Name + " has finshed executing");
                     }
                 }
             }
