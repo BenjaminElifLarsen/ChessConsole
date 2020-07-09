@@ -440,7 +440,7 @@ namespace Chess
                         NetworkStream networkStream = client.GetStream();
                         byte[] receivedData;
                         if (readWaitTime != null)
-                            client.ReceiveTimeout = readWaitTime;
+                            client.ReceiveTimeout = (int)readWaitTime;
                         if (WaitOnResponse)
                         {
                             receivedData = new byte[4];
