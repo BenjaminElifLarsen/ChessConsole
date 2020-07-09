@@ -271,7 +271,7 @@ namespace Chess
 
                     if (couldSend) { 
                         //wait on response from the player joined to ensure they are ready.
-                        string response = Network.Receive.GeneralDataReception(true);
+                        string response = Network.Receive.GeneralDataReception(true, 5000);
 
                         //starts game, string colour parameters that decide whoes get the first turn.
                         if (response == "ready")
@@ -336,7 +336,7 @@ namespace Chess
                         string colour = colourHost == "White" ? "Black" : "White";
 
                         //send ready data.
-                        bool couldSend = Network.Transmit.GeneralDataTransmission("ready", ipAddress, true, 5000);
+                        bool couldSend = Network.Transmit.GeneralDataTransmission("ready", ipAddress, true);
 
                         if (couldSend) { 
                             //starts game, the string colour parameter decides who get the first turn.

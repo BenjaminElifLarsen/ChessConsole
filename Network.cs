@@ -289,6 +289,7 @@ namespace Chess
                         NetworkStream networkStream = transmitter.GetStream();
                         if (readWaitTime != null)
                             transmitter.ReceiveTimeout = (int)readWaitTime;
+
                         if (sentResponse)
                         {
                             Converter.Conversion.ValueToBitArrayQuick(9, out byte[] byteArray);
@@ -412,7 +413,7 @@ namespace Chess
             /// Waits on a client to connect and transmit data. The data is then converted into a ASCII string. //rewrite
             /// </summary>
             /// <returns>Returns an ASCII string received from a client.</returns>
-            public static string GeneralDataReception(bool WaitOnResponse = false)
+            public static string GeneralDataReception(bool WaitOnResponse = false, int? readWaitTime = null)
             {
                 /* Client connect to server. 
                  * Waits on answer from the server
@@ -438,7 +439,8 @@ namespace Chess
                         TcpClient client = receiver.AcceptTcpClient();
                         NetworkStream networkStream = client.GetStream();
                         byte[] receivedData;
-
+                        if (readWaitTime != null)
+                            client.ReceiveTimeout = readWaitTime;
                         if (WaitOnResponse)
                         {
                             receivedData = new byte[4];
