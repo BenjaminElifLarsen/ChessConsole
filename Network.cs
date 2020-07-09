@@ -423,11 +423,21 @@ namespace Chess
                  * Client reads the answer and the function returns "true"
                  */
                 string data = null;
+                uint timeCounter = 0;
 
                 while (data == null)
                 {
                     //wats on a requist for connection
-                    while (!receiver.Pending()) ;
+                    while (!receiver.Pending() && timeCounter < 5000) 
+                    { 
+                        timeCounter++; 
+                        Thread.Sleep(1); 
+                    } 
+                    if(timeCounter >= 5000)
+                    {
+                        Debug.WriteLine("Time limit was reached: " + timeCounter);
+                        return "error";
+                    }
                     data = Connection(); //maybe thread this. 
                 }
 

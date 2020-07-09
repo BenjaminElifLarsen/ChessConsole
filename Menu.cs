@@ -337,7 +337,7 @@ namespace Chess
 
                         //send ready data.
                         bool couldSend = Network.Transmit.GeneralDataTransmission("ready", ipAddress, true);
-
+                        
                         if (couldSend) { 
                             //starts game, the string colour parameter decides who get the first turn.
                             bool firstMove = colour == "White" ? true : false;
