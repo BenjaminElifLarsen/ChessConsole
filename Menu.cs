@@ -336,7 +336,7 @@ namespace Chess
                         string colour = colourHost == "White" ? "Black" : "White";
 
                         //send ready data.
-                        bool couldSend = Network.Transmit.GeneralDataTransmission("ready", ipAddress, true);
+                        bool couldSend = Network.Transmit.GeneralDataTransmission("ready", ipAddress, true, 5000);
 
                         if (couldSend) { 
                             //starts game, the string colour parameter decides who get the first turn.

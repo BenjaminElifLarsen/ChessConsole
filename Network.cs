@@ -273,7 +273,7 @@ namespace Chess
             /// </summary>
             /// <param name="data">String to transmit.</param>
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
-            public static bool GeneralDataTransmission(string data, string ipAddress, bool sentResponse = false)
+            public static bool GeneralDataTransmission(string data, string ipAddress, bool sentResponse = false, int? readWaitTime = null)
             {
                 TcpClient transmitter = null;
                 Debug.WriteLine("Transmission: " + data);
@@ -283,9 +283,12 @@ namespace Chess
 
                     //connect to server
                     TransmitSetup(ipAddress, out transmitter);
-                    if(transmitter != null) { 
+                    if(transmitter != null)
+                    { 
+                        
                         NetworkStream networkStream = transmitter.GetStream();
-
+                        if (readWaitTime != null)
+                            transmitter.ReceiveTimeout = (int)readWaitTime;
                         if (sentResponse)
                         {
                             Converter.Conversion.ValueToBitArrayQuick(9, out byte[] byteArray);
