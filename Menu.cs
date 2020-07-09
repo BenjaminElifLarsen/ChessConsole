@@ -373,7 +373,7 @@ namespace Chess
                 while (key.Key != Settings.SelectKey) ;
                 isActive = false;
                 key = new ConsoleKeyInfo();
-
+                
             }
 
             void Start(bool playerStarter)

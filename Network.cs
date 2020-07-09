@@ -89,6 +89,7 @@ namespace Chess
                         GameStates.LostConnection = true;
                         GameStates.GameEnded = true;
                     }
+                    Reporter.Report(e);
                     transmitter = null;
                     return false;
                 }
@@ -199,7 +200,7 @@ namespace Chess
                     Debug.WriteLine(e);
                     if(transmitter != null)
                         transmitter.Close();
-
+                    Reporter.Report(e);
                     Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
                 }
@@ -208,6 +209,7 @@ namespace Chess
                     Debug.WriteLine(e);
                     if (transmitter != null)
                         transmitter.Close();
+                    Reporter.Report(e);
                     Publishers.PubNet.TransmitAnyData(won: null, lostConnection: true, gameEnded: true);
                     return false;
                 }
@@ -258,8 +260,9 @@ namespace Chess
                     else
                         return false;
                 }
-                catch
+                catch (Exception e)
                 {
+                    Reporter.Report(e);
                     //returnValue = false;
                     if (transmitter != null)
                         transmitter.Close();
@@ -327,6 +330,7 @@ namespace Chess
                 }
                 catch (Exception e)
                 {
+                    Reporter.Report(e);
                     if (transmitter != null)
                         transmitter.Close();
                     Debug.WriteLine(e);
@@ -435,7 +439,7 @@ namespace Chess
                     } 
                     if(timeCounter >= 5)
                     {
-                        Debug.WriteLine("Time limit was reached: " + timeCounter);
+                        Debug.WriteLine("Time limit was reached: " + timeCounter); //have a custom exception 
                         return "error";
                     }
                     data = Connection(); //maybe thread this. 
@@ -498,6 +502,7 @@ namespace Chess
                     catch (Exception e)
                     {
                         Debug.WriteLine(""+e);
+                        Reporter.Report(e);
                         return "error";
                     }
                 }
@@ -517,8 +522,9 @@ namespace Chess
                     receiver = new TcpListener(receiverAddress, port);
                     return true;
                 }
-                catch
+                catch (Exception e)
                 {
+                    Reporter.Report(e);
                     return false;
                 }
             }
@@ -565,13 +571,15 @@ namespace Chess
                     
                 }
                 catch (IOException e) //failed read, write or connection closed (forced or not forced).
-                { 
+                {
+                    Reporter.Report(e);
                     Debug.WriteLine(e); //might not be needed with the InnerException, need to read some more up on InnerException
                     Debug.WriteLine(e.InnerException); //helps with identified which specific error. 
                     //receiver.Stop();
                 }
                 catch (Exception e) //other.
-                { 
+                {
+                    Reporter.Report(e);
                     Debug.WriteLine(e);
                     Debug.WriteLine(e.InnerException);
                 }
@@ -715,6 +723,7 @@ namespace Chess
                     }
                     catch (Exception e)
                     {
+                        Reporter.Report(e);
                         Debug.WriteLine(e);
                     }
                     finally
