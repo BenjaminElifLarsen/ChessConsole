@@ -373,7 +373,6 @@ namespace Chess
                 while (key.Key != Settings.SelectKey) ;
                 isActive = false;
                 key = new ConsoleKeyInfo();
-                
             }
 
             void Start(bool playerStarter)
@@ -420,6 +419,7 @@ namespace Chess
             }
             catch (Exception e)
             {
+                Reporter.Report(e);
                 Debug.WriteLine(e); //this block is also entered if something else goes wrong, e.g. System.NullReferenceException and index size
                 Console.WriteLine("Interaction.txt could not be found.");
                 Console.WriteLine("{0}{1} to return.", Environment.NewLine, Settings.SelectKey);
@@ -450,8 +450,9 @@ namespace Chess
                 PrintOut(about);
 
             }
-            catch
+            catch (Exception e)
             {
+                Reporter.Report(e);
                 Console.WriteLine("Rules.txt could not be found.");
                 Console.WriteLine("{0}{1} to return.", Environment.NewLine, Settings.SelectKey);
             }
@@ -537,6 +538,7 @@ namespace Chess
                             }
                             catch (Exception e)
                             {
+                                Reporter.Report(e);
                                 Debug.WriteLine(e);
                                 addToString = "erorr";
                             }

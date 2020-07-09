@@ -11,9 +11,9 @@ namespace Chess
     /// </summary>
     public class Reporter //need to catch errors
     {
-        private static string pathway = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Chess Game\\Error Reports\\";
-        private static string filename = "Error";
-        private static string filetype = ".txt";
+        private static readonly string pathway = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData) + "\\Chess Game\\Error Reports\\";
+        private static readonly string filename = "Error";
+        private static readonly string filetype = ".txt";
 
         public static void Report(Exception e)
         {
@@ -56,7 +56,6 @@ namespace Chess
             string pathFile = Path.Combine(path, file);
             if (!File.Exists(pathFile))
                 using (FileStream fs = File.Create(pathFile)) ;
-
         }
     }
 }
