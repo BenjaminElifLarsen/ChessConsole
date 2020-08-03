@@ -9,5 +9,8 @@ namespace Chess
     /// </summary>
     class Visual
     {
+
+
+
     }
 }
