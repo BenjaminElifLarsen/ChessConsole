@@ -7,7 +7,7 @@ namespace Chess
     /// <summary>
     /// Class that contains the methods for the visual part of the program.
     /// </summary>
-    class Visual
+    public static class Visual
     {
 
 
