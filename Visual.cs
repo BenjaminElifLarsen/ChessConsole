@@ -16,6 +16,9 @@ namespace Chess
         //should this class hold the designs?
         //should "paint" to the console and to a graphical user interfaces
         //should the GUI use signs for the visual representation or should it use polygons(PointF[])/bitmaps?
+        //for the GUI keep the map board, while also having an Image board. There should be a readonly bitmap board that can be copied from which
+            //adding/changing the visual is done. 
+        //store static variables for all colours and designs used for the board
 
         /// <summary>
         /// 
