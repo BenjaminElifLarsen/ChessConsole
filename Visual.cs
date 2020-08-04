@@ -85,7 +85,7 @@ namespace Chess
             return colours;
         }
 
-        static private byte[] PaintCalculations(out int drawLocationX, out int drawLocationY, int[] mapLoc,  byte[] mapLocation)
+        static private byte[] PaintCalculations(out int drawLocationX, out int drawLocationY, int[] mapLoc, PointF[] design, byte[] mapLocation)
         {
             drawLocationX = 0;
             drawLocationY = 0;
