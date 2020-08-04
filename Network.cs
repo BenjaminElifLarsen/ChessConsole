@@ -409,6 +409,8 @@ namespace Chess
                             return endPoint;
                         }
                     }
+                    else
+                        received = false;
                 }
                 return null;
             }
