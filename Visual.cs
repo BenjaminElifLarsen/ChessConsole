@@ -123,6 +123,117 @@ namespace Chess
             return null;
         }
 
+        private static void BoardSetup()
+        {
+            Console.CursorVisible = false;
+            ushort distance = (ushort)(9 + 8 * squareSize);
+            string[] letters = { "a", "b", "c", "d", "e", "f", "g", "h" };
+            string[] numbers = { "1", "2", "3", "4", "5", "6", "7", "8" };
+            byte alignment = (byte)Math.Ceiling(squareSize / 2f);
+
+            //top left corner
+            Console.SetCursorPosition(offset[0] + edgeSpacing + spacing - 1, offset[1] + edgeSpacing + spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m"
+                + Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC.DEC_Active + topLeftCorner + Settings.CVTS.DEC.DEC_Deactive}");
+
+            //top right corner 
+            Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m"
+                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC.DEC_Active + topRightCorner + Settings.CVTS.DEC.DEC_Deactive}");
+
+            //bottom left corner
+            Console.SetCursorPosition(Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m"
+                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC.DEC_Active + bottomLeftCorner + Settings.CVTS.DEC.DEC_Deactive}");
+
+            //bottom right corner 
+            Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m"
+                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                $"{Settings.CVTS.DEC.DEC_Active + bottomRightCorner + Settings.CVTS.DEC.DEC_Deactive}");
+
+
+            for (int k = 1; k < distance - 1; k++) //vertical lines
+                for (int i = 0; i < distance; i += 1 + squareSize)
+                {
+                    float intersectX = (float)Math.Floor(i / (double)(squareSize + spacing));
+                    float intersectY = k % (float)(squareSize + spacing);
+                    Console.SetCursorPosition(i + offset[0] + edgeSpacing + spacing - 1, k + offset[1] + edgeSpacing + spacing - 1);
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m "); //background colour
+                    Console.SetCursorPosition(i + offset[0] + edgeSpacing + spacing - 1, k + offset[1] + edgeSpacing +spacing - 1);
+                    if (intersectY != 0) //no intersection at all
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + verticalLine + Settings.CVTS.DEC.DEC_Deactive}");
+                    else if (intersectY == 0 && intersectX == 0) //intersection on the left side
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + intersectionLeft + Settings.CVTS.DEC.DEC_Deactive}");
+                    else //intersection at the right side. 
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + intersectionRight + Settings.CVTS.DEC.DEC_Deactive}");
+                }
+
+            for (int k = 0; k < distance; k += 1 + squareSize) //horizontal lines
+                for (int i = 1; i < distance - 1; i++)
+                {
+                    float intersectX = i % (float)(squareSize + spacing);
+                    float intersectY = (float)Math.Floor(k / (double)(squareSize + spacing));
+                    Console.SetCursorPosition(i + offset[0] + edgeSpacing + spacing - 1, k + offset[1] + edgeSpacing + spacing - 1);
+                    Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m "); //background colour
+                    Console.SetCursorPosition(i + offset[0] + edgeSpacing + spacing - 1, k + offset[1] + edgeSpacing + spacing - 1);
+                    if (intersectX != 0) //no intersection at all
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + horizontalLine + Settings.CVTS.DEC.DEC_Deactive}");
+                    else if (intersectX == 0 && intersectY == 0) //intersection at the top
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + intersectionTop + Settings.CVTS.DEC.DEC_Deactive}");
+                    else if (intersectX == 0 && intersectY == 8) //intersection at the bottom
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + intersectionBottom+ Settings.CVTS.DEC.DEC_Deactive}");
+                    else //intersection all other places.
+                        Console.Write(Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset, $"{Settings.CVTS.DEC.DEC_Active + intersectionFull+ Settings.CVTS.DEC.DEC_Deactive}");
+                }
+
+            for (int k = 0; k < numbers.Length; k++) //numbers
+            { //the 1s in this and below for loop should be a setting, it is the amount of empty squares between the numbers/letters and the board edge
+                Console.SetCursorPosition(Settings.Offset[0] - Settings.EdgeSpacing - 1 + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Spacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k) - 1);
+                Console.Write(numbers[7 - k]); //- Settings.EdgeSpacing should not be used in the calculation above.
+                Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.Spacing + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k) - 1);
+                Console.Write(numbers[7 - k]);
+            }
+
+            for (int k = 0; k < letters.Length; k++) //letters
+            {
+                Console.SetCursorPosition(k + Settings.Spacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + Settings.Spacing - Settings.EdgeSpacing - 1);
+                Console.Write(letters[k]);
+                Console.SetCursorPosition(k + Settings.Spacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + distance + Settings.Spacing + Settings.EdgeSpacing);
+                Console.Write(letters[k]);
+            }
+
+            BoardColouring();
+        }
+
+        private static void BoardColouring()
+        {
+            ushort distance = (ushort)(8 + 8 * Settings.SquareSize);
+            byte location = 1;
+            for (int n = 0; n < distance; n += 1 + Settings.SquareSize)
+            {
+                for (int m = 0; m < distance; m += 1 + Settings.SquareSize)
+                {
+                    for (int i = 0; i < Settings.SquareSize; i++)
+                    {
+                        for (int k = 0; k < Settings.SquareSize; k++)
+                        {
+                            Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing + n, k + Settings.Offset[1] + Settings.Spacing + Settings.EdgeSpacing + m);
+                            if (location % 2 == 1)
+                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.SquareColour1[0] + ";" + Settings.SquareColour1[1] + ";" + Settings.SquareColour1[2] + "m " + Settings.CVTS.Reset);
+                            else if (location % 2 == 0)
+                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.SquareColour2[0] + ";" + Settings.SquareColour2[1] + ";" + Settings.SquareColour2[2] + "m " + Settings.CVTS.Reset);
+                        }
+                    }
+                    location++;
+                }
+                location++;
+            }
+        }
+
         private static class Designs //neeeds to contain information about the most important part of each CMD design. 
         {
             //bishop
