@@ -123,7 +123,49 @@ namespace Chess
             return null;
         }
 
-        private static void BoardSetup()
+        /// <summary>
+        /// Calculates the size of <paramref name="design"/> and returns the length of <c>X</c> and <c>Y</c>.
+        /// </summary>
+        /// <param name="design"></param>
+        /// <returns></returns>
+        static private float[] DesignSizeGUICalculatior(PointF[] design)
+        {
+            float lowestX = float.MaxValue;
+            float lowestY = float.MaxValue;
+            float highestX = float.MinValue;
+            float highestY = float.MinValue;
+            foreach (PointF pointF in design)
+            {
+                lowestX = pointF.X < lowestX ? pointF.X : lowestX;
+                lowestY = pointF.Y < lowestY ? pointF.Y : lowestY;
+                highestX = pointF.X > highestX ? pointF.X : highestX;
+                highestY = pointF.Y > highestY ? pointF.Y : highestY;
+            }
+            return new float[] { highestX - lowestX, highestY - lowestY };
+        }
+
+        /// <summary>
+        /// Aligns <paramref name="design"/> to have its point closes to (0,0) moved to (0,0) and ensures all other point are corrosponding moved. 
+        /// </summary>
+        /// <param name="design"
+        /// <returns></returns>
+        static private PointF[] ZeroAlign(PointF[] design) //improve that summary. 
+        {
+            throw new NotImplementedException();
+        }
+
+        /// <summary>
+        /// Takes <paramref name="design"/> and scale it by the value of <paramref name="scale"/> and returns it.
+        /// </summary>
+        /// <param name="design"></param>
+        /// <param name="scale"></param>
+        /// <returns>Returns a PointF array of <paramref name="design"/> scaled with <paramref name="scale"/>.</returns>
+        static private PointF[] Resize(Point[] design, float scale)
+        {
+            throw new NotImplementedException();
+        }
+
+        public static void BoardSetup()
         {
             Console.CursorVisible = false;
             ushort distance = (ushort)(9 + 8 * squareSize);
@@ -138,21 +180,21 @@ namespace Chess
                 $"{Settings.CVTS.DEC.DEC_Active + topLeftCorner + Settings.CVTS.DEC.DEC_Deactive}");
 
             //top right corner 
-            Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.SetCursorPosition(distance - 1 + offset[0] + edgeSpacing + spacing - 1, offset[1] + edgeSpacing + spacing - 1);
             Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m"
-                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                + Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset,
                 $"{Settings.CVTS.DEC.DEC_Active + topRightCorner + Settings.CVTS.DEC.DEC_Deactive}");
 
             //bottom left corner
-            Console.SetCursorPosition(Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.SetCursorPosition(offset[0] + edgeSpacing + spacing - 1, distance - 1 + offset[1] + edgeSpacing + spacing - 1);
             Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m"
-                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                + Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset,
                 $"{Settings.CVTS.DEC.DEC_Active + bottomLeftCorner + Settings.CVTS.DEC.DEC_Deactive}");
 
             //bottom right corner 
-            Console.SetCursorPosition(distance - 1 + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing - 1, distance - 1 + Settings.Offset[1] + Settings.EdgeSpacing + Settings.Spacing - 1);
+            Console.SetCursorPosition(distance - 1 + offset[0] + edgeSpacing + spacing - 1, distance - 1 + offset[1] + edgeSpacing + spacing - 1);
             Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + lineBaseColour[0] + ";" + lineBaseColour[1] + ";" + lineBaseColour[2] + "m"
-                + Settings.CVTS.ExtendedForegroundColour_RGB + Settings.LineColour[0] + ";" + Settings.LineColour[1] + ";" + Settings.LineColour[2] + "m{0}" + Settings.CVTS.Reset,
+                + Settings.CVTS.ExtendedForegroundColour_RGB + lineColour[0] + ";" + lineColour[1] + ";" + lineColour[2] + "m{0}" + Settings.CVTS.Reset,
                 $"{Settings.CVTS.DEC.DEC_Active + bottomRightCorner + Settings.CVTS.DEC.DEC_Deactive}");
 
 
@@ -192,17 +234,17 @@ namespace Chess
 
             for (int k = 0; k < numbers.Length; k++) //numbers
             { //the 1s in this and below for loop should be a setting, it is the amount of empty squares between the numbers/letters and the board edge
-                Console.SetCursorPosition(Settings.Offset[0] - Settings.EdgeSpacing - 1 + Settings.Spacing, k + Settings.EdgeSpacing + Settings.Spacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k) - 1);
+                Console.SetCursorPosition(offset[0] - edgeSpacing - 1 + spacing, k + edgeSpacing + spacing + offset[1] + alignment + (squareSize * k) - 1);
                 Console.Write(numbers[7 - k]); //- Settings.EdgeSpacing should not be used in the calculation above.
-                Console.SetCursorPosition(Settings.Offset[0] + distance + Settings.EdgeSpacing + Settings.Spacing, k + Settings.Spacing + Settings.EdgeSpacing + Settings.Offset[1] + alignment + (Settings.SquareSize * k) - 1);
+                Console.SetCursorPosition(offset[0] + distance + edgeSpacing + spacing, k + spacing + edgeSpacing + offset[1] + alignment + (squareSize * k) - 1);
                 Console.Write(numbers[7 - k]);
             }
 
             for (int k = 0; k < letters.Length; k++) //letters
             {
-                Console.SetCursorPosition(k + Settings.Spacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + Settings.Spacing - Settings.EdgeSpacing - 1);
+                Console.SetCursorPosition(k + spacing + offset[0] + alignment + (squareSize * k), offset[1] + spacing - edgeSpacing - 1);
                 Console.Write(letters[k]);
-                Console.SetCursorPosition(k + Settings.Spacing + Settings.Offset[0] + alignment + (Settings.SquareSize * k), Settings.Offset[1] + distance + Settings.Spacing + Settings.EdgeSpacing);
+                Console.SetCursorPosition(k + spacing + offset[0] + alignment + (squareSize * k),offset[1] + distance + spacing + edgeSpacing);
                 Console.Write(letters[k]);
             }
 
@@ -211,21 +253,21 @@ namespace Chess
 
         private static void BoardColouring()
         {
-            ushort distance = (ushort)(8 + 8 * Settings.SquareSize);
+            ushort distance = (ushort)(8 + 8 * squareSize);
             byte location = 1;
-            for (int n = 0; n < distance; n += 1 + Settings.SquareSize)
+            for (int n = 0; n < distance; n += 1 + squareSize)
             {
-                for (int m = 0; m < distance; m += 1 + Settings.SquareSize)
+                for (int m = 0; m < distance; m += 1 + squareSize)
                 {
-                    for (int i = 0; i < Settings.SquareSize; i++)
+                    for (int i = 0; i < squareSize; i++)
                     {
-                        for (int k = 0; k < Settings.SquareSize; k++)
+                        for (int k = 0; k < squareSize; k++)
                         {
-                            Console.SetCursorPosition(i + Settings.Offset[0] + Settings.EdgeSpacing + Settings.Spacing + n, k + Settings.Offset[1] + Settings.Spacing + Settings.EdgeSpacing + m);
+                            Console.SetCursorPosition(i + offset[0] + edgeSpacing + spacing + n, k + offset[1] + spacing + edgeSpacing + m);
                             if (location % 2 == 1)
-                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.SquareColour1[0] + ";" + Settings.SquareColour1[1] + ";" + Settings.SquareColour1[2] + "m " + Settings.CVTS.Reset);
+                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + whiteBackgroundColour[0] + ";" + whiteBackgroundColour[1] + ";" + whiteBackgroundColour[2] + "m " + Settings.CVTS.Reset);
                             else if (location % 2 == 0)
-                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + Settings.SquareColour2[0] + ";" + Settings.SquareColour2[1] + ";" + Settings.SquareColour2[2] + "m " + Settings.CVTS.Reset);
+                                Console.Write(Settings.CVTS.ExtendedBackgroundColour_RGB + blackBackgroundColour[0] + ";" + blackBackgroundColour[1] + ";" + blackBackgroundColour[2] + "m " + Settings.CVTS.Reset);
                         }
                     }
                     location++;
