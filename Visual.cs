@@ -123,7 +123,7 @@ namespace Chess
             return null;
         }
 
-        private static class Designs
+        private static class Designs //neeeds to contain information about the most important part of each CMD design. 
         {
             //bishop
             /// <summary> //make all these readonly
@@ -131,7 +131,9 @@ namespace Chess
             /// </summary>
             private static string[] bishopCmdDesign =
             {
-
+                $"_{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Plus_Minus}{Settings.CVTS.DEC.DEC_Deactive}_",
+                $"{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Vertical_Line}{Settings.CVTS.DEC.DEC_Deactive}O{Settings.CVTS.DEC.DEC_Active}{Settings.CVTS.DEC.DEC_Vertical_Line}{Settings.CVTS.DEC.DEC_Deactive}",
+                $"-B-"
             };
             /// <summary>
             /// 
@@ -157,7 +159,9 @@ namespace Chess
             /// </summary>
             private static string[] pawnCMDDesign =
             {
-
+                " - ",
+                " | ",
+                "-P-"
             };
             /// <summary>
             /// 
@@ -182,8 +186,10 @@ namespace Chess
             /// 
             /// </summary>
             private static string[] queenCMDDesign = 
-            { 
-            
+            {
+                "_w_",
+                "~|~",
+                "-Q-"
             };
             /// <summary>
             /// 
@@ -209,7 +215,9 @@ namespace Chess
             /// </summary>
             private static string[] kingCMDDesign =
             {
-
+                "^V^",
+                "*|*",
+                "-K-"
             };
             /// <summary>
             /// 
@@ -235,7 +243,9 @@ namespace Chess
             /// </summary>
             private static string[] rookCMDDesign =
             {
-
+                "^^^",
+                "|=|",
+                "-R-"
             };
             /// <summary>
             /// 
@@ -261,7 +271,9 @@ namespace Chess
             /// </summary>
             private static string[] knightCMDDesign =
             {
-
+                " ^_",
+                " |>",
+                "-k-"
             };
 
             /// <summary>
