@@ -126,7 +126,7 @@ namespace Chess
         private static class Designs
         {
             //bishop
-            /// <summary>
+            /// <summary> //make all these readonly
             /// 
             /// </summary>
             private static string[] bishopCmdDesign =
@@ -149,6 +149,7 @@ namespace Chess
             /// </summary>
             public static PointF[] GUI_Bishop { get => bishopGUIDesign; }
 
+            //pawn
             //--------------------------------
 
             /// <summary>
@@ -173,6 +174,111 @@ namespace Chess
             /// 
             /// </summary>
             public static PointF[] GUI_Pawn { get => pawnGUIDesign; }
+
+            //queen
+            //--------------------------------
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private static string[] queenCMDDesign = 
+            { 
+            
+            };
+            /// <summary>
+            /// 
+            /// </summary>
+            private static PointF[] queenGUIDesign =
+            {
+
+            };
+            /// <summary>
+            /// 
+            /// </summary>
+            public static string[] CMD_Queen { get => queenCMDDesign; }
+            /// <summary>
+            /// 
+            /// </summary>
+            public static PointF[] GUI_Queen { get => queenGUIDesign; }
+
+            //king
+            //--------------------------------
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private static string[] kingCMDDesign =
+            {
+
+            };
+            /// <summary>
+            /// 
+            /// </summary>
+            private static PointF[] kingGUIDesign =
+            {
+
+            };
+            /// <summary>
+            /// 
+            /// </summary>
+            public static string[] CMD_King { get => kingCMDDesign; }
+            /// <summary>
+            /// 
+            /// </summary>
+            public static PointF[] GUI_King { get => kingGUIDesign; }
+
+            //rook
+            //--------------------------------
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private static string[] rookCMDDesign =
+            {
+
+            };
+            /// <summary>
+            /// 
+            /// </summary>
+            private static PointF[] rookGUIDesign =
+            {
+
+            };
+            /// <summary>
+            /// 
+            /// </summary>
+            public static string[] CMD_Rook { get => rookCMDDesign; }
+            /// <summary>
+            /// 
+            /// </summary>
+            public static PointF[] GUI_Rook { get => rookGUIDesign; }
+
+            //knight
+            //--------------------------------
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private static string[] knightCMDDesign =
+            {
+
+            };
+
+            /// <summary>
+            /// 
+            /// </summary>
+            private static PointF[] knightGUIDesign =
+            {
+
+            };
+            /// <summary>
+            /// 
+            /// </summary>
+            public static string[] CMD_Knight { get => knightCMDDesign; }
+            /// <summary>
+            /// 
+            /// </summary>
+            public static PointF[] GUI_Knight { get => knightGUIDesign; }
 
         }
     }
