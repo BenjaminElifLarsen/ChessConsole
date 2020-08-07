@@ -281,7 +281,7 @@ namespace Chess
         }
 
         /// <summary>
-        /// Updates the piece, if it has been modified by the other player. If any combinations of the parameters are not null/false the piece will be set as captured only.
+        /// Updates the piece, if it has been modified by the other player. If any combinations of the parameters are not null/false and <paramref name="captured"/> is true the piece will be set as captured only.
         /// </summary>
         /// <param name="newLocation">If not null, will move the piece to this location.</param>
         /// <param name="captured">If not null, will set the piece as been captured.</param>

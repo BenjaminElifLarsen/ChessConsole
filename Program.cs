@@ -1,5 +1,7 @@
 ﻿
 
+using System.ComponentModel.Design;
+
 namespace Chess
 {   //https://www.chessvariants.com/d.chess/chess.html
 

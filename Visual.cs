@@ -20,7 +20,33 @@ namespace Chess
         //    adding/changing the visual is done. 
         //store static variables for all colours and designs used for the board
 
-        private static byte[] squareColour_1 = Settings.SquareColour1;
+        private static readonly byte squareSize = Settings.SquareSize; //if the square size is changed this will need to be updated. 
+        private static readonly byte spacing = Settings.Spacing;
+        private static readonly byte edgeSpacing = Settings.EdgeSpacing;
+        private static readonly int[] consoleSize = Settings.WindowSize;
+        private static readonly byte[] offset = Settings.Offset;
+
+        private static readonly byte[] whiteBackgroundColour = Settings.SquareColour1;
+        private static readonly byte[] blackBackgroundColour = Settings.SquareColour2;
+        private static readonly byte[] whiteColour = Settings.WhiteColour;
+        private static readonly byte[] blackColour = Settings.BlackColour;
+        private static readonly byte[] lineColour = Settings.LineColour;
+        private static readonly byte[] lineBaseColour = Settings.LineColourBase;
+        private static readonly byte[] selectSquareColour = Settings.SelectSquareColour;
+        private static readonly byte[] selectPieceColour = Settings.SelectPieceColour;
+        private static readonly byte[] selectMoveSquareColour = Settings.SelectMoveSquareColour;
+
+        private static readonly string topLeftCorner = Settings.CVTS.DEC.DEC_Corner_TopLeft;
+        private static readonly string topRightCorner = Settings.CVTS.DEC.DEC_Corner_TopRight;
+        private static readonly string bottomLeftCorner = Settings.CVTS.DEC.DEC_Corner_BottomLeft;
+        private static readonly string bottomRightCorner = Settings.CVTS.DEC.DEC_Corner_BottomRight;
+        private static readonly string horizontalLine = Settings.CVTS.DEC.DEC_Horizontal_Line;
+        private static readonly string verticalLine = Settings.CVTS.DEC.DEC_Vertical_Line;
+        private static readonly string intersectionFull = Settings.CVTS.DEC.DEC_Intersection_Full;
+        private static readonly string intersectionRight = Settings.CVTS.DEC.DEC_Intersection_Right;
+        private static readonly string intersectionLeft = Settings.CVTS.DEC.DEC_Intersection_Left;
+        private static readonly string intersectionTop = Settings.CVTS.DEC.DEC_Intersection_Top;
+        private static readonly string intersectionBottom = Settings.CVTS.DEC.DEC_Intersection_Bottom;
 
         /// <summary>
         /// 
@@ -81,12 +107,12 @@ namespace Chess
         /// <returns></returns>
         static private byte[] PaintCalculations(out int drawLocationX, out int drawLocationY, int[] mapLoc, string[] design, byte[] mapLocation)
         {
-            int[] location = new int[2] { mapLocation[0] * Settings.SquareSize + (mapLocation[0] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[0], mapLocation[1] * Settings.SquareSize + (mapLocation[1] + Settings.EdgeSpacing + Settings.Spacing) * 1 + Settings.Offset[1] };
+            int[] location = new int[2] { mapLocation[0] * squareSize + (mapLocation[0] + edgeSpacing + spacing) * 1 + offset[0], mapLocation[1] *squareSize + (mapLocation[1] + edgeSpacing + spacing) * 1 + offset[1] };
             int designSize = design.Length;
-            drawLocationX = location[0] + (int)(Settings.SquareSize - designSize) / 2;
-            drawLocationY = location[1] + (int)(Settings.SquareSize - designSize) / 2;
+            drawLocationX = location[0] + (int)(squareSize - designSize) / 2;
+            drawLocationY = location[1] + (int)(squareSize - designSize) / 2;
             int locationForColour = (mapLoc[0] + mapLoc[1]) % 2; //if zero, background colour is "white", else background colour is "black".
-            byte[] colours = locationForColour == 0 ? Settings.SquareColour1 : Settings.SquareColour2;
+            byte[] colours = locationForColour == 0 ? whiteBackgroundColour : blackBackgroundColour;
             return colours;
         }
 
