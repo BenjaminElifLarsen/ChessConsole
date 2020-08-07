@@ -499,9 +499,9 @@ namespace Chess
                             }
                             else
                             {
-                                foreach (ChessPiece chePie in ChessList.GetList(team))
+                                foreach (ChessPiece chePie in ChessList.GetList(team)) //consider using delegate/event for this. 
                                 {
-                                    if (chePie.GetID == squareID)
+                                    if (chePie.GetID == squareID) //put the content of this if-statement into a function in ChessPiece. 
                                     {
                                         if (isHighlighted)
                                             chePie.IsHoveredOn(true, true);

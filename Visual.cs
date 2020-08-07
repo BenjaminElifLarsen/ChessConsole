@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Drawing;
 using System.Dynamic;
 using System.Net;
+using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace Chess
@@ -10,7 +11,7 @@ namespace Chess
     /// <summary>
     /// Class that contains the methods for the visual part of the program.
     /// </summary>
-    public static class Visual //needs the command promp chess piece important part resizer. 
+    public static class Visual //needs the command promp chess piece design resizer. 
     {
         //how to do this...
         //should this class hold the designs?
@@ -95,6 +96,118 @@ namespace Chess
         {
 
         }
+
+        /// <summary>
+        /// if the design is bigger than the square, part of the design will be removed so it fits the square. 
+        /// </summary>
+        static private string[] DesignResizer(string[] design, byte[] mostImportantDesignPart)
+        {
+            if (Settings.ChesspieceDesignSize > squareSize)
+            {
+                string[] resizedDesign = new string[squareSize];
+
+                if (resizedDesign.Length > 1)
+                {
+                    byte belowStringAmount = (byte)(design.Length - (mostImportantDesignPart[1] + 1)); //the amount of strings below
+                    byte aboveStringAmount = (byte)(design.Length - belowStringAmount - 1); //the -1 is the most important string
+                    sbyte direction = belowStringAmount >= aboveStringAmount ? (sbyte)1 : (sbyte)-1;
+                    byte stringAmount = belowStringAmount >= aboveStringAmount ? belowStringAmount : aboveStringAmount;
+
+                    byte startLocation = (byte)(mostImportantDesignPart[1]);
+                    byte endLocation = direction < 0 ? (byte)(startLocation - resizedDesign.Length) : (byte)(startLocation + resizedDesign.Length);
+                    byte lengthDifference = (byte)(design.Length - resizedDesign.Length);
+                    byte indexSubtraction = startLocation < stringAmount ? (byte)0 : lengthDifference;
+                    for (int i = startLocation; i != endLocation; i += direction)
+                    {
+                        char[] designImportant = design[i].ToCharArray();
+                        resizedDesign[i - indexSubtraction] = DesignCreate(designImportant, (byte)design.Length);
+                    }
+                }
+                else
+                {
+                    string importantString = design[mostImportantDesignPart[1]];
+                    char[] importantChars = importantString.ToCharArray();
+                    char[] importantChar = new char[] { importantChars[mostImportantDesignPart[0]] };
+                    resizedDesign[0] = new string(importantChar);
+                }
+                return resizedDesign;
+
+                string DesignCreate(char[] charArray, byte charLength)
+                {
+                    bool?[] DECLocation = new bool?[charLength];
+                    bool?[] DECSymbolUsed = new bool?[charLength];
+                    int charDECLength = 0;
+                    if (charLength < charArray.Length) //DEC is present 
+                    {
+                        charDECLength = charArray.Length;
+                        byte posistion = 0;
+                        char[] nonDECArray = new char[charLength];
+                        for (int m = 0; m < charArray.Length; m++)
+                        {
+                            if (charArray[m] == '\u001b') //DEC is either activated or deactivated
+                            {
+                                if (charArray[m + 2] == '0') //DEC is activated 
+                                {
+                                    DECLocation[posistion] = true;
+                                }
+                                m += 2; //jumps to the end of the DEC char sequence. 
+                            }
+                            else
+                            {
+                                nonDECArray[posistion] = charArray[m];
+                                posistion++;
+                            }
+                        }
+                        charArray = nonDECArray;
+                    }
+
+                    char[] newDesign = new char[squareSize];
+                    byte mostImportLocation = mostImportantDesignPart[0] < squareSize ? mostImportantDesignPart[0] : (byte)(newDesign.Length - 1);
+                    newDesign[mostImportLocation] = charArray[mostImportantDesignPart[0]];
+                    byte rightAmountOfChars = (byte)(charLength - (mostImportantDesignPart[0] + 1)); //the +1 is to make up with the difference in array length and indexes.
+                    byte leftAmountOfChars = (byte)(charLength - 1 - rightAmountOfChars); //the -1 is to subtract the important char. 
+                    sbyte charDirection = rightAmountOfChars >= leftAmountOfChars ? (sbyte)1 : (sbyte)-1; //right : left
+                    byte charAmount = rightAmountOfChars >= leftAmountOfChars ? rightAmountOfChars : leftAmountOfChars;
+                    byte startCharLocation = (byte)(mostImportantDesignPart[0]);
+                    byte endCharLoction = charDirection < 0 ? (byte)(startCharLocation - newDesign.Length) : (byte)(startCharLocation + newDesign.Length);
+                    byte lengthCharDifference = (byte)(charLength - newDesign.Length);
+                    byte indexCharSubtraction = startCharLocation < charAmount ? (byte)0 : lengthCharDifference;
+                    for (int n = startCharLocation; n != endCharLoction; n += charDirection)
+                    {
+                        newDesign[n - indexCharSubtraction] = charArray[n];
+                        if (DECLocation[n] == true)
+                            DECSymbolUsed[n] = true;
+                        else
+                            DECSymbolUsed[n] = false;
+                    }
+                    if (charDECLength > charLength) //checks to see if DEC escape signs might should be reimplemented
+                    {
+                        List<char> reconsturectionChar = new List<char>();
+                        for (int k = 0; k < DECSymbolUsed.Length; k++)
+                        {
+                            if (DECSymbolUsed[k] == true)
+                            {
+                                reconsturectionChar.Add('\u001b');
+                                reconsturectionChar.Add('(');
+                                reconsturectionChar.Add('0'); //active DEC
+                                reconsturectionChar.Add(charArray[k]);
+                                reconsturectionChar.Add('\u001b');
+                                reconsturectionChar.Add('(');
+                                reconsturectionChar.Add('B'); //deactive DEC
+                            }
+                            else if (DECSymbolUsed[k] == false)
+                                reconsturectionChar.Add(charArray[k]);
+                        }
+                        if (reconsturectionChar.Count > newDesign.Length)
+                            newDesign = reconsturectionChar.ToArray();
+                    }
+                    string newDesignString = new string(newDesign);
+                    return newDesignString;
+                }
+            }
+            return design;
+        }
+
 
         /// <summary>
         /// 
