@@ -116,6 +116,15 @@ namespace Chess
             return colours;
         }
 
+        /// <summary>
+        /// 
+        /// </summary>
+        /// <param name="drawLocationX"></param>
+        /// <param name="drawLocationY"></param>
+        /// <param name="mapLoc"></param>
+        /// <param name="design"></param>
+        /// <param name="mapLocation"></param>
+        /// <returns></returns>
         static private byte[] PaintCalculations(out int drawLocationX, out int drawLocationY, int[] mapLoc, PointF[] design, byte[] mapLocation)
         {
             drawLocationX = 0;
@@ -124,11 +133,11 @@ namespace Chess
         }
 
         /// <summary>
-        /// Calculates the size of <paramref name="design"/> and returns the length of <c>X</c> and <c>Y</c>.
+        /// Calculates the size of <paramref name="design"/> and returns the locations of the lowest and highest X and Y.
         /// </summary>
         /// <param name="design"></param>
         /// <returns></returns>
-        static private float[] DesignSizeGUICalculatior(PointF[] design)
+        static private float[,] DesignSizeGUICalculatior(PointF[] design) //expalin that the first part of the return index is lowest and the last part is the highest
         {
             float lowestX = float.MaxValue;
             float lowestY = float.MaxValue;
@@ -141,7 +150,7 @@ namespace Chess
                 highestX = pointF.X > highestX ? pointF.X : highestX;
                 highestY = pointF.Y > highestY ? pointF.Y : highestY;
             }
-            return new float[] { highestX - lowestX, highestY - lowestY };
+            return new float[,] { { lowestX, lowestY }, { highestX, highestY } };
         }
 
         /// <summary>
@@ -151,7 +160,26 @@ namespace Chess
         /// <returns></returns>
         static private PointF[] ZeroAlign(PointF[] design) //improve that summary. 
         {
-            throw new NotImplementedException();
+            float[,] originalLocation = DesignSizeGUICalculatior(design);
+            PointF[] convertedDesign = new PointF[design.Length];
+            for (int i = 0; i < convertedDesign.Length; i++)
+                convertedDesign[i] = design[i];
+
+            if(originalLocation[0,0] != 0)
+            {
+                for (int i = 0; i < design.Length; i++)
+                {
+                    convertedDesign[i].X -= originalLocation[0, 0];
+                }
+            }
+            if(originalLocation[0,1] != 0)
+            {
+                for (int i = 0; i < design.Length; i++)
+                {
+                    convertedDesign[i].Y -= originalLocation[0, 1];
+                }
+            }
+            return convertedDesign;
         }
 
         /// <summary>
