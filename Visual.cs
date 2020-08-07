@@ -10,7 +10,7 @@ namespace Chess
     /// <summary>
     /// Class that contains the methods for the visual part of the program.
     /// </summary>
-    public static class Visual
+    public static class Visual //needs the command promp chess piece important part resizer. 
     {
         //how to do this...
         //should this class hold the designs?
@@ -188,12 +188,30 @@ namespace Chess
         /// <param name="design"></param>
         /// <param name="scale"></param>
         /// <returns>Returns a PointF array of <paramref name="design"/> scaled with <paramref name="scale"/>.</returns>
-        static private PointF[] Resize(Point[] design, float scale)
+        static private PointF[] Resize(PointF[] design, float scale, bool aligne = false)
         {
-            throw new NotImplementedException();
+            PointF[] alignedDesign;
+            if (aligne)
+                alignedDesign = ZeroAlign(design);
+            else
+            {
+                alignedDesign = new PointF[design.Length];
+                for (int i = 0; i < alignedDesign.Length; i++)
+                    alignedDesign[i] = design[i];
+            }
+
+            for (int i = 0; i < alignedDesign.Length; i++)
+            {
+                alignedDesign[i].X *= scale;
+                alignedDesign[i].Y *= scale;
+            }
+            return alignedDesign;
         }
 
-        public static void BoardSetup()
+        /// <summary>
+        /// Creates the command prompt outlines of the chess board. 
+        /// </summary>
+        public static void BoardSetupCMD()
         {
             Console.CursorVisible = false;
             ushort distance = (ushort)(9 + 8 * squareSize);
@@ -276,10 +294,13 @@ namespace Chess
                 Console.Write(letters[k]);
             }
 
-            BoardColouring();
+            BoardColouringCMD();
         }
 
-        private static void BoardColouring()
+        /// <summary>
+        /// Colours the command promp chess table.
+        /// </summary>
+        private static void BoardColouringCMD()
         {
             ushort distance = (ushort)(8 + 8 * squareSize);
             byte location = 1;
@@ -307,7 +328,7 @@ namespace Chess
         private static class Designs //neeeds to contain information about the most important part of each CMD design. 
         {
             //bishop
-            /// <summary> //make all these readonly
+            /// <summary> //make all these readonly or allow (for the GUI version) them to be overwritten with the resize and aligned versions. 
             /// 
             /// </summary>
             private static string[] bishopCmdDesign =
