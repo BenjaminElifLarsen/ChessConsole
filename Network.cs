@@ -58,6 +58,8 @@ namespace Chess
             /// If it succeeded it return true, else false.
             /// </summary>
             /// <param name="IPaddress">The IP address to connect too.</param>
+            /// <param name="transmitter"></param>
+            /// <param name="transmit"></param>
             /// <returns>Returns true if it can connect to <paramref name="IPaddress"/>, else false.</returns>
             public static bool TransmitSetup(string IPaddress, out TcpClient transmitter, bool transmit = false)
             {
@@ -138,6 +140,7 @@ namespace Chess
             /// <summary>
             /// Transmit the map data to the IP address stored in <c>OtherPlayerIpAddress</c>.
             /// </summary>
+            /// <param name="ipAddress"></param>
             public static bool TransmitMapData(string ipAddress)
             {
                 TcpClient transmitter = null;
@@ -275,6 +278,9 @@ namespace Chess
             /// Transmit any <paramref name="data"/> string to the IP-address stored in <c>OtherPlayerIpAddress</c>.
             /// </summary>
             /// <param name="data">String to transmit.</param>
+            /// <param name="ipAddress"></param>
+            /// <param name="readWaitTime"></param>
+            /// <param name="sentResponse"></param>
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
             public static bool GeneralDataTransmission(string data, string ipAddress, bool sentResponse = false, int? readWaitTime = null)
             {
