@@ -25,12 +25,4 @@ namespace Support
 
     }
 
-    public class Test
-    {
-        void test()
-        {
-            ArrayExtent<int>.DeepCore(new int[] { 5, 3 });
-        }
-    }
-
 }
