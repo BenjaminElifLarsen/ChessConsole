@@ -25,7 +25,7 @@ namespace Chess
             DateTime time = DateTime.Now;
             //string newFileName = $"{filename} {time.Year}-{time.Month}-{time.Day}-{time.Hour}-{time.Minute}-{time.Second}-{time.Millisecond}{filetype}";
             string newFileName = filename + filetype;
-            string timePoint = $"{filename} {time.Year}-{time.Month}-{time.Day}-{time.Hour}-{time.Minute}-{time.Second}-{time.Millisecond}";
+            string timePoint = $"{time.Year}-{time.Month}-{time.Day}-{time.Hour}-{time.Minute}-{time.Second}-{time.Millisecond}";
             CreateFolder(pathway);
             CreateFile(pathway, newFileName);
             string pathFile = Path.Combine(pathway, newFileName);
