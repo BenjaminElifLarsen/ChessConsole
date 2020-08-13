@@ -58,8 +58,8 @@ namespace Chess
             /// If it succeeded it return true, else false.
             /// </summary>
             /// <param name="IPaddress">The IP address to connect too.</param>
-            /// <param name="transmitter"></param>
-            /// <param name="transmit"></param>
+            /// <param name="transmitter">The TCP client.</param>
+            /// <param name="transmit">If true, it will transmit some data.</param>
             /// <returns>Returns true if it can connect to <paramref name="IPaddress"/>, else false.</returns>
             public static bool TransmitSetup(string IPaddress, out TcpClient transmitter, bool transmit = false)
             {
@@ -140,7 +140,7 @@ namespace Chess
             /// <summary>
             /// Transmit the map data to the IP address stored in <c>OtherPlayerIpAddress</c>.
             /// </summary>
-            /// <param name="ipAddress"></param>
+            /// <param name="ipAddress">The IP-address the data should be transmitted too.</param>
             public static bool TransmitMapData(string ipAddress)
             {
                 TcpClient transmitter = null;
@@ -278,9 +278,9 @@ namespace Chess
             /// Transmit any <paramref name="data"/> string to the IP-address stored in <c>OtherPlayerIpAddress</c>.
             /// </summary>
             /// <param name="data">String to transmit.</param>
-            /// <param name="ipAddress"></param>
-            /// <param name="readWaitTime"></param>
-            /// <param name="sentResponse"></param>
+            /// <param name="ipAddress">The IP address to connect to.</param>
+            /// <param name="readWaitTime">If not null, sets the maximum wait time of the transmitter.</param>
+            /// <param name="sentResponse">True if a response will be transmitted back, else false.</param>
             /// <returns>Returns true when <paramref name="data"/> has been trasmitted. </returns>
             public static bool GeneralDataTransmission(string data, string ipAddress, bool sentResponse = false, int? readWaitTime = null)
             {
@@ -380,6 +380,7 @@ namespace Chess
             /// Waits on a client connection to the listiner and returns the IP address of the client. 
             /// If the search for a player is aborted, it will return null.
             /// </summary>
+            /// <param name="waitOnResponse">If true it will wait on a reponse.</param>
             /// <returns>Returns the IP address of the client. If the search for a player is aborted, returns null.</returns>
             public static string GetConnectionIpAddress(bool waitOnResponse = false)
             {
@@ -424,6 +425,8 @@ namespace Chess
             /// <summary>
             /// Waits on a client to connect and transmit data. The data is then converted into a ASCII string. //rewrite
             /// </summary>
+            /// <param name="WaitOnResponse">If true it will wait on a reponse.</param>
+            /// <param name="readWaitTime">If not null, it will set the max read wait time of the client to the value.</param>
             /// <returns>Returns an ASCII string received from a client.</returns>
             public static string GeneralDataReception(bool WaitOnResponse = false, int? readWaitTime = null)
             {
@@ -520,6 +523,7 @@ namespace Chess
             /// Sets up the receiver with the <paramref name="IPaddress"/>.
             /// </summary>
             /// <param name="IPaddress">IP addresss to initialise the receiver with.</param>
+            /// <param name="portNumber">The port number that should be listen to.</param>
             /// <returns>Returns true if the receiver is initialised, else false.</returns>
             public static bool ReceiveSetup(string IPaddress, int portNumber = 23000)
             {
