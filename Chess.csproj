@@ -39,6 +39,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="Support\Support.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
     <Reference Include="ConverterLibrary">
       <HintPath>Converter\bin\Release\netstandard2.0\ConverterLibrary.dll</HintPath>
     </Reference>

@@ -54,7 +54,7 @@ namespace Chess
         /// </summary>
         static public void ChessBoardPaint()
         {
-
+            
         }
 
         /// <summary>
