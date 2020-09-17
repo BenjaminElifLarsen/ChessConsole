@@ -240,13 +240,13 @@ namespace Chess
         public class CVTS //Console Virtual Terminal Sequences
         {
 
-            [DllImport("kernel32.dll", SetLastError = true)]
-            public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
-            [DllImport("kernel32.dll", SetLastError = true)]
-            public static extern bool GetConsoleMode(IntPtr handle, out int mode);
+            //[DllImport("kernel32.dll", SetLastError = true)]
+            //public static extern bool SetConsoleMode(IntPtr hConsoleHandle, int mode);
+            //[DllImport("kernel32.dll", SetLastError = true)]
+            //public static extern bool GetConsoleMode(IntPtr handle, out int mode);
 
-            [DllImport("kernel32.dll", SetLastError = true)]
-            private static extern IntPtr GetStdHandle(int handle);
+            //[DllImport("kernel32.dll", SetLastError = true)]
+            //private static extern IntPtr GetStdHandle(int handle);
 
             private static string whiteBrightForColour = "\x1b[97m";
             private static string cyanBrightForColour = "\x1b[96m";
@@ -295,10 +295,10 @@ namespace Chess
             /// </summary>
             public static void ActivateCVTS()
             {
-                var handle = GetStdHandle(-11);
-                int mode;
-                GetConsoleMode(handle, out mode);
-                SetConsoleMode(handle, mode | 0x4);
+                //var handle = GetStdHandle(-11);
+                //int mode;
+                //GetConsoleMode(handle, out mode);
+                //SetConsoleMode(handle, mode | 0x4);
             }
 
             /// <summary>
