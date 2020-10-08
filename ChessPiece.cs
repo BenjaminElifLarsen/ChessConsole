@@ -8,7 +8,7 @@ namespace Chess
     /// <summary>
     /// The base class for chess pieces. Any chess piece should derive from this class.
     /// </summary>
-    abstract public class ChessPiece //still got a lot to read and learn about what is the best choice for a base class, class is abstract, everything is abstract, nothing is abstract and so on. 
+    abstract public class ChessPiece
     {
         protected int[] location = new int[2]; //x,y
         protected byte[] colour; // https://docs.microsoft.com/en-us/dotnet/csharp/tutorials/inheritance 
